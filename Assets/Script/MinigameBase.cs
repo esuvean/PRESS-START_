@@ -22,7 +22,7 @@ public abstract class MinigameBase : MonoBehaviour
         currentTimer = timeLimit;
         isGameActive = true;
         hintGiven = false;
-        Debug.Log($"{gameName} 시작! 지시: {instruction}");
+        Debug.Log($"{gameName} 시작 지시: {instruction}");
     }
 
     protected virtual void Update()
