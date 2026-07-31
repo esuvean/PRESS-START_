@@ -2,18 +2,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using UnityEngine.InputSystem;
 
 public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
 {
     [Header("UI Reference")]
     public RectTransform buttonTransform;
     public Button startButton;
-    public TextMeshProUGUI statusText; // 성공 횟수 0/3 표시
+    public TextMeshProUGUI statusText;
 
     [Header("Movement Settings")]
-    public float detectionRadius = 150f; // 마우스 감지 거리
-    public float fleeDistance = 200f;     // 도망치는 거리
-    public float pauseTime = 0.4f;        // 도망 후 정지 시간
+    public float detectionRadius = 150f;
+    public float fleeDistance = 200f;
+    public float pauseTime = 0.4f;
 
     private int successCount = 0;
     private int failCount = 0;
@@ -38,7 +39,6 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
         base.Update();
         if (!isGameActive) return;
 
-       
         if (isPaused)
         {
             pauseTimer -= Time.deltaTime;
@@ -46,16 +46,24 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
             {
                 isPaused = false;
             }
-            return; 
+            return;
         }
 
         CheckMouseProximityAndFlee();
     }
 
-   
     private void CheckMouseProximityAndFlee()
     {
-        Vector2 mousePos = Input.mousePosition;
+        Vector2 mousePos = Vector2.zero;
+        if (Mouse.current != null)
+        {
+            mousePos = Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            mousePos = Input.mousePosition;
+        }
+
         Vector2 buttonPos = buttonTransform.position;
         float distance = Vector2.Distance(mousePos, buttonPos);
 
@@ -72,23 +80,33 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
 
         switch (successCount)
         {
-            case 0: //  좌우로만 도망
+            case 0: // 1단계: 좌우 이동
                 currentPos.x += (dir.x > 0 ? 1 : -1) * fleeDistance;
                 break;
 
-            case 1: //  화면 모서리 방향으로 도망
+            case 1: // 2단계: 대각선 이동
                 currentPos += dir * fleeDistance;
                 break;
 
-            case 2: //  작아진 상태로 도망
+            case 2: // 3단계: 작아졌다가 돌아오는 이동
                 currentPos += dir * fleeDistance;
                 StartCoroutine(ShrinkAndReturnRoutine());
                 break;
         }
 
+        //  버튼이 패널(화면) 밖으로 나가지 않도록 가둡니다!
+        RectTransform parentRect = buttonTransform.parent as RectTransform;
+        if (parentRect != null)
+        {
+            float limitX = (parentRect.rect.width - buttonTransform.rect.width) / 2f;
+            float limitY = (parentRect.rect.height - buttonTransform.rect.height) / 2f;
+
+            currentPos.x = Mathf.Clamp(currentPos.x, -limitX, limitX);
+            currentPos.y = Mathf.Clamp(currentPos.y, -limitY, limitY);
+        }
+
         buttonTransform.anchoredPosition = currentPos;
 
-       
         isPaused = true;
         pauseTimer = pauseTime;
     }
@@ -100,25 +118,22 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
         buttonTransform.localScale = Vector3.one;
     }
 
-    
     private void OnStartButtonClick()
     {
         if (!isGameActive) return;
 
         successCount++;
-        fleeDistance += 30f; // 난이도 상승: 성공할 때마다 속도/거리 증가
+        fleeDistance += 30f;
         UpdateUI();
 
         if (successCount >= 3)
         {
-            Success(); 
+            Success();
         }
     }
 
-   
     public void OnPointerClick(PointerEventData eventData)
     {
-        
         if (eventData.pointerCurrentRaycast.gameObject != startButton.gameObject)
         {
             failCount++;
@@ -126,7 +141,6 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
         }
     }
 
-    
     private void CheckHints()
     {
         if (failCount == 3)
@@ -135,12 +149,12 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
         }
         else if (failCount == 6)
         {
-            pauseTime = 0.8f; 
+            pauseTime = 0.8f;
             Debug.Log(" 힌트 (실패 6회): 버튼 정지 시간이 증가했습니다.");
         }
         else if (failCount == 10)
         {
-            fleeDistance = Mathf.Max(50f, fleeDistance - 50f); 
+            fleeDistance = Mathf.Max(50f, fleeDistance - 50f);
             Debug.Log(" 힌트 (실패 10회): 버튼 이동 거리가 감소했습니다.");
         }
     }
