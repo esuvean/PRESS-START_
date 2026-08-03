@@ -3,15 +3,18 @@ using System.Collections.Generic;
 
 public class ChapterManager : MonoBehaviour
 {
+    [Header("UI Reference")]
+    public Transform canvasTransform; 
+
     [System.Serializable]
     public class ChapterData
     {
         public string chapterName;
-        public List<GameObject> minigamePrefabs; 
+        public List<GameObject> minigamePrefabs;
     }
 
     [Header("Chapter Settings")]
-    public List<ChapterData> chapters; 
+    public List<ChapterData> chapters;
 
     private int currentChapterIndex = 0;
     private int currentMinigameIndex = 0;
@@ -19,14 +22,12 @@ public class ChapterManager : MonoBehaviour
 
     private void OnEnable()
     {
-       
         MinigameBase.OnGameSuccess += HandleMinigameSuccess;
         MinigameBase.OnGameFailure += HandleMinigameFailure;
     }
 
     private void OnDisable()
     {
-       
         MinigameBase.OnGameSuccess -= HandleMinigameSuccess;
         MinigameBase.OnGameFailure -= HandleMinigameFailure;
     }
@@ -39,10 +40,10 @@ public class ChapterManager : MonoBehaviour
 
     private void StartCurrentMinigame()
     {
-        // 예외 처리 (모든 챕터를 다 깬 경우)
+        // 모든 챕터를 다 깬 경우
         if (currentChapterIndex >= chapters.Count)
         {
-            Debug.Log("?? 모든 챕터를 클리어하셨습니다! 게임 클리어!");
+            Debug.Log(" 모든 챕터를 클리어하셨습니다! 게임 클리어!");
             return;
         }
 
@@ -51,18 +52,18 @@ public class ChapterManager : MonoBehaviour
         if (currentMinigameIndex >= activeChapter.minigamePrefabs.Count)
         {
             // 한 챕터의 5개 게임을 다 깬 경우 다음 챕터로 이동한다
-            Debug.Log($"?? {activeChapter.chapterName} 클리어! 다음 챕터로 넘어갑니다.");
+            Debug.Log($" {activeChapter.chapterName} 클리어! 다음 챕터로 넘어갑니다.");
             currentChapterIndex++;
             currentMinigameIndex = 0;
             StartCurrentMinigame();
             return;
         }
 
-        // 현재 순서의 미니게임 프리팹을 화면에 생성
+        
         GameObject gamePrefab = activeChapter.minigamePrefabs[currentMinigameIndex];
-        currentActiveGameInstance = Instantiate(gamePrefab, transform);
+        currentActiveGameInstance = Instantiate(gamePrefab, canvasTransform);
 
-        // 미니게임 시작 신호 주는 부분
+       
         MinigameBase gameScript = currentActiveGameInstance.GetComponent<MinigameBase>();
         if (gameScript != null)
         {
@@ -72,10 +73,14 @@ public class ChapterManager : MonoBehaviour
 
     private void HandleMinigameSuccess()
     {
-        Debug.Log(" 미니게임 성공 ");
-        
+        Debug.Log("미니게임 성공!");
 
         
+        if (currentActiveGameInstance != null)
+        {
+            Destroy(currentActiveGameInstance, 1f);
+        }
+
         currentMinigameIndex++;
         Invoke(nameof(StartCurrentMinigame), 1f); // 1초 뒤 다음 게임 시작 
     }
@@ -83,6 +88,5 @@ public class ChapterManager : MonoBehaviour
     private void HandleMinigameFailure()
     {
         Debug.Log("미니게임 실패");
-       
     }
 }
