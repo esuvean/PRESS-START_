@@ -255,6 +255,7 @@ MonoBehaviour:
   - chapterName: 
     minigamePrefabs:
     - {fileID: 3735909273749746481, guid: ac3d83ba5f2963440b1479e4f3a31611, type: 3}
+    - {fileID: 9197203338581499475, guid: 5b75eab5886b05544b9ee9e8ed6fd167, type: 3}
 --- !u!4 &1405073026
 Transform:
   m_ObjectHideFlags: 0
