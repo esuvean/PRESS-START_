@@ -7,16 +7,11 @@ public class DraggablePopup : MonoBehaviour, IBeginDragHandler, IDragHandler
     [Header("Popup")]
     public RectTransform popupRect;
     public Canvas canvas;
-
-    // 팝업이 움직일 수 있는 화면 영역
-    public RectTransform moveArea;
-
     public Button closeButton;
 
     [Header("Close Trap")]
     public bool closable = true;
     public bool spawnTwoOnClose = false;
-
     public GameObject nuisancePopupPrefab;
     public Transform popupParent;
 
@@ -28,84 +23,127 @@ public class DraggablePopup : MonoBehaviour, IBeginDragHandler, IDragHandler
         if (canvas == null)
             canvas = GetComponentInParent<Canvas>();
 
-        // 지정 안 했으면 부모 영역 사용
-        if (moveArea == null)
-            moveArea = popupRect.parent as RectTransform;
-
         if (closeButton != null)
         {
             closeButton.interactable = closable;
-
-            closeButton.onClick.RemoveListener(ClosePopup);
             closeButton.onClick.AddListener(ClosePopup);
         }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // 클릭한 팝업을 가장 앞으로
+        // 잡은 팝업을 맨 앞으로
         transform.SetAsLastSibling();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (popupRect == null || moveArea == null)
+        if (popupRect == null)
             return;
 
         float scaleFactor = canvas != null
             ? canvas.scaleFactor
             : 1f;
 
+        // 기존 드래그 기능
         popupRect.anchoredPosition +=
             eventData.delta / Mathf.Max(scaleFactor, 0.01f);
 
-        ClampPopup();
+        // ★ Canvas 밖으로 나가지 않게 제한
+        KeepInsideCanvas();
     }
 
-    private void ClampPopup()
+    // ==================================================
+    // 팝업이 실제 Canvas 화면 밖으로 나가지 않도록 제한
+    // ==================================================
+    private void KeepInsideCanvas()
     {
-        if (popupRect == null || moveArea == null)
+        if (popupRect == null || canvas == null)
             return;
 
-        Rect area = moveArea.rect;
+        RectTransform canvasRect =
+            canvas.transform as RectTransform;
 
-        float popupWidth =
-            popupRect.rect.width * Mathf.Abs(popupRect.localScale.x);
+        if (canvasRect == null)
+            return;
 
-        float popupHeight =
-            popupRect.rect.height * Mathf.Abs(popupRect.localScale.y);
+        // 팝업의 실제 화면상 모서리
+        Vector3[] popupCorners = new Vector3[4];
 
-        float minX =
-            area.xMin +
-            popupWidth * popupRect.pivot.x;
+        // Canvas의 실제 화면상 모서리
+        Vector3[] canvasCorners = new Vector3[4];
 
-        float maxX =
-            area.xMax -
-            popupWidth * (1f - popupRect.pivot.x);
+        popupRect.GetWorldCorners(popupCorners);
+        canvasRect.GetWorldCorners(canvasCorners);
 
-        float minY =
-            area.yMin +
-            popupHeight * popupRect.pivot.y;
+        Vector3 offset = Vector3.zero;
 
-        float maxY =
-            area.yMax -
-            popupHeight * (1f - popupRect.pivot.y);
+        // 왼쪽으로 나갔을 때
+        if (popupCorners[0].x < canvasCorners[0].x)
+        {
+            offset.x +=
+                canvasCorners[0].x - popupCorners[0].x;
+        }
 
-        Vector2 pos = popupRect.anchoredPosition;
+        // 오른쪽으로 나갔을 때
+        if (popupCorners[2].x > canvasCorners[2].x)
+        {
+            offset.x -=
+                popupCorners[2].x - canvasCorners[2].x;
+        }
 
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        // 아래쪽으로 나갔을 때
+        if (popupCorners[0].y < canvasCorners[0].y)
+        {
+            offset.y +=
+                canvasCorners[0].y - popupCorners[0].y;
+        }
 
-        popupRect.anchoredPosition = pos;
+        // 위쪽으로 나갔을 때
+        if (popupCorners[2].y > canvasCorners[2].y)
+        {
+            offset.y -=
+                popupCorners[2].y - canvasCorners[2].y;
+        }
+
+        // 필요한 만큼만 다시 안쪽으로 이동
+        popupRect.position += offset;
     }
+    // "아니요" 버튼을 누르면 현재 팝업이 2개 더 생성됨
+    public void DuplicatePopupTwice()
+    {
+        Transform parent = transform.parent;
 
+        for (int i = 0; i < 2; i++)
+        {
+            GameObject clone = Instantiate(gameObject, parent);
+
+            RectTransform rt = clone.GetComponent<RectTransform>();
+
+            if (rt != null)
+            {
+                // 기존 팝업 위치를 기준으로 살짝 떨어뜨려 생성
+                if (i == 0)
+                {
+                    rt.anchoredPosition =
+                        popupRect.anchoredPosition +
+                        new Vector2(-120f, -80f);
+                }
+                else
+                {
+                    rt.anchoredPosition =
+                        popupRect.anchoredPosition +
+                        new Vector2(120f, 80f);
+                }
+            }
+        }
+    }
     public void ClosePopup()
     {
         if (!closable)
             return;
 
-        if (spawnTwoOnClose &&
-            nuisancePopupPrefab != null)
+        if (spawnTwoOnClose && nuisancePopupPrefab != null)
         {
             Transform parent =
                 popupParent != null
