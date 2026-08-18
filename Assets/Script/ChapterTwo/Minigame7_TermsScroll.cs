@@ -1,111 +1,233 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
 
 public class Minigame7_TermsScroll : MinigameBase
 {
-    [Header("UI Reference")]
+    [Header("UI")]
     public ScrollRect termsScroll;
     public Button agreeButton;
     public TextMeshProUGUI statusText;
 
+    [Header("Window")]
+    public GameObject termsWindow;
+
+    [Header("Hidden Start Button")]
+    public Button hiddenStartButton;
+
     [Header("Settings")]
-    [Range(0f, 0.2f)]
-    public float bottomThreshold = 0.03f;
+    [Range(0f, 0.1f)]
+    public float bottomThreshold = 0.02f;
 
     private bool escapedOnce = false;
+    private bool started = false;
+
+    private void Start()
+    {
+        if (!started)
+        {
+            StartMinigame();
+        }
+    }
 
     public override void StartMinigame()
     {
+        if (started)
+            return;
+
+        started = true;
+
         base.StartMinigame();
 
         gameName = "실행 문서 확인 검사";
-        instruction = "약관의 마지막까지 이동하여 시작 버튼을 누른다.";
+        instruction =
+            "게임 실행 약관의 마지막까지 이동하여 시작 버튼을 누른다.";
 
         escapedOnce = false;
 
-        if (termsScroll != null)
-            termsScroll.verticalNormalizedPosition = 1f;
-
-        if (agreeButton != null)
+        // 약관 창은 처음에 보임
+        if (termsWindow != null)
         {
-            agreeButton.onClick.RemoveListener(OnAgreeClicked);
-            agreeButton.onClick.AddListener(OnAgreeClicked);
-            AddPointerEnterTrap();
+            termsWindow.SetActive(true);
+        }
+
+        // 진짜 시작하기 버튼은 처음에 숨김
+        if (hiddenStartButton != null)
+        {
+            hiddenStartButton.gameObject.SetActive(false);
+
+            hiddenStartButton.onClick.RemoveListener(
+                OnStartButtonClicked
+            );
+
+            hiddenStartButton.onClick.AddListener(
+                OnStartButtonClicked
+            );
+        }
+
+        // 약관 맨 위로
+        if (termsScroll != null)
+        {
+            Canvas.ForceUpdateCanvases();
+
+            termsScroll.verticalNormalizedPosition = 1f;
+            termsScroll.scrollSensitivity = 40f;
         }
 
         if (statusText != null)
-            statusText.text = "약관을 끝까지 확인하세요.";
+        {
+            statusText.text =
+                "약관을 끝까지 확인하세요.";
+        }
     }
 
-    private void AddPointerEnterTrap()
-    {
-        EventTrigger trigger = agreeButton.GetComponent<EventTrigger>();
-
-        if (trigger == null)
-            trigger = agreeButton.gameObject.AddComponent<EventTrigger>();
-
-        if (trigger.triggers == null)
-            trigger.triggers = new System.Collections.Generic.List<EventTrigger.Entry>();
-
-        // 프리팹 인스턴스는 한 번만 StartMinigame 되므로 새 엔트리를 추가합니다.
-        EventTrigger.Entry entry = new EventTrigger.Entry();
-        entry.eventID = EventTriggerType.PointerEnter;
-        entry.callback.AddListener(_ => OnAgreePointerEnter());
-        trigger.triggers.Add(entry);
-    }
+    // ===============================
+    // 현재 약관 맨 아래인지 확인
+    // ===============================
 
     private bool IsAtBottom()
     {
-        return termsScroll != null &&
-               termsScroll.verticalNormalizedPosition <= bottomThreshold;
+        if (termsScroll == null)
+            return false;
+
+        return termsScroll.verticalNormalizedPosition
+               <= bottomThreshold;
     }
 
-    private void OnAgreePointerEnter()
+    // ===============================
+    // 동의 버튼에 마우스 올렸을 때
+    // 첫 번째는 맨 위로 도망
+    // ===============================
+
+    public void OnAgreePointerEnter()
     {
-        if (!isGameActive || escapedOnce || !IsAtBottom())
+        if (!isGameActive)
             return;
 
-        escapedOnce = true;
+        if (!IsAtBottom())
+            return;
 
-        if (termsScroll != null)
+        // 첫 번째 접근
+        if (!escapedOnce)
+        {
+            escapedOnce = true;
+
+            Canvas.ForceUpdateCanvases();
+
             termsScroll.verticalNormalizedPosition = 1f;
 
-        if (statusText != null)
-            statusText.text = "약관 위치가 초기화되었습니다.";
+            // 두 번째 스크롤은 더 빠르게
+            termsScroll.scrollSensitivity = 80f;
+
+            if (statusText != null)
+            {
+                statusText.text =
+                    "제대로 약관을 읽으셨습니까?";
+            }
+        }
     }
 
-    private void OnAgreeClicked()
-    {
-        if (!isGameActive) return;
+    // ===============================
+    // 약관 동의 버튼
+    // ===============================
 
+    public void OnAgreeClicked()
+    {
+        if (!isGameActive)
+            return;
+
+        // 첫 번째 장난을 아직 안 봤으면 동의 불가
         if (!escapedOnce)
         {
             if (statusText != null)
-                statusText.text = "먼저 약관 마지막까지 이동하세요.";
+                statusText.text = "약관을 끝까지 확인하세요.";
+
             return;
         }
 
+        // 다시 맨 아래까지 안 내려왔으면 동의 불가
         if (!IsAtBottom())
         {
             if (statusText != null)
                 statusText.text = "다시 약관 마지막까지 이동하세요.";
+
             return;
         }
+
+        // =========================
+        // 모든 약관 동의 완료
+        // =========================
+
+        if (statusText != null)
+            statusText.text = "모든 약관에 동의했습니다.";
+
+        // 약관 창 끄기
+        if (termsWindow != null)
+            termsWindow.SetActive(false);
+
+        // 뒤에 있던 START 버튼 켜기
+        if (hiddenStartButton != null)
+            hiddenStartButton.gameObject.SetActive(true);
+    }
+
+    // ===============================
+    // 진짜 시작하기 버튼
+    // ===============================
+
+    private void OnStartButtonClicked()
+    {
+        if (!isGameActive)
+            return;
+
+        if (statusText != null)
+            statusText.text = "실행 문서 확인 완료";
 
         Success();
     }
 
+    // ===============================
+    // 힌트
+    // ===============================
+
     protected override void GiveHint()
     {
         if (statusText != null)
-            statusText.text = "힌트: 마우스 휠 또는 스크롤바를 사용하세요.";
+        {
+            statusText.text =
+                "힌트: 스크롤바를 끝까지 내려보세요.";
+        }
     }
+
+    // ===============================
+    // 재시작
+    // ===============================
 
     protected override void RestartGame()
     {
+        escapedOnce = false;
+
+        if (termsWindow != null)
+        {
+            termsWindow.SetActive(true);
+        }
+
+        if (hiddenStartButton != null)
+        {
+            hiddenStartButton.gameObject.SetActive(false);
+        }
+
         if (termsScroll != null)
+        {
+            Canvas.ForceUpdateCanvases();
+
             termsScroll.verticalNormalizedPosition = 1f;
+            termsScroll.scrollSensitivity = 40f;
+        }
+
+        if (statusText != null)
+        {
+            statusText.text =
+                "약관을 끝까지 확인하세요.";
+        }
     }
 }
