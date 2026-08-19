@@ -7,11 +7,11 @@ public class Minigame4_TargetClick : MinigameBase
     [Header("UI Reference")]
     public RectTransform targetButtonTransform;
     public Button targetButton;
-    public RectTransform spawnArea;       // 타겟이 나타날 영역
+    public RectTransform spawnArea;       
     public TextMeshProUGUI statusText;
 
     [Header("Game Settings")]
-    public int targetClickCount = 5;      // 목표 클릭 횟수
+    public int targetClickCount = 5;      
 
     private int currentCount = 0;
 
