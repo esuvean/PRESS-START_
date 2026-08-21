@@ -94,7 +94,7 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
                 break;
         }
 
-        //  버튼이 패널(화면) 밖으로 나가지 않도록 가둡니다!
+        // ?? [핵심 해결 코드] 버튼이 패널(화면) 밖으로 나가지 않도록 가둡니다!
         RectTransform parentRect = buttonTransform.parent as RectTransform;
         if (parentRect != null)
         {

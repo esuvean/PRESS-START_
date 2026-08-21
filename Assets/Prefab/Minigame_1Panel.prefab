@@ -466,8 +466,8 @@ MonoBehaviour:
 
 '
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: f8e333675b37d0b4b8c6354bab31e501, type: 2}
-  m_sharedMaterial: {fileID: 5012033598484532911, guid: f8e333675b37d0b4b8c6354bab31e501, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 67baecb2163c46242ab2eafe39050054, type: 2}
+  m_sharedMaterial: {fileID: 633201899678641852, guid: 67baecb2163c46242ab2eafe39050054, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -684,7 +684,7 @@ GameObject:
   - component: {fileID: 6746823045006291018}
   - component: {fileID: 5172066308333687893}
   - component: {fileID: 5129703732600201297}
-  - component: {fileID: 2405394184658585921}
+  - component: {fileID: -1384648050288608166}
   m_Layer: 5
   m_Name: Minigame_1Panel
   m_TagString: Untagged
@@ -755,7 +755,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2405394184658585921
+--- !u!114 &-1384648050288608166
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -764,7 +764,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3735909273749746481}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7866d081e5e449a4797c6310b4b1cd42, type: 3}
+  m_Script: {fileID: 11500000, guid: 50054acde4e44ac449f65eae8de91575, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Minigame1_FleeingButton
   gameName: 
