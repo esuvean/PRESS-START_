@@ -1,5 +1,3 @@
-
-
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -8,31 +6,25 @@ using System.Collections;
 
 public class Minigame3_MashButton : MinigameBase
 {
-    
-    public RectTransform[] slotTransforms = new RectTransform[4];
-
    
-    public RectTransform[] pieceTransforms = new RectTransform[4];
+    public RectTransform[] slotTransforms;
+    public RectTransform[] pieceTransforms;
+    public TextMeshProUGUI[] slotSilhouettes;
 
-    
-    public TextMeshProUGUI[] slotSilhouettes = new TextMeshProUGUI[4];
-
-   
     public Button fullStartButton;
 
-    [Header("UI References - Labels")]
+   
     public TextMeshProUGUI failText;       // 실수 X 회
-    public TextMeshProUGUI piecesText;     // PIECES X / 4 (또는 조립 X / 4)
+    public TextMeshProUGUI piecesText;     // PIECES X / N
     public TextMeshProUGUI hintText;       // 하단 힌트 텍스트
     public TextMeshProUGUI timerText;      // 우상단 타이머 (TIME 00:00)
 
-    [Header("Game Settings")]
     public float snapDistance = 100f;      // 슬롯 흡착 인식 거리
-    public Vector3 escapeOffset = new Vector3(300f, 180f, 0f); // '기' 조각 도망 위치 오프셋
+    public Vector3 escapeOffset = new Vector3(120f, 60f, 0f); // 마지막 조각 도망 위치 오프셋
 
     // 내부 상태 변수
-    private Vector3[] initialPiecePositions = new Vector3[4];
-    private bool[] isPlaced = new bool[4];
+    private Vector3[] initialPiecePositions;
+    private bool[] isPlaced;
     private int failCount = 0;
     private bool hasEscapedOnce = false;
     private bool isButtonCompleted = false;
@@ -50,15 +42,20 @@ public class Minigame3_MashButton : MinigameBase
     {
         base.StartMinigame();
         gameName = "조각난 시작";
-        instruction = "흩어진 버튼 조각을 드래그해 '시작하기' 버튼을 완성하세요.";
+        instruction = "흩어진 버튼 조각을 드래그해 'START' 버튼을 완성하세요.";
+
+        int pieceCount = pieceTransforms != null ? pieceTransforms.Length : 5;
 
         failCount = 0;
         elapsedTime = 0f;
         hasEscapedOnce = false;
         isButtonCompleted = false;
 
-        // 초기 위치 저장 및 조각/슬롯 초기화
-        for (int i = 0; i < 4; i++)
+        // 개수에 맞게 배열 크기 동적 생성
+        initialPiecePositions = new Vector3[pieceCount];
+        isPlaced = new bool[pieceCount];
+
+        for (int i = 0; i < pieceCount; i++)
         {
             if (pieceTransforms[i] != null)
             {
@@ -73,7 +70,7 @@ public class Minigame3_MashButton : MinigameBase
                 pieceTransforms[i].gameObject.SetActive(true);
             }
 
-            if (slotTransforms[i] != null)
+            if (slotTransforms != null && i < slotTransforms.Length && slotTransforms[i] != null)
             {
                 slotTransforms[i].gameObject.SetActive(true);
             }
@@ -96,6 +93,8 @@ public class Minigame3_MashButton : MinigameBase
 
     private void SetupDragEvents()
     {
+        if (pieceTransforms == null) return;
+
         for (int i = 0; i < pieceTransforms.Length; i++)
         {
             if (pieceTransforms[i] == null) continue;
@@ -108,7 +107,7 @@ public class Minigame3_MashButton : MinigameBase
 
             trigger.triggers.Clear();
 
-            int index = i; // 클로저 캡처
+            int index = i;
 
             // 드래그 시작
             EventTrigger.Entry entryBegin = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
@@ -130,9 +129,9 @@ public class Minigame3_MashButton : MinigameBase
     private void OnBeginDragPiece(int index, PointerEventData data)
     {
         if (!isGameActive || isButtonCompleted) return;
-        if (isPlaced[index]) return; // 이미 슬롯에 고정된 조각은 드래그 불가
+        if (isPlaced[index]) return;
 
-        pieceTransforms[index].SetAsLastSibling(); // 맨 위 레이어로 이동
+        pieceTransforms[index].SetAsLastSibling();
     }
 
     private void OnDragPiece(int index, PointerEventData data)
@@ -148,12 +147,10 @@ public class Minigame3_MashButton : MinigameBase
         if (!isGameActive || isButtonCompleted) return;
         if (isPlaced[index]) return;
 
-        // 정답 슬롯과의 거리 계산
         float distToCorrectSlot = Vector2.Distance(pieceTransforms[index].position, slotTransforms[index].position);
 
-        // 오답 슬롯 근처에 놓았는지 체크
         bool droppedNearWrongSlot = false;
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < slotTransforms.Length; j++)
         {
             if (j == index) continue;
             if (slotTransforms[j] != null && Vector2.Distance(pieceTransforms[index].position, slotTransforms[j].position) < snapDistance)
@@ -165,15 +162,12 @@ public class Minigame3_MashButton : MinigameBase
 
         if (distToCorrectSlot <= snapDistance)
         {
-            // [정답] 올바른 슬롯에 흡착
             SnapPieceToSlot(index);
         }
         else
         {
-            // [오답/미흡착] 원래 위치로 복귀
             ReturnPieceToInitial(index);
 
-            // 잘못된 위치나 오답 슬롯에 놓았을 때 실패 카운트 증가
             if (droppedNearWrongSlot || distToCorrectSlot < snapDistance * 2f)
             {
                 failCount++;
@@ -199,19 +193,17 @@ public class Minigame3_MashButton : MinigameBase
     private void CheckAssemblyProgress()
     {
         int placedCount = GetPlacedCount();
+        int totalCount = pieceTransforms != null ? pieceTransforms.Length : 5;
         UpdateUI();
 
-        // 4개 조각이 모두 맞춰졌을 때
-        if (placedCount == 4)
+        if (placedCount == totalCount)
         {
             if (!hasEscapedOnce)
             {
-                //  4개 조각이 맞춰지는 순간, 마지막 '기' 조각이 우상단으로 도망!
                 StartCoroutine(EscapeLastPieceRoutine());
             }
             else
             {
-                //  도망간 '기' 조각까지 재배치 완료 ? 통합 버튼으로 전환!
                 CompleteButtonMerger();
             }
         }
@@ -221,22 +213,24 @@ public class Minigame3_MashButton : MinigameBase
     {
         yield return new WaitForSeconds(0.15f);
 
-        hasEscapedOnce = true;
-        isPlaced[3] = false; // '기' 조각 고정 해제하여 다시 드래그 가능하게 전환
+        // 맨 마지막 조각 인덱스 (5개면 4번 인덱스 'T')
+        int lastIndex = pieceTransforms.Length - 1;
 
-        // 우상단으로 도망가는 이탈 애니메이션 연출
-        Vector3 targetEscapePos = slotTransforms[3].position + escapeOffset;
+        hasEscapedOnce = true;
+        isPlaced[lastIndex] = false;
+
+        Vector3 targetEscapePos = slotTransforms[lastIndex].position + escapeOffset;
         float elapsed = 0f;
-        Vector3 startPos = pieceTransforms[3].position;
+        Vector3 startPos = pieceTransforms[lastIndex].position;
 
         while (elapsed < 0.35f)
         {
             elapsed += Time.deltaTime;
-            pieceTransforms[3].position = Vector3.Lerp(startPos, targetEscapePos, elapsed / 0.35f);
+            pieceTransforms[lastIndex].position = Vector3.Lerp(startPos, targetEscapePos, elapsed / 0.35f);
             yield return null;
         }
 
-        pieceTransforms[3].position = targetEscapePos;
+        pieceTransforms[lastIndex].position = targetEscapePos;
 
         if (hintText != null)
         {
@@ -249,14 +243,13 @@ public class Minigame3_MashButton : MinigameBase
     {
         isButtonCompleted = true;
 
-        // 개별 조각 및 슬롯 숨기기
-        for (int i = 0; i < 4; i++)
+        int totalCount = pieceTransforms != null ? pieceTransforms.Length : 5;
+        for (int i = 0; i < totalCount; i++)
         {
             if (pieceTransforms[i] != null) pieceTransforms[i].gameObject.SetActive(false);
             if (slotTransforms[i] != null) slotTransforms[i].gameObject.SetActive(false);
         }
 
-        // 완성된 통합  버튼 표시
         if (fullStartButton != null)
         {
             fullStartButton.gameObject.SetActive(true);
@@ -272,7 +265,7 @@ public class Minigame3_MashButton : MinigameBase
     private void OnFullStartButtonClicked()
     {
         if (!isGameActive) return;
-        Success(); // 검사 완료 (미니게임 성공 처리)
+        Success();
     }
 
     protected override void Update()
@@ -283,7 +276,6 @@ public class Minigame3_MashButton : MinigameBase
         elapsedTime += Time.deltaTime;
         UpdateTimerUI();
 
-        // 70초 경과 힌트: 안 맞춰진 조각 알파값 반짝임
         if (elapsedTime >= 70f && !isButtonCompleted)
         {
             FlashNextPiece();
@@ -292,7 +284,8 @@ public class Minigame3_MashButton : MinigameBase
 
     private void FlashNextPiece()
     {
-        for (int i = 0; i < 4; i++)
+        int totalCount = pieceTransforms != null ? pieceTransforms.Length : 5;
+        for (int i = 0; i < totalCount; i++)
         {
             if (!isPlaced[i] && pieceTransforms[i] != null)
             {
@@ -309,26 +302,25 @@ public class Minigame3_MashButton : MinigameBase
 
     private void UpdateSilhouettes()
     {
-        if (slotSilhouettes == null || slotSilhouettes.Length < 4) return;
+        if (slotSilhouettes == null || slotSilhouettes.Length == 0) return;
 
-        string[] characters = new string[] { "시", "작", "하", "기" };
+        // START 5글자 알파벳 지정
+        string[] characters = new string[] { "S", "T", "A", "R", "T" };
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < slotSilhouettes.Length; i++)
         {
             if (slotSilhouettes[i] == null) continue;
 
             if (failCount >= 4)
             {
-                // 실패 4회 이상: 모든 슬롯에 실루엣 표시
-                slotSilhouettes[i].text = characters[i];
+                if (i < characters.Length) slotSilhouettes[i].text = characters[i];
                 slotSilhouettes[i].gameObject.SetActive(true);
             }
             else if (failCount >= 2)
             {
-                // 실패 2회 이상: 첫 번째 슬롯('시')에만 실루엣 표시
                 if (i == 0)
                 {
-                    slotSilhouettes[i].text = characters[i];
+                    if (i < characters.Length) slotSilhouettes[i].text = characters[i];
                     slotSilhouettes[i].gameObject.SetActive(true);
                 }
                 else
@@ -342,19 +334,19 @@ public class Minigame3_MashButton : MinigameBase
             }
         }
 
-        // 힌트 텍스트 갱신
         if (hintText != null && !isButtonCompleted && !hasEscapedOnce)
         {
             if (failCount >= 4) hintText.text = "[ HINT ] 모든 슬롯에 정답 실루엣이 표시됩니다.";
-            else if (failCount >= 2) hintText.text = "[ HINT ] 첫 번째 슬롯에 '시' 실루엣이 나타납니다.";
-            else hintText.text = "흩어진 버튼 조각을 드래그해 '시작하기' 버튼을 완성하세요.";
+            else if (failCount >= 2) hintText.text = "[ HINT ] 첫 번째 슬롯에 'S' 실루엣이 나타납니다.";
+            else hintText.text = "흩어진 버튼 조각을 드래그해 'START' 버튼을 완성하세요.";
         }
     }
 
     private int GetPlacedCount()
     {
         int count = 0;
-        for (int i = 0; i < 4; i++)
+        int totalCount = isPlaced != null ? isPlaced.Length : 0;
+        for (int i = 0; i < totalCount; i++)
         {
             if (isPlaced[i]) count++;
         }
@@ -366,7 +358,8 @@ public class Minigame3_MashButton : MinigameBase
         if (failText != null) failText.text = $"실수 {failCount} 회";
 
         int count = GetPlacedCount();
-        if (piecesText != null) piecesText.text = $"PIECES {count} / 4";
+        int totalCount = pieceTransforms != null ? pieceTransforms.Length : 5;
+        if (piecesText != null) piecesText.text = $"PIECES {count} / {totalCount}";
     }
 
     private void UpdateTimerUI()
