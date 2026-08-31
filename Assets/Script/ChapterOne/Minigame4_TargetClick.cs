@@ -8,7 +8,7 @@ public class Minigame4_TargetClick : MinigameBase
 {
     [Header("UI References - Buttons")]
     public Button[] candidateButtons;      // 12개 후보 버튼 배열
-    public int realButtonIndex = 8;       
+    public int realButtonIndex = 8;
 
     [Header("UI References - Labels")]
     public TextMeshProUGUI failText;       // 오답 X 회
@@ -18,6 +18,7 @@ public class Minigame4_TargetClick : MinigameBase
 
     private int failCount = 0;
     private float elapsedTime = 0f;
+    private float remainingTime = 0f;      // ★ [추가] 잔여 시간 관리 변수
     private bool isHoveringReal = false;
     private float hoverTimer = 0f;
     private bool hasTriggeredBounce = false;
@@ -38,6 +39,8 @@ public class Minigame4_TargetClick : MinigameBase
 
         failCount = 0;
         elapsedTime = 0f;
+        remainingTime = timeLimit;         // ★ [추가] 제한시간 초기화
+
         isHoveringReal = false;
         hoverTimer = 0f;
         hasTriggeredBounce = false;
@@ -107,6 +110,7 @@ public class Minigame4_TargetClick : MinigameBase
         {
             cloneBtn.onClick.RemoveAllListeners();
             cloneBtn.onClick.AddListener(() => {
+                if (!isGameActive) return;
                 failCount++;
                 CheckHintConditions();
                 UpdateUI();
@@ -122,7 +126,17 @@ public class Minigame4_TargetClick : MinigameBase
         base.Update();
         if (!isGameActive) return;
 
+        // ★ [추가] 제한시간 카운트다운 로직
+        remainingTime -= Time.deltaTime;
         elapsedTime += Time.deltaTime;
+
+        if (remainingTime <= 0f)
+        {
+            remainingTime = 0f;
+            OnTimeOut();
+            return;
+        }
+
         UpdateTimerUI();
 
         // 진짜 버튼 약 1초 호버 시 커졌다 작아지는 애니메이션
@@ -134,6 +148,17 @@ public class Minigame4_TargetClick : MinigameBase
                 hasTriggeredBounce = true;
                 StartCoroutine(BounceButtonAnimation(candidateButtons[realButtonIndex].transform));
             }
+        }
+    }
+
+    // ★ [추가] 시간 초과 처리
+    private void OnTimeOut()
+    {
+        isGameActive = false;
+        if (timerText != null) timerText.text = "TIME 00:00";
+        if (hintText != null)
+        {
+            hintText.text = "시간 초과! 진짜 '시작하기' 버튼을 찾지 못했습니다.";
         }
     }
 
@@ -218,8 +243,8 @@ public class Minigame4_TargetClick : MinigameBase
     {
         if (timerText != null)
         {
-            int minutes = Mathf.FloorToInt(elapsedTime / 60f);
-            int seconds = Mathf.FloorToInt(elapsedTime % 60f);
+            int minutes = Mathf.FloorToInt(remainingTime / 60f);
+            int seconds = Mathf.FloorToInt(remainingTime % 60f);
             timerText.text = string.Format("TIME {0:00}:{1:00}", minutes, seconds);
         }
     }

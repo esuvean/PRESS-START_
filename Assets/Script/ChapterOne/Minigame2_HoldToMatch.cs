@@ -13,6 +13,7 @@ public class Minigame2_HoldToMatch : MinigameBase
     public TextMeshProUGUI failText;       // 실패 횟수
     public TextMeshProUGUI successText;    // 성공 횟수
     public TextMeshProUGUI hintText;       // 하단 힌트 텍스트
+    public TextMeshProUGUI timerText;      
 
     [Header("Game Configurations")]
     public float[] targetScales = new float[] { 2.0f, 2.8f, 1.6f };
@@ -28,6 +29,9 @@ public class Minigame2_HoldToMatch : MinigameBase
     private float currentScale = 1.0f;
     private float currentGrowSpeed;
     private float currentTolerance;
+
+   
+    private float remainingTime;
 
     private void Start()
     {
@@ -46,6 +50,9 @@ public class Minigame2_HoldToMatch : MinigameBase
         currentRound = 0;
         failCount = 0;
         successCount = 0;
+
+       
+        remainingTime = timeLimit;
 
         SetupButtonEvents();
         SetupRound();
@@ -108,6 +115,23 @@ public class Minigame2_HoldToMatch : MinigameBase
         base.Update();
         if (!isGameActive) return;
 
+       
+        remainingTime -= Time.deltaTime;
+        if (remainingTime <= 0f)
+        {
+            remainingTime = 0f;
+            OnTimeOut();
+            return;
+        }
+
+       
+        if (timerText != null)
+        {
+            int min = Mathf.FloorToInt(remainingTime / 60f);
+            int sec = Mathf.FloorToInt(remainingTime % 60f);
+            timerText.text = string.Format("TIME {0:00}:{1:00}", min, sec);
+        }
+
         if (isHolding)
         {
             currentScale += currentGrowSpeed * Time.deltaTime;
@@ -134,6 +158,16 @@ public class Minigame2_HoldToMatch : MinigameBase
                 OnButtonUp();
             }
         }
+    }
+
+    // ★ [추가] 시간 초과 시 처리 메서드
+    private void OnTimeOut()
+    {
+        isGameActive = false;
+        isHolding = false;
+
+        if (timerText != null) timerText.text = "TIME 00:00";
+        if (hintText != null) hintText.text = "시간 초과! 제시간에 맞추지 못했습니다.";
     }
 
     public void OnButtonDown()

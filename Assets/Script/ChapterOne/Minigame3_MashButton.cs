@@ -6,19 +6,19 @@ using System.Collections;
 
 public class Minigame3_MashButton : MinigameBase
 {
-   
+    [Header("UI References")]
     public RectTransform[] slotTransforms;
     public RectTransform[] pieceTransforms;
     public TextMeshProUGUI[] slotSilhouettes;
 
     public Button fullStartButton;
 
-   
     public TextMeshProUGUI failText;       // 실수 X 회
     public TextMeshProUGUI piecesText;     // PIECES X / N
     public TextMeshProUGUI hintText;       // 하단 힌트 텍스트
     public TextMeshProUGUI timerText;      // 우상단 타이머 (TIME 00:00)
 
+    [Header("Settings")]
     public float snapDistance = 100f;      // 슬롯 흡착 인식 거리
     public Vector3 escapeOffset = new Vector3(120f, 60f, 0f); // 마지막 조각 도망 위치 오프셋
 
@@ -28,6 +28,9 @@ public class Minigame3_MashButton : MinigameBase
     private int failCount = 0;
     private bool hasEscapedOnce = false;
     private bool isButtonCompleted = false;
+
+    // ★ [타이머 관리 변수]
+    private float remainingTime;
     private float elapsedTime = 0f;
 
     private void Start()
@@ -48,6 +51,10 @@ public class Minigame3_MashButton : MinigameBase
 
         failCount = 0;
         elapsedTime = 0f;
+
+        // ★ [추가] 제한시간 초기화 (부모 MinigameBase의 timeLimit 적용)
+        remainingTime = timeLimit;
+
         hasEscapedOnce = false;
         isButtonCompleted = false;
 
@@ -213,7 +220,6 @@ public class Minigame3_MashButton : MinigameBase
     {
         yield return new WaitForSeconds(0.15f);
 
-        // 맨 마지막 조각 인덱스 (5개면 4번 인덱스 'T')
         int lastIndex = pieceTransforms.Length - 1;
 
         hasEscapedOnce = true;
@@ -273,12 +279,34 @@ public class Minigame3_MashButton : MinigameBase
         base.Update();
         if (!isGameActive) return;
 
+        // ★ [추가] 제한시간 카운트다운
+        remainingTime -= Time.deltaTime;
         elapsedTime += Time.deltaTime;
+
+        if (remainingTime <= 0f)
+        {
+            remainingTime = 0f;
+            OnTimeOut();
+            return;
+        }
+
         UpdateTimerUI();
 
-        if (elapsedTime >= 70f && !isButtonCompleted)
+        // 25초 동안 조각을 맞추지 못하고 지체 시 깜빡임 힌트 발동
+        if (elapsedTime >= 25f && !isButtonCompleted)
         {
             FlashNextPiece();
+        }
+    }
+
+    // ★ [추가] 시간 초과 처리
+    private void OnTimeOut()
+    {
+        isGameActive = false;
+        if (timerText != null) timerText.text = "TIME 00:00";
+        if (hintText != null)
+        {
+            hintText.text = "시간 초과! 제시간에 버튼을 완성하지 못했습니다.";
         }
     }
 
@@ -304,7 +332,6 @@ public class Minigame3_MashButton : MinigameBase
     {
         if (slotSilhouettes == null || slotSilhouettes.Length == 0) return;
 
-        // START 5글자 알파벳 지정
         string[] characters = new string[] { "S", "T", "A", "R", "T" };
 
         for (int i = 0; i < slotSilhouettes.Length; i++)
@@ -366,8 +393,8 @@ public class Minigame3_MashButton : MinigameBase
     {
         if (timerText != null)
         {
-            int minutes = Mathf.FloorToInt(elapsedTime / 60f);
-            int seconds = Mathf.FloorToInt(elapsedTime % 60f);
+            int minutes = Mathf.FloorToInt(remainingTime / 60f);
+            int seconds = Mathf.FloorToInt(remainingTime % 60f);
             timerText.text = string.Format("TIME {0:00}:{1:00}", minutes, seconds);
         }
     }

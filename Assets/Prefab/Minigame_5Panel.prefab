@@ -1938,6 +1938,7 @@ GameObject:
   - component: {fileID: 5078613134793853974}
   - component: {fileID: 3688082181990460670}
   - component: {fileID: 6326062758958609308}
+  - component: {fileID: 2869883395766323875}
   m_Layer: 5
   m_Name: StartButton
   m_TagString: Untagged
@@ -2047,6 +2048,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2869883395766323875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3779495047794058697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddcf66c2ddb34cc4fb7194f0a5277431, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaserMazeButtonDrag
+  mazeArea: {fileID: 435335972610748929}
+  mainController: {fileID: 9124764614125356543}
 --- !u!1 &3843447004562129469
 GameObject:
   m_ObjectHideFlags: 0
@@ -3335,6 +3350,7 @@ MonoBehaviour:
   gameName: 
   instruction: 
   timeLimit: 60
+  mazeArea: {fileID: 0}
   startButton: {fileID: 5530021975219746449}
   startPoint: {fileID: 8823909118107276606}
   goalPoint: {fileID: 8151338648181293288}
