@@ -3349,7 +3349,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Minigame5_LaserMaze
   gameName: 
   instruction: 
-  timeLimit: 60
+  timeLimit: 40
   mazeArea: {fileID: 0}
   startButton: {fileID: 5530021975219746449}
   startPoint: {fileID: 8823909118107276606}
@@ -3395,6 +3395,7 @@ MonoBehaviour:
   goalSnapDistance: 50
   laserOnDuration: 1.5
   laserOffDuration: 1.5
+  timeLimit: 60
 --- !u!1 &5776292224247105086
 GameObject:
   m_ObjectHideFlags: 0

@@ -7,18 +7,18 @@ using System.Collections;
 public class Minigame4_TargetClick : MinigameBase
 {
     [Header("UI References - Buttons")]
-    public Button[] candidateButtons;      // 12개 후보 버튼 배열
+    public Button[] candidateButtons;     
     public int realButtonIndex = 8;
 
     [Header("UI References - Labels")]
-    public TextMeshProUGUI failText;       // 오답 X 회
-    public TextMeshProUGUI candidatesText; // CANDIDATES 12
-    public TextMeshProUGUI hintText;       // 하단 힌트
-    public TextMeshProUGUI timerText;      // TIME 00:00
+    public TextMeshProUGUI failText;       
+    public TextMeshProUGUI candidatesText; 
+    public TextMeshProUGUI hintText;       
+    public TextMeshProUGUI timerText;      
 
     private int failCount = 0;
     private float elapsedTime = 0f;
-    private float remainingTime = 0f;      // ★ [추가] 잔여 시간 관리 변수
+    private float remainingTime = 0f;      
     private bool isHoveringReal = false;
     private float hoverTimer = 0f;
     private bool hasTriggeredBounce = false;
@@ -39,7 +39,7 @@ public class Minigame4_TargetClick : MinigameBase
 
         failCount = 0;
         elapsedTime = 0f;
-        remainingTime = timeLimit;         // ★ [추가] 제한시간 초기화
+        remainingTime = timeLimit;         // 제한시간 초기화
 
         isHoveringReal = false;
         hoverTimer = 0f;
@@ -88,34 +88,20 @@ public class Minigame4_TargetClick : MinigameBase
         {
             // 가짜 버튼 클릭 실패
             failCount++;
-            SplitFakeButton(index);
+            ShrinkFakeButton(index); 
             CheckHintConditions();
-            UpdateUI();
+            UpdateUI();              
         }
     }
 
-    // 가짜 버튼 분열 기믹 
-    private void SplitFakeButton(int index)
+    // 가짜 버튼 축소 기믹 (클론 복제 생성 코드 완전 제거)
+    private void ShrinkFakeButton(int index)
     {
         Button original = candidateButtons[index];
         if (original == null || !original.gameObject.activeSelf) return;
 
+        // 클릭된 버튼 크기 0.5배로 축소만 진행
         original.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
-
-        GameObject clone = Instantiate(original.gameObject, original.transform.parent);
-        clone.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
-
-        Button cloneBtn = clone.GetComponent<Button>();
-        if (cloneBtn != null)
-        {
-            cloneBtn.onClick.RemoveAllListeners();
-            cloneBtn.onClick.AddListener(() => {
-                if (!isGameActive) return;
-                failCount++;
-                CheckHintConditions();
-                UpdateUI();
-            });
-        }
     }
 
     private void OnRealButtonHover() { isHoveringReal = true; }
@@ -126,7 +112,7 @@ public class Minigame4_TargetClick : MinigameBase
         base.Update();
         if (!isGameActive) return;
 
-        // ★ [추가] 제한시간 카운트다운 로직
+        // 제한시간 카운트다운
         remainingTime -= Time.deltaTime;
         elapsedTime += Time.deltaTime;
 
@@ -139,7 +125,7 @@ public class Minigame4_TargetClick : MinigameBase
 
         UpdateTimerUI();
 
-        // 진짜 버튼 약 1초 호버 시 커졌다 작아지는 애니메이션
+        // 진짜 버튼 약 1초 호버 시 반응 애니메이션
         if (isHoveringReal && !hasTriggeredBounce)
         {
             hoverTimer += Time.deltaTime;
@@ -151,7 +137,6 @@ public class Minigame4_TargetClick : MinigameBase
         }
     }
 
-    // ★ [추가] 시간 초과 처리
     private void OnTimeOut()
     {
         isGameActive = false;
@@ -190,7 +175,6 @@ public class Minigame4_TargetClick : MinigameBase
     {
         if (failCount >= 8)
         {
-            // 실패 8회: 가짜 버튼 일부 제거
             for (int i = 0; i < candidateButtons.Length; i++)
             {
                 if (i != realButtonIndex && i % 2 == 0 && candidateButtons[i] != null)
@@ -202,13 +186,11 @@ public class Minigame4_TargetClick : MinigameBase
         }
         else if (failCount >= 5)
         {
-            // 실패 5회: 진짜 버튼 외곽선 강조
             StartCoroutine(FlashRealButtonOutline());
             if (hintText != null) hintText.text = "[ HINT ] 진짜 버튼의 외곽선이 깜빡입니다.";
         }
         else if (failCount >= 3)
         {
-            // 실패 3회: 반응 힌트 출력
             if (hintText != null) hintText.text = "[ HINT ] 정상적인 버튼은 마우스에 반응합니다.";
         }
     }
@@ -253,7 +235,6 @@ public class Minigame4_TargetClick : MinigameBase
     protected override void RestartGame() { }
 }
 
-// 호버 이벤트 전용 보조 클래스
 public class ButtonHoverDetector : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     private bool isReal;

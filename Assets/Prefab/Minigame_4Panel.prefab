@@ -1850,7 +1850,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Minigame4_TargetClick
   gameName: 
   instruction: 
-  timeLimit: 50
+  timeLimit: 35
   candidateButtons:
   - {fileID: 7875407244219889484}
   - {fileID: 4134577839411112571}
