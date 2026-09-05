@@ -3350,7 +3350,7 @@ MonoBehaviour:
   gameName: 
   instruction: 
   timeLimit: 40
-  mazeArea: {fileID: 0}
+  mazeArea: {fileID: 435335972610748929}
   startButton: {fileID: 5530021975219746449}
   startPoint: {fileID: 8823909118107276606}
   goalPoint: {fileID: 8151338648181293288}
@@ -3396,6 +3396,7 @@ MonoBehaviour:
   laserOnDuration: 1.5
   laserOffDuration: 1.5
   timeLimit: 60
+  borderPadding: 15
 --- !u!1 &5776292224247105086
 GameObject:
   m_ObjectHideFlags: 0
