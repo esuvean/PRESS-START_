@@ -1,72 +1,117 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class FallingButtonItem : MonoBehaviour
 {
+    [Header("UI")]
     public RectTransform rectTransform;
+    public Image buttonImage;
     public TextMeshProUGUI labelText;
 
     private Minigame9_FallingStart owner;
-    private bool isTarget;
-    private float speed;
     private RectTransform paddle;
     private RectTransform playArea;
-    private bool consumed = false;
 
-    public void Init(
+    private bool isStartButton;
+    private float fallSpeed;
+    private bool handled = false;
+
+    private Color normalColor;
+    private Color hintColor;
+
+    public void Setup(
         Minigame9_FallingStart gameOwner,
-        bool target,
-        string label,
-        float fallSpeed,
         RectTransform paddleRect,
-        RectTransform areaRect)
+        RectTransform playAreaRect,
+        bool startButton,
+        string buttonText,
+        float speed,
+        Color normalButtonColor,
+        Color startHintColor,
+        Color textColor,
+        bool hintActive)
     {
         owner = gameOwner;
-        isTarget = target;
-        speed = fallSpeed;
         paddle = paddleRect;
-        playArea = areaRect;
+        playArea = playAreaRect;
+
+        isStartButton = startButton;
+        fallSpeed = speed;
+
+        normalColor = normalButtonColor;
+        hintColor = startHintColor;
 
         if (rectTransform == null)
             rectTransform = transform as RectTransform;
 
         if (labelText != null)
-            labelText.text = label;
+        {
+            labelText.text = buttonText;
+            labelText.color = textColor;
+        }
+
+        if (buttonImage != null)
+        {
+            // 처음엔 모두 같은 색
+            buttonImage.color = normalColor;
+
+            // 힌트가 이미 켜졌다면 START만 민트
+            if (hintActive && isStartButton)
+                buttonImage.color = hintColor;
+        }
+    }
+
+    // 힌트 발동 시 호출
+    public void ApplyHint()
+    {
+        if (isStartButton && buttonImage != null)
+        {
+            buttonImage.color = hintColor;
+        }
     }
 
     private void Update()
     {
-        if (consumed || rectTransform == null)
+        if (handled || rectTransform == null)
             return;
 
-        rectTransform.anchoredPosition += Vector2.down * speed * Time.deltaTime;
+        rectTransform.anchoredPosition +=
+            Vector2.down * fallSpeed * Time.deltaTime;
 
-        if (paddle != null && WorldRect(rectTransform).Overlaps(WorldRect(paddle)))
+        if (paddle != null &&
+            GetWorldRect(rectTransform).Overlaps(GetWorldRect(paddle)))
         {
-            consumed = true;
+            handled = true;
 
             if (owner != null)
-                owner.OnItemCaught(isTarget);
+                owner.CatchButton(isStartButton);
 
             Destroy(gameObject);
             return;
         }
 
-        if (playArea != null &&
-            rectTransform.anchoredPosition.y < playArea.rect.yMin - 120f)
+        if (playArea != null)
         {
-            Destroy(gameObject);
+            if (rectTransform.anchoredPosition.y <
+                playArea.rect.yMin - 100f)
+            {
+                Destroy(gameObject);
+            }
         }
     }
 
-    private Rect WorldRect(RectTransform rt)
+    private Rect GetWorldRect(RectTransform rt)
     {
         Vector3[] corners = new Vector3[4];
+
         rt.GetWorldCorners(corners);
 
         return Rect.MinMaxRect(
-            corners[0].x, corners[0].y,
-            corners[2].x, corners[2].y
+            corners[0].x,
+            corners[0].y,
+            corners[2].x,
+            corners[2].y
         );
     }
 }
