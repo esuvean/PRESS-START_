@@ -4,11 +4,12 @@ using UnityEngine.EventSystems;
 public class LaserMazeButtonDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("References")]
-    public RectTransform mazeArea;             
-    public Minigame5_LaserMaze mainController; 
+    public RectTransform mazeArea;
+    public Minigame5_LaserMaze mainController;
 
     private RectTransform rectTransform;
     private Vector2 dragOffset;
+    private bool isHit = false; 
 
     private void Awake()
     {
@@ -19,7 +20,8 @@ public class LaserMazeButtonDrag : MonoBehaviour, IBeginDragHandler, IDragHandle
     {
         if (mainController != null && !mainController.IsGameActive()) return;
 
-        
+        isHit = false; 
+
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             rectTransform.parent as RectTransform,
             eventData.position,
@@ -32,6 +34,7 @@ public class LaserMazeButtonDrag : MonoBehaviour, IBeginDragHandler, IDragHandle
     public void OnDrag(PointerEventData eventData)
     {
         if (mainController != null && !mainController.IsGameActive()) return;
+        if (isHit) return; 
 
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             rectTransform.parent as RectTransform,
@@ -39,13 +42,13 @@ public class LaserMazeButtonDrag : MonoBehaviour, IBeginDragHandler, IDragHandle
             eventData.pressEventCamera,
             out Vector2 localPoint))
         {
-            // 위치 업데이트
+            
             rectTransform.anchoredPosition = localPoint + dragOffset;
 
-            // 미로 상자 내부로 영역 가두기
+           
             ClampToMazeArea();
 
-            // 충돌 및 도착 검사 실행
+            
             if (mainController != null)
             {
                 mainController.CheckCollisions();
@@ -56,6 +59,13 @@ public class LaserMazeButtonDrag : MonoBehaviour, IBeginDragHandler, IDragHandle
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        isHit = false; 
+    }
+
+   
+    public void ForceEndDrag()
+    {
+        isHit = true;
     }
 
     public void ClampToMazeArea()
