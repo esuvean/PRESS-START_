@@ -6,36 +6,36 @@ using System.Collections.Generic;
 
 public class Minigame5_LaserMaze : MinigameBase
 {
- 
+    [Header("UI References - Game Area")]
     public RectTransform mazeArea;          // 미로 전체 영역 (초록색 테두리 상자)
     public RectTransform startButton;       // 드래그할 버튼
     public RectTransform startPoint;        // 출발 위치
     public RectTransform goalPoint;         // 도착 위치
     public GameObject pathGuideLine;        // 5회 실패 힌트 점선
 
-   
+    [Header("Laser Groups")]
     public List<RectTransform> course1Lasers;
     public List<RectTransform> course2Lasers;
 
-   
+    [Header("UI References - Labels")]
     public TextMeshProUGUI failText;
     public TextMeshProUGUI courseText;
     public TextMeshProUGUI hintText;
     public TextMeshProUGUI timerText;
 
-
+    [Header("Game Settings")]
     public float goalSnapDistance = 50f;
     public float laserOnDuration = 1.5f;
     public float laserOffDuration = 1.5f;
-    public float timeLimit = 60f;           // 제한시간 설정 (기본값 60초)
-    public float borderPadding = 15f;       
+    public float timeLimit = 60f;          
+    public float borderPadding = 15f;
 
     private int currentCourse = 1;
     private int failCount = 0;
-    private float remainingTime;            // 남은 시간 카운트다운 변수
+    private float remainingTime;           
     private float hitboxShrinkRatio = 1.0f;
     private Coroutine laserBlinkCoroutine;
-    private bool isTransitioning = false;  // 코스 전환 중 중복 판정 방지 플래그
+    private bool isTransitioning = false;  
 
     public bool IsGameActive()
     {
@@ -106,14 +106,14 @@ public class Minigame5_LaserMaze : MinigameBase
     {
         if (isTransitioning || startButton == null) return;
 
-        
+       
         if (mazeArea != null && IsTouchingOrOutsideBorder(startButton, mazeArea, borderPadding))
         {
             OnHitLaser();
             return;
         }
 
-        // 레이저 충돌 검사
+      
         List<RectTransform> activeLasers = (currentCourse == 1) ? course1Lasers : course2Lasers;
 
         foreach (var laser in activeLasers)
@@ -129,7 +129,6 @@ public class Minigame5_LaserMaze : MinigameBase
         }
     }
 
-    
     private bool IsTouchingOrOutsideBorder(RectTransform btn, RectTransform container, float padding)
     {
         Vector3[] btnCorners = new Vector3[4];
@@ -138,13 +137,11 @@ public class Minigame5_LaserMaze : MinigameBase
         btn.GetWorldCorners(btnCorners);
         container.GetWorldCorners(containerCorners);
 
-      
         float minX = containerCorners[0].x + padding;
         float maxX = containerCorners[2].x - padding;
         float minY = containerCorners[0].y + padding;
         float maxY = containerCorners[2].y - padding;
 
-       
         foreach (var corner in btnCorners)
         {
             if (corner.x < minX || corner.x > maxX || corner.y < minY || corner.y > maxY)
@@ -177,6 +174,17 @@ public class Minigame5_LaserMaze : MinigameBase
     {
         failCount++;
         ResetButtonToStart();
+
+       
+        if (startButton != null)
+        {
+            var dragComp = startButton.GetComponent<LaserMazeButtonDrag>();
+            if (dragComp != null)
+            {
+                dragComp.ForceEndDrag();
+            }
+        }
+
         ApplyFailHints();
         UpdateUI();
     }
