@@ -68,7 +68,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d26b8cda2614cfd49b62617c9c17c63c, type: 3}
   m_Name: CRTRendererFeature
   m_EditorClassIdentifier: Assembly-CSharp::CRTFilter.CRTRendererFeature
-  m_Active: 1
+  m_Active: 0
   shader: {fileID: 4800000, guid: 6f2fcdc189458914eb8a323f19e3a27b, type: 3}
   shaderLite: {fileID: 0}
   useShaderLite: 0
