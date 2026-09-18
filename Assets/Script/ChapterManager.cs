@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
 public class ChapterManager : MonoBehaviour
 {
     [Header("UI Reference")]
-    public Transform canvasTransform; 
+    public Transform canvasTransform;
 
     [System.Serializable]
     public class ChapterData
@@ -40,10 +41,11 @@ public class ChapterManager : MonoBehaviour
 
     private void StartCurrentMinigame()
     {
-        // 모든 챕터를 다 깬 경우
+        // 모든 챕터를 다 깬 경우 메인화면으로 이동
         if (currentChapterIndex >= chapters.Count)
         {
-            Debug.Log(" 모든 챕터를 클리어하셨습니다! 게임 클리어!");
+            Debug.Log("모든 챕터를 클리어하셨습니다! 메인 화면으로 돌아갑니다.");
+            SceneManager.LoadScene("MainScene");
             return;
         }
 
@@ -51,19 +53,17 @@ public class ChapterManager : MonoBehaviour
 
         if (currentMinigameIndex >= activeChapter.minigamePrefabs.Count)
         {
-            // 한 챕터의 5개 게임을 다 깬 경우 다음 챕터로 이동한다
-            Debug.Log($" {activeChapter.chapterName} 클리어! 다음 챕터로 넘어갑니다.");
+            // 한 챕터의 게임들을 다 깬 경우 다음 챕터로 이동
+            Debug.Log($"{activeChapter.chapterName} 클리어! 다음 챕터로 넘어갑니다.");
             currentChapterIndex++;
             currentMinigameIndex = 0;
             StartCurrentMinigame();
             return;
         }
 
-        
         GameObject gamePrefab = activeChapter.minigamePrefabs[currentMinigameIndex];
         currentActiveGameInstance = Instantiate(gamePrefab, canvasTransform);
 
-       
         MinigameBase gameScript = currentActiveGameInstance.GetComponent<MinigameBase>();
         if (gameScript != null)
         {
@@ -75,7 +75,6 @@ public class ChapterManager : MonoBehaviour
     {
         Debug.Log("미니게임 성공!");
 
-        
         if (currentActiveGameInstance != null)
         {
             Destroy(currentActiveGameInstance, 1f);

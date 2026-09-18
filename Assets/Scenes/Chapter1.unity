@@ -252,7 +252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChapterManager
   canvasTransform: {fileID: 13007745}
   chapters:
-  - chapterName: 
+  - chapterName: Chapter1
     minigamePrefabs:
     - {fileID: 3735909273749746481, guid: ac3d83ba5f2963440b1479e4f3a31611, type: 3}
     - {fileID: 3603140009378628500, guid: 5b75eab5886b05544b9ee9e8ed6fd167, type: 3}
