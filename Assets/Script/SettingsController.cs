@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class SettingsController : MonoBehaviour
 {
+
+
     // =========================================================
     // PAGE
     // =========================================================
@@ -57,6 +59,8 @@ public class SettingsController : MonoBehaviour
     [Header("Screen Controller")]
     [SerializeField] private ScreenController screenController;
 
+    [Header("Settings Window")]
+    [SerializeField] private GameObject settingsPanel;
 
     // =========================================================
     // PLAYER PREFS KEY
@@ -69,8 +73,10 @@ public class SettingsController : MonoBehaviour
     private const string FullscreenKey = "Fullscreen";
 
 
+
     // 가장 어두울 때 검은 오버레이 강도
     private const float MaxDarkness = 0.85f;
+
 
 
     // =========================================================
@@ -89,6 +95,26 @@ public class SettingsController : MonoBehaviour
     // =========================================================
     // TAB
     // =========================================================
+
+    public void OpenSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(true);
+        }
+
+        Time.timeScale = 0f;
+    }
+
+    public void CloseSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+
+        Time.timeScale = 1f;
+    }
 
     public void ShowDisplay()
     {
