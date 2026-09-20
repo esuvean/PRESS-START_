@@ -530,6 +530,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3768974153668398892, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4335407678216324989, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4452821597164601978, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4736618627962457303, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_UiScaleMode
       value: 1
@@ -553,6 +565,10 @@ PrefabInstance:
     - target: {fileID: 5683200333337141349, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6981207452259289568, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7902750936144716209, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1285,6 +1301,7 @@ MonoBehaviour:
     - {fileID: 3771278176461636885, guid: 23581d4c9ef4e0a4a9ca3d485b28fff2, type: 3}
     - {fileID: 5011738245977228482, guid: 9f877453530a2cb41b863c4821fe8ddc, type: 3}
     - {fileID: 1847466556680343471, guid: a43d0f82cc2e9bf4c9b84792fb6952fc, type: 3}
+    - {fileID: 3735909273749746481, guid: 1d5ab81f95b47ff4ca4b96da634d21da, type: 3}
 --- !u!4 &1935694891
 Transform:
   m_ObjectHideFlags: 0
