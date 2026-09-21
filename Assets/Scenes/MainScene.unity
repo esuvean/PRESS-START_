@@ -4183,7 +4183,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 71390270616486b4fba932617c944c49, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 287d6303b561d434796bc67bc28be29f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4881,7 +4881,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 71390270616486b4fba932617c944c49, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 287d6303b561d434796bc67bc28be29f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5639,7 +5639,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 71390270616486b4fba932617c944c49, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 287d6303b561d434796bc67bc28be29f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10664,6 +10664,7 @@ MonoBehaviour:
   volumeSlider: {fileID: 895378361}
   volumeValueText: {fileID: 0}
   screenController: {fileID: 0}
+  settingsPanel: {fileID: 0}
 --- !u!224 &1938056835
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11073,6 +11074,7 @@ MonoBehaviour:
   volumeSlider: {fileID: 895378361}
   volumeValueText: {fileID: 26074095}
   screenController: {fileID: 2015297140}
+  settingsPanel: {fileID: 0}
 --- !u!114 &2015297144
 MonoBehaviour:
   m_ObjectHideFlags: 0
