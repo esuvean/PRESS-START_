@@ -20,7 +20,11 @@ public class Minigame3_MashButton : MinigameBase
 
     [Header("Settings")]
     public float snapDistance = 100f;      // 슬롯 흡착 인식 거리
-    public Vector3 escapeOffset = new Vector3(120f, 60f, 0f); // 마지막 조각 도망 위치 오프셋
+    public Vector3 escapeOffset = new Vector3(120f, 60f, 0f); // 마지막 조각 최초 탈출 오프셋
+
+    [Header("T Button Flee Settings")]
+    public float fleeSpeed = 350f;         // T 버튼 랜덤 도망 속도
+    public float fleeRadius = 200f;        // T 버튼 도망 반경 범위
 
     // 내부 상태 변수
     private Vector3[] initialPiecePositions;
@@ -29,7 +33,12 @@ public class Minigame3_MashButton : MinigameBase
     private bool hasEscapedOnce = false;
     private bool isButtonCompleted = false;
 
-    // ★ [타이머 관리 변수]
+    // ★ [T 버튼 도망 상태 변수]
+    private bool isTButtonMoving = false;   // 랜덤 이동 활성화 여부
+    private bool isBeingDragged = false;    // 플레이어가 드래그 중인지 여부
+    private Vector3 fleeTargetPos;          // 랜덤 목표 위치
+
+    // 타이머 관리 변수
     private float remainingTime;
     private float elapsedTime = 0f;
 
@@ -51,12 +60,12 @@ public class Minigame3_MashButton : MinigameBase
 
         failCount = 0;
         elapsedTime = 0f;
-
-        // ★ [추가] 제한시간 초기화 (부모 MinigameBase의 timeLimit 적용)
         remainingTime = timeLimit;
 
         hasEscapedOnce = false;
         isButtonCompleted = false;
+        isTButtonMoving = false;
+        isBeingDragged = false;
 
         // 개수에 맞게 배열 크기 동적 생성
         initialPiecePositions = new Vector3[pieceCount];
@@ -138,6 +147,12 @@ public class Minigame3_MashButton : MinigameBase
         if (!isGameActive || isButtonCompleted) return;
         if (isPlaced[index]) return;
 
+        // ★ 마지막 T 버튼 드래그 시작 시 이동 일시정지
+        if (index == pieceTransforms.Length - 1 && isTButtonMoving)
+        {
+            isBeingDragged = true;
+        }
+
         pieceTransforms[index].SetAsLastSibling();
     }
 
@@ -153,6 +168,12 @@ public class Minigame3_MashButton : MinigameBase
     {
         if (!isGameActive || isButtonCompleted) return;
         if (isPlaced[index]) return;
+
+        // ★ 손을 뗐을 때 드래그 상태 해제
+        if (index == pieceTransforms.Length - 1 && isTButtonMoving)
+        {
+            isBeingDragged = false;
+        }
 
         float distToCorrectSlot = Vector2.Distance(pieceTransforms[index].position, slotTransforms[index].position);
 
@@ -188,6 +209,13 @@ public class Minigame3_MashButton : MinigameBase
     {
         pieceTransforms[index].position = slotTransforms[index].position;
         isPlaced[index] = true;
+
+        // ★ 슬롯에 안착되면 도망 모드 종료
+        if (index == pieceTransforms.Length - 1)
+        {
+            isTButtonMoving = false;
+            isBeingDragged = false;
+        }
 
         CheckAssemblyProgress();
     }
@@ -238,16 +266,52 @@ public class Minigame3_MashButton : MinigameBase
 
         pieceTransforms[lastIndex].position = targetEscapePos;
 
+        // ★ 탈출 후 즉시 우왕좌왕 랜덤 이동 시작!
+        SetNewFleeTarget(lastIndex);
+        isTButtonMoving = true;
+
         if (hintText != null)
         {
-            hintText.text = "[ HINT ] 마지막 조각은 한 번 도망갑니다";
+            hintText.text = "[ HINT ] 도망치는 마지막 조각을 잡아 슬롯에 끼워 넣으세요!";
         }
         UpdateUI();
+    }
+
+    // ★ [랜덤 목표 위치 설정]
+    private void SetNewFleeTarget(int lastIndex)
+    {
+        if (slotTransforms == null || lastIndex >= slotTransforms.Length || slotTransforms[lastIndex] == null) return;
+
+        Vector2 randomCircle = Random.insideUnitCircle * fleeRadius;
+        fleeTargetPos = slotTransforms[lastIndex].position + new Vector3(randomCircle.x, randomCircle.y, 0f);
+    }
+
+    // ★ [T 버튼 실시간 도망 이동 업데이트]
+    private void UpdateFleeingTButton()
+    {
+        if (!isTButtonMoving || isBeingDragged || pieceTransforms == null || pieceTransforms.Length == 0) return;
+
+        int lastIndex = pieceTransforms.Length - 1;
+        if (isPlaced[lastIndex] || pieceTransforms[lastIndex] == null) return;
+
+        // 목표 방향으로 이동
+        pieceTransforms[lastIndex].position = Vector3.MoveTowards(
+            pieceTransforms[lastIndex].position,
+            fleeTargetPos,
+            fleeSpeed * Time.deltaTime
+        );
+
+        // 목표 위치 근처에 도달 시 다음 랜덤 위치 설정
+        if (Vector3.Distance(pieceTransforms[lastIndex].position, fleeTargetPos) < 15f)
+        {
+            SetNewFleeTarget(lastIndex);
+        }
     }
 
     private void CompleteButtonMerger()
     {
         isButtonCompleted = true;
+        isTButtonMoving = false;
 
         int totalCount = pieceTransforms != null ? pieceTransforms.Length : 5;
         for (int i = 0; i < totalCount; i++)
@@ -279,7 +343,7 @@ public class Minigame3_MashButton : MinigameBase
         base.Update();
         if (!isGameActive) return;
 
-        // ★ [추가] 제한시간 카운트다운
+        // 제한시간 카운트다운
         remainingTime -= Time.deltaTime;
         elapsedTime += Time.deltaTime;
 
@@ -292,14 +356,16 @@ public class Minigame3_MashButton : MinigameBase
 
         UpdateTimerUI();
 
-        // 25초 동안 조각을 맞추지 못하고 지체 시 깜빡임 힌트 발동
+        // ★ 마지막 T 버튼 랜덤 이동 연출
+        UpdateFleeingTButton();
+
+        // 25초 지체 시 깜빡임 힌트
         if (elapsedTime >= 25f && !isButtonCompleted)
         {
             FlashNextPiece();
         }
     }
 
-    // ★ [추가] 시간 초과 처리
     private void OnTimeOut()
     {
         isGameActive = false;
