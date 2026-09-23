@@ -43,6 +43,16 @@ public class Minigame11_PathPuzzle : MinigameBase
     [Header("Message Settings")]
     public float messageDuration = 2f;
 
+    [Header("Hint Timing")]
+    [Tooltip("게임 시작 후 첫 번째 힌트가 나오는 시간(초)")]
+    public float firstHintTime = 30f;
+
+    [Tooltip("게임 시작 후 두 번째 힌트가 나오는 시간(초)")]
+    public float secondHintTime = 50f;
+
+    [Tooltip("게임 시작 후 RouteHint가 나타나는 시간(초)")]
+    public float routeHintTime = 70f;
+
     private StageData currentStage;
     private int currentStageNumber = 1;
 
@@ -141,6 +151,8 @@ public class Minigame11_PathPuzzle : MinigameBase
         if (stage2.routeHint != null)
             stage2.routeHint.SetActive(false);
 
+        Debug.Log($"[PathPuzzle] Hint Timing: {firstHintTime}s / {secondHintTime}s / Route {routeHintTime}s");
+
         if (hintText != null)
             hintText.text = instruction;
 
@@ -187,7 +199,7 @@ public class Minigame11_PathPuzzle : MinigameBase
 
     private void CheckHints()
     {
-        if (elapsedTime >= 30f && !hint30Shown)
+        if (elapsedTime >= firstHintTime && !hint30Shown)
         {
             hint30Shown = true;
 
@@ -196,7 +208,7 @@ public class Minigame11_PathPuzzle : MinigameBase
             );
         }
 
-        if (elapsedTime >= 50f && !hint50Shown)
+        if (elapsedTime >= secondHintTime && !hint50Shown)
         {
             hint50Shown = true;
 
@@ -205,7 +217,7 @@ public class Minigame11_PathPuzzle : MinigameBase
             );
         }
 
-        if (elapsedTime >= 70f && !hint70Shown)
+        if (elapsedTime >= routeHintTime && !hint70Shown)
         {
             hint70Shown = true;
 
@@ -220,11 +232,28 @@ public class Minigame11_PathPuzzle : MinigameBase
 
     private void ShowCurrentRouteHint()
     {
-        if (currentStage != null &&
-            currentStage.routeHint != null)
+        if (currentStage == null)
         {
-            currentStage.routeHint.SetActive(true);
+            Debug.LogWarning("[PathPuzzle] currentStage가 null이라 RouteHint를 표시할 수 없습니다.");
+            return;
         }
+
+        if (currentStage.routeHint == null)
+        {
+            Debug.LogWarning($"[PathPuzzle] Stage {currentStageNumber}의 Route Hint가 Inspector에 연결되지 않았습니다.");
+            return;
+        }
+
+        // RouteHintGroup 자체를 켭니다.
+        currentStage.routeHint.SetActive(true);
+
+        // 그룹 안의 힌트 조각이 개별적으로 꺼져 있어도 함께 켜지도록 처리합니다.
+        foreach (Transform child in currentStage.routeHint.transform)
+        {
+            child.gameObject.SetActive(true);
+        }
+
+        Debug.Log($"[PathPuzzle] Stage {currentStageNumber} RouteHint 표시 - 경과시간 {elapsedTime:0.0}초");
     }
 
 
@@ -510,7 +539,7 @@ public class Minigame11_PathPuzzle : MinigameBase
     }
 
 
-   
+
     private void OnBeginStartDrag(
         StageData stage,
         PointerEventData data)
@@ -607,7 +636,7 @@ public class Minigame11_PathPuzzle : MinigameBase
         ResetStartPosition(stage);
     }
 
-    
+
 
     private void ClearCurrentStage()
     {
@@ -631,8 +660,8 @@ public class Minigame11_PathPuzzle : MinigameBase
             currentStageNumber = 2;
             currentStage = stage2;
 
-          
-            if (elapsedTime >= 70f &&
+
+            if (elapsedTime >= routeHintTime &&
                 stage2.routeHint != null)
             {
                 stage2.routeHint.SetActive(true);
@@ -642,13 +671,13 @@ public class Minigame11_PathPuzzle : MinigameBase
         }
         else
         {
-            
+
             Success();
         }
     }
 
 
-    
+
 
     private bool IsStartTouchingBlock(
         StageData stage)
@@ -787,7 +816,7 @@ public class Minigame11_PathPuzzle : MinigameBase
     }
 
 
- 
+
 
     private void ClampInsidePlayArea(
         RectTransform playArea,
@@ -825,7 +854,7 @@ public class Minigame11_PathPuzzle : MinigameBase
     }
 
 
- 
+
     private void CacheInitialPositions(
         StageData stage)
     {
@@ -917,7 +946,7 @@ public class Minigame11_PathPuzzle : MinigameBase
     }
 
 
-  
+
     private void ShowMessage(string message)
     {
         if (hintText == null)
