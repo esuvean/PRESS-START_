@@ -82,9 +82,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 게임 시작
-    // =====================================================
+    
 
     public override void StartMinigame()
     {
@@ -122,9 +120,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // Update
-    // =====================================================
+    
 
     protected override void Update()
     {
@@ -141,10 +137,6 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
     }
 
-
-    // =====================================================
-    // 케이블 초기 설정
-    // =====================================================
 
     private void SetupCables()
     {
@@ -242,10 +234,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 케이블 드래그
-    // =====================================================
-
     private void BeginCableDrag(
         CableData cable,
         PointerEventData data)
@@ -320,10 +308,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 올바른 연결
-    // =====================================================
-
     private bool IsNearCorrectPort(
         CableData cable)
     {
@@ -360,10 +344,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 잘못된 연결
-    // =====================================================
-
     private void WrongConnection(
         CableData cable)
     {
@@ -382,9 +362,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 케이블 선 그리기
-    // =====================================================
 
     private void UpdateCableLine(
         CableData cable)
@@ -446,10 +423,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 회로 완성
-    // =====================================================
-
     private void CheckCircuitComplete()
     {
         if (cables == null)
@@ -491,9 +464,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // START 버튼
-    // =====================================================
 
     private void SetupStartButton()
     {
@@ -536,10 +506,6 @@ public class Minigame14_PowerCircuit : MinigameBase
         Success();
     }
 
-
-    // =====================================================
-    // 실수 힌트
-    // =====================================================
 
     private void CheckErrorHints()
     {
@@ -585,9 +551,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 실수 2 - 첫 포트 점멸
-    // =====================================================
 
     private IEnumerator BlinkFirstPort()
     {
@@ -627,9 +590,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 실수 4 - 연결선 힌트
-    // =====================================================
 
     private void ShowHintLines()
     {
@@ -665,9 +625,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // 실수 6 - 장치 애니메이션 중지
-    // =====================================================
 
     private void DisableDeviceAnimations()
     {
@@ -685,9 +642,6 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    // =====================================================
-    // UI
-    // =====================================================
 
     private void UpdateErrorUI()
     {

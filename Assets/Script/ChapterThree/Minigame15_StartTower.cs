@@ -91,10 +91,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 게임 시작
-    // =====================================================
-
+   
     public override void StartMinigame()
     {
         gameName = "실행 구조 안정성 검사";
@@ -164,10 +161,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // Update
-    // =====================================================
-
+   
     protected override void Update()
     {
         base.Update();
@@ -209,10 +203,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 블록 생성
-    // =====================================================
-
+  
     private void SpawnCurrentBlock()
     {
         if (letterBlocks == null ||
@@ -275,9 +266,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 좌우 이동
-    // =====================================================
 
     private void MoveBlockHorizontally()
     {
@@ -336,9 +324,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 낙하
-    // =====================================================
 
     private void MoveBlockDown()
     {
@@ -353,10 +338,6 @@ public class Minigame15_StartTower : MinigameBase
             Time.deltaTime;
     }
 
-
-    // =====================================================
-    // 착지 검사
-    // =====================================================
 
     private void CheckLanding()
     {
@@ -515,9 +496,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 블록 떨어짐
-    // =====================================================
+    
 
     private void CheckBlockMiss()
     {
@@ -570,10 +549,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 실패 보조 기능
-    // =====================================================
-
     private void ApplyFallAssists()
     {
         // 2회 실패
@@ -616,9 +591,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 70초 힌트
-    // =====================================================
 
     private void CheckCenterHint()
     {
@@ -693,10 +665,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 3초 안정성 검사
-    // =====================================================
-
     private IEnumerator StabilityCheckRoutine()
     {
         stabilityChecking = true;
@@ -723,9 +691,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // START 버튼 결합
-    // =====================================================
 
     private void CreateCompletedStartButton()
     {
@@ -789,9 +754,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 최종 START 클릭
-    // =====================================================
+ 
 
     private void OnCompletedStartClicked()
     {
@@ -808,9 +771,7 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // Chapter 3 완료 문구
-    // =====================================================
+
 
     private IEnumerator ChapterCompleteRoutine()
     {
@@ -876,10 +837,6 @@ public class Minigame15_StartTower : MinigameBase
     }
 
 
-    // =====================================================
-    // 초기화
-    // =====================================================
-
     private void ResetLetterBlocks()
     {
         if (letterBlocks == null)
@@ -903,10 +860,6 @@ public class Minigame15_StartTower : MinigameBase
         }
     }
 
-
-    // =====================================================
-    // UI
-    // =====================================================
 
     private void UpdateFallUI()
     {
