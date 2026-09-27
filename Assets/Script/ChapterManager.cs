@@ -7,15 +7,15 @@ using System.Collections.Generic;
 
 public class ChapterManager : MonoBehaviour
 {
-    [Header("UI Reference")]
+   
     public Transform canvasTransform;
 
-    [Header("Loading UI")]
+    
     public GameObject loadingPanel;
     public Image loadingBar;
     public TMP_Text loadingPercentText;
 
-    [Header("Loading Settings")]
+   
     public float loadingDuration = 0.35f;
 
     [System.Serializable]
@@ -28,9 +28,26 @@ public class ChapterManager : MonoBehaviour
     [Header("Chapter Settings")]
     public List<ChapterData> chapters;
 
+  
+
+    [Header("Chapter Transition")]
+    [Tooltip("현재 Scene의 모든 미니게임 완료 후 이동할 Scene 이름")]
+    public string nextSceneName;
+
+    [Tooltip("Next Scene Name이 비어있을 때 이동할 Scene")]
+    public string fallbackSceneName = "MainScene";
+
+ 
+
     private int currentChapterIndex = 0;
     private int currentMinigameIndex = 0;
+
     private GameObject currentActiveGameInstance;
+
+    private bool isTransitioning = false;
+
+
+   
 
     private void OnEnable()
     {
@@ -38,106 +55,345 @@ public class ChapterManager : MonoBehaviour
         MinigameBase.OnGameFailure += HandleMinigameFailure;
     }
 
+
     private void OnDisable()
     {
         MinigameBase.OnGameSuccess -= HandleMinigameSuccess;
         MinigameBase.OnGameFailure -= HandleMinigameFailure;
     }
 
-    void Start()
+
+   
+    private void Start()
     {
         if (loadingPanel != null)
+        {
             loadingPanel.SetActive(false);
-        // 첫 번째 챕터의 첫 게임 시작
+        }
+
+        ResetLoadingUI();
+
         StartCurrentMinigame();
     }
 
+
+   
     private void StartCurrentMinigame()
     {
-        // 모든 챕터를 다 깬 경우 메인화면으로 이동
+      
         if (currentChapterIndex >= chapters.Count)
         {
-            Debug.Log("모든 챕터를 클리어하셨습니다! 메인 화면으로 돌아갑니다.");
-            SceneManager.LoadScene("MainScene");
+            StartCoroutine(LoadNextChapterScene());
             return;
         }
 
-        ChapterData activeChapter = chapters[currentChapterIndex];
 
-        if (currentMinigameIndex >= activeChapter.minigamePrefabs.Count)
+        ChapterData activeChapter =
+            chapters[currentChapterIndex];
+
+
+        
+        if (currentMinigameIndex >=
+            activeChapter.minigamePrefabs.Count)
         {
-            // 한 챕터의 게임들을 다 깬 경우 다음 챕터로 이동
-            Debug.Log($"{activeChapter.chapterName} 클리어! 다음 챕터로 넘어갑니다.");
+            Debug.Log(
+                $"{activeChapter.chapterName} 클리어!"
+            );
+
             currentChapterIndex++;
             currentMinigameIndex = 0;
+
             StartCurrentMinigame();
+
             return;
         }
 
-        GameObject gamePrefab = activeChapter.minigamePrefabs[currentMinigameIndex];
-        currentActiveGameInstance = Instantiate(gamePrefab, canvasTransform);
 
-        MinigameBase gameScript = currentActiveGameInstance.GetComponent<MinigameBase>();
+        GameObject gamePrefab =
+            activeChapter
+                .minigamePrefabs[
+                    currentMinigameIndex
+                ];
+
+
+        if (gamePrefab == null)
+        {
+            Debug.LogError(
+                $"{activeChapter.chapterName}의 " +
+                $"{currentMinigameIndex}번 미니게임 Prefab이 비어 있습니다."
+            );
+
+            return;
+        }
+
+
+        currentActiveGameInstance =
+            Instantiate(
+                gamePrefab,
+                canvasTransform
+            );
+
+
+        MinigameBase gameScript =
+            currentActiveGameInstance
+                .GetComponent<MinigameBase>();
+
+
         if (gameScript != null)
         {
             gameScript.StartMinigame();
         }
+        else
+        {
+            Debug.LogError(
+                $"{gamePrefab.name}에 MinigameBase를 상속받은 스크립트가 없습니다."
+            );
+        }
     }
 
+
+   
     private void HandleMinigameSuccess()
     {
+        if (isTransitioning)
+        {
+            return;
+        }
+
+
         Debug.Log("미니게임 성공!");
+
 
         if (currentActiveGameInstance != null)
         {
-            Destroy(currentActiveGameInstance);
+            Destroy(
+                currentActiveGameInstance
+            );
+
             currentActiveGameInstance = null;
         }
 
+
         currentMinigameIndex++;
 
-        StartCoroutine(LoadNextMinigame());
+
+        StartCoroutine(
+            LoadNextMinigame()
+        );
     }
+
 
     private IEnumerator LoadNextMinigame()
     {
+        isTransitioning = true;
+
+
         if (loadingPanel != null)
+        {
             loadingPanel.SetActive(true);
+        }
+
+
+        ResetLoadingUI();
+
 
         float timer = 0f;
+
 
         while (timer < loadingDuration)
         {
             timer += Time.deltaTime;
 
-            float progress = Mathf.Clamp01(timer / loadingDuration);
+
+            float progress =
+                Mathf.Clamp01(
+                    timer /
+                    loadingDuration
+                );
+
 
             if (loadingBar != null)
-                loadingBar.fillAmount = progress;
+            {
+                loadingBar.fillAmount =
+                    progress;
+            }
+
 
             if (loadingPercentText != null)
+            {
                 loadingPercentText.text =
-                    Mathf.RoundToInt(progress * 100f) + "%";
+                    Mathf.RoundToInt(
+                        progress * 100f
+                    )
+                    + "%";
+            }
+
 
             yield return null;
         }
 
+
         if (loadingBar != null)
+        {
             loadingBar.fillAmount = 1f;
+        }
+
 
         if (loadingPercentText != null)
-            loadingPercentText.text = "100%";
+        {
+            loadingPercentText.text =
+                "100%";
+        }
 
-        yield return new WaitForSeconds(0.05f);
 
-        StartCurrentMinigame();
+        yield return new WaitForSeconds(
+            0.05f
+        );
+
 
         if (loadingPanel != null)
+        {
             loadingPanel.SetActive(false);
+        }
+
+
+        isTransitioning = false;
+
+
+        StartCurrentMinigame();
     }
 
+
+ 
+    private IEnumerator LoadNextChapterScene()
+    {
+        if (isTransitioning)
+        {
+            yield break;
+        }
+
+
+        isTransitioning = true;
+
+
+        Debug.Log(
+            "현재 챕터의 모든 미니게임을 완료했습니다."
+        );
+
+
+        if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(true);
+        }
+
+
+        ResetLoadingUI();
+
+
+        float timer = 0f;
+
+
+        while (timer < loadingDuration)
+        {
+            timer += Time.deltaTime;
+
+
+            float progress =
+                Mathf.Clamp01(
+                    timer /
+                    loadingDuration
+                );
+
+
+            if (loadingBar != null)
+            {
+                loadingBar.fillAmount =
+                    progress;
+            }
+
+
+            if (loadingPercentText != null)
+            {
+                loadingPercentText.text =
+                    Mathf.RoundToInt(
+                        progress * 100f
+                    )
+                    + "%";
+            }
+
+
+            yield return null;
+        }
+
+
+        if (loadingBar != null)
+        {
+            loadingBar.fillAmount = 1f;
+        }
+
+
+        if (loadingPercentText != null)
+        {
+            loadingPercentText.text =
+                "100%";
+        }
+
+
+        yield return new WaitForSeconds(
+            0.1f
+        );
+
+
+        string sceneToLoad;
+
+
+        if (!string.IsNullOrWhiteSpace(
+            nextSceneName))
+        {
+            sceneToLoad =
+                nextSceneName;
+        }
+        else
+        {
+            sceneToLoad =
+                fallbackSceneName;
+        }
+
+
+        Debug.Log(
+            $"다음 Scene으로 이동: {sceneToLoad}"
+        );
+
+
+        SceneManager.LoadScene(
+            sceneToLoad
+        );
+    }
+
+
+    
     private void HandleMinigameFailure()
     {
         Debug.Log("미니게임 실패");
+
+        
+    }
+
+
+ 
+
+    private void ResetLoadingUI()
+    {
+        if (loadingBar != null)
+        {
+            loadingBar.fillAmount = 0f;
+        }
+
+
+        if (loadingPercentText != null)
+        {
+            loadingPercentText.text =
+                "0%";
+        }
     }
 }
