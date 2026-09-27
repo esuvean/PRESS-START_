@@ -7,200 +7,495 @@ using System.Collections.Generic;
 public class Minigame5_LaserMaze : MinigameBase
 {
     [Header("UI References - Game Area")]
-    public RectTransform mazeArea;          // 미로 전체 영역 (초록색 테두리 상자)
-    public RectTransform startButton;       // 드래그할 버튼
-    public RectTransform startPoint;        // 출발 위치
-    public RectTransform goalPoint;         // 도착 위치
-    public GameObject pathGuideLine;        // 5회 실패 힌트 점선
+    public RectTransform mazeArea;
+    public RectTransform startButton;
+    public RectTransform startPoint;
+    public RectTransform goalPoint;
+    public GameObject pathGuideLine;
 
-    [Header("Laser Groups")]
+   
     public List<RectTransform> course1Lasers;
     public List<RectTransform> course2Lasers;
 
-    [Header("UI References - Labels")]
+   
     public TextMeshProUGUI failText;
     public TextMeshProUGUI courseText;
     public TextMeshProUGUI hintText;
     public TextMeshProUGUI timerText;
 
-    [Header("Game Settings")]
     public float goalSnapDistance = 50f;
     public float laserOnDuration = 1.5f;
     public float laserOffDuration = 1.5f;
-    public float timeLimit = 60f;          
+    public float laserMazeTimeLimit = 60f;
     public float borderPadding = 15f;
+
+   
+    [Range(0f, 1f)]
+    public float laserVisibleAlpha = 1f;
+
+    [Range(0f, 1f)]
+    public float laserHiddenAlpha = 0f;
 
     private int currentCourse = 1;
     private int failCount = 0;
-    private float remainingTime;           
+
+    private float remainingTime;
     private float hitboxShrinkRatio = 1.0f;
+
     private Coroutine laserBlinkCoroutine;
-    private bool isTransitioning = false;  
+
+    private bool isTransitioning = false;
+
 
     public bool IsGameActive()
     {
-        return isGameActive && !isTransitioning;
+        return isGameActive &&
+               !isTransitioning;
     }
+
 
     private void Start()
     {
-        if (!isGameActive) StartMinigame();
+        if (!isGameActive)
+        {
+            StartMinigame();
+        }
     }
 
+
+ 
     public override void StartMinigame()
     {
-        base.StartMinigame();
         gameName = "안전 이동 검사";
-        instruction = "'START' 버튼을 드래그하여 레이저를 피해 출발 지점에서 도착 지점까지 이동시키기.";
+
+        instruction =
+            "'START' 버튼을 드래그하여 레이저를 피해 출발 지점에서 도착 지점까지 이동시키기.";
+
+        timeLimit = laserMazeTimeLimit;
+
+        base.StartMinigame();
 
         currentCourse = 1;
         failCount = 0;
-        remainingTime = timeLimit;
+
+        remainingTime =
+            laserMazeTimeLimit;
+
         hitboxShrinkRatio = 1.0f;
+
         laserOffDuration = 1.5f;
+
         isTransitioning = false;
 
-        if (pathGuideLine != null) pathGuideLine.SetActive(false);
+
+        if (pathGuideLine != null)
+        {
+            pathGuideLine.SetActive(false);
+        }
+
+
+    
+        SetCourse2LasersVisual(true);
 
         SetupCourse(1);
     }
 
+
+  
     private void SetupCourse(int courseIndex)
     {
         currentCourse = courseIndex;
 
-        foreach (var laser in course1Lasers)
-            if (laser != null) laser.gameObject.SetActive(courseIndex == 1);
 
-        foreach (var laser in course2Lasers)
-            if (laser != null) laser.gameObject.SetActive(courseIndex == 2);
-
-        if (laserBlinkCoroutine != null) StopCoroutine(laserBlinkCoroutine);
-        if (courseIndex == 2)
+        
+        foreach (RectTransform laser
+                 in course1Lasers)
         {
-            laserBlinkCoroutine = StartCoroutine(BlinkCourse2Lasers());
+            if (laser != null)
+            {
+                laser.gameObject.SetActive(
+                    courseIndex == 1
+                );
+            }
         }
 
+
+       
+        foreach (RectTransform laser
+                 in course2Lasers)
+        {
+            if (laser != null)
+            {
+                laser.gameObject.SetActive(
+                    courseIndex == 2
+                );
+            }
+        }
+
+
+        if (laserBlinkCoroutine != null)
+        {
+            StopCoroutine(
+                laserBlinkCoroutine
+            );
+
+            laserBlinkCoroutine = null;
+        }
+
+
+        if (courseIndex == 2)
+        {
+           
+            foreach (RectTransform laser
+                     in course2Lasers)
+            {
+                if (laser != null)
+                {
+                    laser.gameObject
+                        .SetActive(true);
+                }
+            }
+
+
+            // 처음에는 보이는 상태
+            SetCourse2LasersVisual(true);
+
+
+            laserBlinkCoroutine =
+                StartCoroutine(
+                    BlinkCourse2Lasers()
+                );
+        }
+
+
         ResetButtonToStart();
+
         UpdateUI();
     }
 
+
     private IEnumerator BlinkCourse2Lasers()
     {
-        while (isGameActive && currentCourse == 2)
+        while (isGameActive &&
+               currentCourse == 2)
         {
-            SetCourse2LasersActive(true);
-            yield return new WaitForSeconds(laserOnDuration);
-            SetCourse2LasersActive(false);
-            yield return new WaitForSeconds(laserOffDuration);
+          
+
+            SetCourse2LasersVisual(true);
+
+            yield return new WaitForSeconds(
+                laserOnDuration
+            );
+
+
+            if (!isGameActive ||
+                currentCourse != 2)
+            {
+                break;
+            }
+
+
+
+            SetCourse2LasersVisual(false);
+
+            yield return new WaitForSeconds(
+                laserOffDuration
+            );
+        }
+
+
+        SetCourse2LasersVisual(true);
+    }
+
+
+   
+
+    private void SetCourse2LasersVisual(
+        bool visible)
+    {
+        foreach (RectTransform laser
+                 in course2Lasers)
+        {
+            if (laser == null)
+                continue;
+
+
+            if (currentCourse == 2 &&
+                !laser.gameObject.activeSelf)
+            {
+                laser.gameObject
+                    .SetActive(true);
+            }
+
+
+            CanvasGroup group =
+                laser.GetComponent<CanvasGroup>();
+
+
+            if (group == null)
+            {
+                group =
+                    laser.gameObject
+                        .AddComponent<CanvasGroup>();
+            }
+
+
+            if (visible)
+            {
+                group.alpha =
+                    laserVisibleAlpha;
+            }
+            else
+            {
+                group.alpha =
+                    laserHiddenAlpha;
+            }
+
+
+            group.blocksRaycasts = false;
+            group.interactable = false;
         }
     }
 
-    private void SetCourse2LasersActive(bool active)
-    {
-        foreach (var laser in course2Lasers)
-            if (laser != null) laser.gameObject.SetActive(active);
-    }
+
 
     public void CheckCollisions()
     {
-        if (isTransitioning || startButton == null) return;
+        if (isTransitioning ||
+            startButton == null)
+        {
+            return;
+        }
+
 
        
-        if (mazeArea != null && IsTouchingOrOutsideBorder(startButton, mazeArea, borderPadding))
+        if (mazeArea != null &&
+            IsTouchingOrOutsideBorder(
+                startButton,
+                mazeArea,
+                borderPadding
+            ))
         {
             OnHitLaser();
             return;
         }
 
-      
-        List<RectTransform> activeLasers = (currentCourse == 1) ? course1Lasers : course2Lasers;
 
-        foreach (var laser in activeLasers)
+        List<RectTransform> activeLasers =
+            currentCourse == 1
+            ? course1Lasers
+            : course2Lasers;
+
+
+        foreach (RectTransform laser
+                 in activeLasers)
         {
-            if (laser != null && laser.gameObject.activeInHierarchy)
+            if (laser == null)
+                continue;
+
+
+       
+
+            if (IsRectOverlapping(
+                startButton,
+                laser,
+                hitboxShrinkRatio
+            ))
             {
-                if (IsRectOverlapping(startButton, laser, hitboxShrinkRatio))
-                {
-                    OnHitLaser();
-                    break;
-                }
+                OnHitLaser();
+                return;
             }
         }
     }
 
-    private bool IsTouchingOrOutsideBorder(RectTransform btn, RectTransform container, float padding)
+
+
+
+    private bool IsTouchingOrOutsideBorder(
+        RectTransform btn,
+        RectTransform container,
+        float padding)
     {
-        Vector3[] btnCorners = new Vector3[4];
-        Vector3[] containerCorners = new Vector3[4];
+        Vector3[] btnCorners =
+            new Vector3[4];
 
-        btn.GetWorldCorners(btnCorners);
-        container.GetWorldCorners(containerCorners);
+        Vector3[] containerCorners =
+            new Vector3[4];
 
-        float minX = containerCorners[0].x + padding;
-        float maxX = containerCorners[2].x - padding;
-        float minY = containerCorners[0].y + padding;
-        float maxY = containerCorners[2].y - padding;
 
-        foreach (var corner in btnCorners)
+        btn.GetWorldCorners(
+            btnCorners
+        );
+
+        container.GetWorldCorners(
+            containerCorners
+        );
+
+
+        float minX =
+            containerCorners[0].x +
+            padding;
+
+        float maxX =
+            containerCorners[2].x -
+            padding;
+
+        float minY =
+            containerCorners[0].y +
+            padding;
+
+        float maxY =
+            containerCorners[2].y -
+            padding;
+
+
+        foreach (Vector3 corner
+                 in btnCorners)
         {
-            if (corner.x < minX || corner.x > maxX || corner.y < minY || corner.y > maxY)
+            if (corner.x < minX ||
+                corner.x > maxX ||
+                corner.y < minY ||
+                corner.y > maxY)
             {
                 return true;
             }
         }
 
+
         return false;
     }
 
-    private bool IsRectOverlapping(RectTransform rectA, RectTransform rectB, float shrink)
-    {
-        Vector3[] cornersA = new Vector3[4];
-        Vector3[] cornersB = new Vector3[4];
-        rectA.GetWorldCorners(cornersA);
-        rectB.GetWorldCorners(cornersB);
 
-        Bounds boundsA = new Bounds(cornersA[0], Vector3.zero);
-        for (int i = 1; i < 4; i++) boundsA.Encapsulate(cornersA[i]);
+   
+    private bool IsRectOverlapping(
+        RectTransform rectA,
+        RectTransform rectB,
+        float shrink)
+    {
+        Vector3[] cornersA =
+            new Vector3[4];
+
+        Vector3[] cornersB =
+            new Vector3[4];
+
+
+        rectA.GetWorldCorners(
+            cornersA
+        );
+
+        rectB.GetWorldCorners(
+            cornersB
+        );
+
+
+        Bounds boundsA =
+            new Bounds(
+                cornersA[0],
+                Vector3.zero
+            );
+
+
+        for (int i = 1;
+             i < 4;
+             i++)
+        {
+            boundsA.Encapsulate(
+                cornersA[i]
+            );
+        }
+
+
         boundsA.size *= shrink;
 
-        Bounds boundsB = new Bounds(cornersB[0], Vector3.zero);
-        for (int i = 1; i < 4; i++) boundsB.Encapsulate(cornersB[i]);
 
-        return boundsA.Intersects(boundsB);
+        Bounds boundsB =
+            new Bounds(
+                cornersB[0],
+                Vector3.zero
+            );
+
+
+        for (int i = 1;
+             i < 4;
+             i++)
+        {
+            boundsB.Encapsulate(
+                cornersB[i]
+            );
+        }
+
+
+        return boundsA.Intersects(
+            boundsB
+        );
     }
+
 
     private void OnHitLaser()
     {
+        if (isTransitioning)
+            return;
+
+
         failCount++;
+
+
         ResetButtonToStart();
 
-       
+
         if (startButton != null)
         {
-            var dragComp = startButton.GetComponent<LaserMazeButtonDrag>();
+            LaserMazeButtonDrag dragComp =
+                startButton
+                    .GetComponent<
+                        LaserMazeButtonDrag>();
+
+
             if (dragComp != null)
             {
                 dragComp.ForceEndDrag();
             }
         }
 
+
         ApplyFailHints();
+
         UpdateUI();
     }
 
+
+
+
     public void CheckGoalArrival()
     {
-        if (!isGameActive || isTransitioning || goalPoint == null || startButton == null) return;
-
-        float dist = Vector2.Distance(startButton.position, goalPoint.position);
-        if (dist <= goalSnapDistance)
+        if (!isGameActive ||
+            isTransitioning ||
+            goalPoint == null ||
+            startButton == null)
         {
-            startButton.position = goalPoint.position;
+            return;
+        }
+
+
+        float dist =
+            Vector2.Distance(
+                startButton.position,
+                goalPoint.position
+            );
+
+
+        if (dist <=
+            goalSnapDistance)
+        {
+            startButton.position =
+                goalPoint.position;
+
 
             if (currentCourse == 1)
             {
-                StartCoroutine(TransitionToCourse2());
+                StartCoroutine(
+                    TransitionToCourse2()
+                );
             }
             else
             {
@@ -209,88 +504,202 @@ public class Minigame5_LaserMaze : MinigameBase
         }
     }
 
+
+ 
     private IEnumerator TransitionToCourse2()
     {
         isTransitioning = true;
 
+
         SetupCourse(2);
+
 
         while (Input.GetMouseButton(0))
         {
             ResetButtonToStart();
+
             yield return null;
         }
 
-        yield return new WaitForSeconds(0.1f);
+
+        yield return new WaitForSeconds(
+            0.1f
+        );
+
+
         isTransitioning = false;
     }
 
+
+ 
     public void ResetButtonToStart()
     {
-        if (startButton != null && startPoint != null)
+        if (startButton != null &&
+            startPoint != null)
         {
-            startButton.position = startPoint.position;
+            startButton.position =
+                startPoint.position;
 
-            var dragComp = startButton.GetComponent<LaserMazeButtonDrag>();
-            if (dragComp != null) dragComp.ClampToMazeArea();
+
+            LaserMazeButtonDrag dragComp =
+                startButton
+                    .GetComponent<
+                        LaserMazeButtonDrag>();
+
+
+            if (dragComp != null)
+            {
+                dragComp.ClampToMazeArea();
+            }
         }
     }
+
+
 
     private void ApplyFailHints()
     {
         if (failCount >= 8)
         {
             laserOffDuration = 3.0f;
-            if (hintText != null) hintText.text = "[ HINT ] 레이저가 꺼져 있는 시간이 길어집니다.";
+
+
+            if (hintText != null)
+            {
+                hintText.text =
+                    "[ HINT ] 미로가 보이지 않는 시간이 길어집니다.";
+            }
         }
         else if (failCount >= 5)
         {
-            if (pathGuideLine != null) pathGuideLine.SetActive(true);
-            if (hintText != null) hintText.text = "[ HINT ] 안전한 이동 경로가 표시됩니다.";
+            if (pathGuideLine != null)
+            {
+                pathGuideLine
+                    .SetActive(true);
+            }
+
+
+            if (hintText != null)
+            {
+                hintText.text =
+                    "[ HINT ] 안전한 이동 경로가 표시됩니다.";
+            }
         }
         else if (failCount >= 3)
         {
-            hitboxShrinkRatio = 0.6f;
-            if (hintText != null) hintText.text = "[ HINT ] 버튼의 충돌 판정 범위가 감소합니다.";
+            hitboxShrinkRatio =
+                0.6f;
+
+
+            if (hintText != null)
+            {
+                hintText.text =
+                    "[ HINT ] 버튼의 충돌 판정 범위가 감소합니다.";
+            }
         }
     }
 
+
+ 
+
     private void UpdateUI()
     {
-        if (failText != null) failText.text = $"실수 {failCount} 회";
-        if (courseText != null) courseText.text = $"코스 {currentCourse} / 2";
+        if (failText != null)
+        {
+            failText.text =
+                $"실수 {failCount} 회";
+        }
+
+
+        if (courseText != null)
+        {
+            courseText.text =
+                $"코스 {currentCourse} / 2";
+        }
     }
+
+
+    
 
     protected override void Update()
     {
         base.Update();
-        if (!isGameActive) return;
 
-        remainingTime -= Time.deltaTime;
+
+        if (!isGameActive)
+            return;
+
+
+        remainingTime -=
+            Time.deltaTime;
+
 
         if (remainingTime <= 0f)
         {
             remainingTime = 0f;
+
             OnTimeOut();
+
+            return;
         }
+
 
         if (timerText != null)
         {
-            int min = Mathf.FloorToInt(remainingTime / 60f);
-            int sec = Mathf.FloorToInt(remainingTime % 60f);
-            timerText.text = string.Format("TIME {0:00}:{1:00}", min, sec);
+            int min =
+                Mathf.FloorToInt(
+                    remainingTime / 60f
+                );
+
+            int sec =
+                Mathf.FloorToInt(
+                    remainingTime % 60f
+                );
+
+
+            timerText.text =
+                string.Format(
+                    "TIME {0:00}:{1:00}",
+                    min,
+                    sec
+                );
         }
     }
 
+
+  
     private void OnTimeOut()
     {
         isGameActive = false;
+
+
+        if (laserBlinkCoroutine != null)
+        {
+            StopCoroutine(
+                laserBlinkCoroutine
+            );
+
+            laserBlinkCoroutine = null;
+        }
+
+
+        // 시각 상태 복구
+        SetCourse2LasersVisual(true);
+
+
         if (hintText != null)
         {
-            hintText.text = "시간 초과! 실패했습니다.";
+            hintText.text =
+                "시간 초과! 실패했습니다.";
         }
     }
 
-    protected override void GiveHint() { }
-    protected override void RestartGame() { }
+
+    protected override void GiveHint()
+    {
+    }
+
+
+    protected override void RestartGame()
+    {
+    }
 }
