@@ -3,68 +3,88 @@ using UnityEngine.SceneManagement;
 
 public class StartMenuController : MonoBehaviour
 {
-   
-    public GameObject titlePanel;          
-    public GameObject chapterSelectPanel; 
+    [Header("Panels")]
+    public GameObject mainPanel;
+    public GameObject checkProgressPanel;
+    public GameObject settingsPanel;
 
-   
-    public string chapter1SceneName = "Chapter1";
-    public string chapter2SceneName = "Chapter2";
-    public string chapter3SceneName = "Chapter3";
-    public string chapter4SceneName = "Chapter4";
+    [Header("Progress UI")]
+    public ChapterProgressUI chapterProgressUI;
 
     private void Start()
     {
-        
-        if (titlePanel != null) titlePanel.SetActive(true);
-        if (chapterSelectPanel != null) chapterSelectPanel.SetActive(false);
+        // 챕터 완료 후 메인씬으로 돌아온 경우
+        if (SessionProgress.openChapterSelectOnLoad)
+        {
+            OpenChapterSelectDirectly();
+            SessionProgress.openChapterSelectOnLoad = false;
+        }
+        else
+        {
+            ShowMainPanel();
+        }
     }
 
-   
+    private void ShowMainPanel()
+    {
+        if (mainPanel != null) mainPanel.SetActive(true);
+        if (checkProgressPanel != null) checkProgressPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+    }
+
+    private void OpenChapterSelectDirectly()
+    {
+        if (mainPanel != null) mainPanel.SetActive(false);
+        if (checkProgressPanel != null) checkProgressPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
+        if (chapterProgressUI != null)
+        {
+            chapterProgressUI.RefreshProgress();
+        }
+    }
+
     public void OnClickStart()
     {
-        if (titlePanel != null) titlePanel.SetActive(false);
-        if (chapterSelectPanel != null) chapterSelectPanel.SetActive(true);
+        OpenChapterSelectDirectly();
     }
 
-   
-    public void OnClickChapter1()
+    public void OnClickSettings()
     {
-        SceneManager.LoadScene(chapter1SceneName);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
-   
-    public void OnClickChapter2()
+    public void OnClickCloseSettings()
     {
-        SceneManager.LoadScene(chapter2SceneName);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
-  
-    public void OnClickChapter3()
-    {
-        SceneManager.LoadScene(chapter3SceneName);
-    }
-
-   
-    public void OnClickChapter4()
-    {
-        SceneManager.LoadScene(chapter4SceneName);
-    }
-
-    
-    public void OnClickBackToTitle()
-    {
-        if (chapterSelectPanel != null) chapterSelectPanel.SetActive(false);
-        if (titlePanel != null) titlePanel.SetActive(true);
-    }
-
- 
     public void OnClickQuit()
     {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
         Application.Quit();
-#endif
+    }
+
+    public void OnClickChapter1()
+    {
+        if (SessionProgress.IsChapterUnlocked(1))
+            SceneManager.LoadScene("Chapter1");
+    }
+
+    public void OnClickChapter2()
+    {
+        if (SessionProgress.IsChapterUnlocked(2))
+            SceneManager.LoadScene("Chapter2");
+    }
+
+    public void OnClickChapter3()
+    {
+        if (SessionProgress.IsChapterUnlocked(3))
+            SceneManager.LoadScene("Chapter3");
+    }
+
+    public void OnClickChapter4()
+    {
+        if (SessionProgress.IsChapterUnlocked(4))
+            SceneManager.LoadScene("Chapter4");
     }
 }

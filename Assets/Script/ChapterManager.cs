@@ -10,13 +10,16 @@ public class ChapterManager : MonoBehaviour
    
     public Transform canvasTransform;
 
-    
+
+  
     public GameObject loadingPanel;
     public Image loadingBar;
     public TMP_Text loadingPercentText;
 
-   
+
+    
     public float loadingDuration = 0.35f;
+
 
     [System.Serializable]
     public class ChapterData
@@ -25,19 +28,19 @@ public class ChapterManager : MonoBehaviour
         public List<GameObject> minigamePrefabs;
     }
 
-    [Header("Chapter Settings")]
+
+   
     public List<ChapterData> chapters;
 
-  
 
-    [Header("Chapter Transition")]
-    [Tooltip("현재 Scene의 모든 미니게임 완료 후 이동할 Scene 이름")]
-    public string nextSceneName;
+   
+    [Tooltip("현재 Scene의 챕터 번호")]
+    public int chapterNumber = 1;
 
-    [Tooltip("Next Scene Name이 비어있을 때 이동할 Scene")]
-    public string fallbackSceneName = "MainScene";
 
- 
+    [Tooltip("챕터 완료 후 돌아갈 Scene")]
+    public string mainSceneName = "MainScene";
+
 
     private int currentChapterIndex = 0;
     private int currentMinigameIndex = 0;
@@ -47,23 +50,28 @@ public class ChapterManager : MonoBehaviour
     private bool isTransitioning = false;
 
 
-   
-
+    
     private void OnEnable()
     {
-        MinigameBase.OnGameSuccess += HandleMinigameSuccess;
-        MinigameBase.OnGameFailure += HandleMinigameFailure;
+        MinigameBase.OnGameSuccess +=
+            HandleMinigameSuccess;
+
+        MinigameBase.OnGameFailure +=
+            HandleMinigameFailure;
     }
 
 
     private void OnDisable()
     {
-        MinigameBase.OnGameSuccess -= HandleMinigameSuccess;
-        MinigameBase.OnGameFailure -= HandleMinigameFailure;
+        MinigameBase.OnGameSuccess -=
+            HandleMinigameSuccess;
+
+        MinigameBase.OnGameFailure -=
+            HandleMinigameFailure;
     }
 
 
-   
+ 
     private void Start()
     {
         if (loadingPanel != null)
@@ -77,13 +85,19 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-   
+    
+
     private void StartCurrentMinigame()
     {
+        if (isTransitioning)
+            return;
+
+
       
-        if (currentChapterIndex >= chapters.Count)
+        if (currentChapterIndex >=
+            chapters.Count)
         {
-            StartCoroutine(LoadNextChapterScene());
+            CompleteChapter();
             return;
         }
 
@@ -92,15 +106,26 @@ public class ChapterManager : MonoBehaviour
             chapters[currentChapterIndex];
 
 
-        
+        if (activeChapter == null)
+        {
+            Debug.LogError(
+                "ChapterData가 없습니다."
+            );
+
+            return;
+        }
+
+
+        // 현재 챕터의 모든 미니게임 완료
         if (currentMinigameIndex >=
             activeChapter.minigamePrefabs.Count)
         {
             Debug.Log(
-                $"{activeChapter.chapterName} 클리어!"
+                $"{activeChapter.chapterName} 미니게임 전부 완료"
             );
 
             currentChapterIndex++;
+
             currentMinigameIndex = 0;
 
             StartCurrentMinigame();
@@ -119,14 +144,16 @@ public class ChapterManager : MonoBehaviour
         if (gamePrefab == null)
         {
             Debug.LogError(
-                $"{activeChapter.chapterName}의 " +
-                $"{currentMinigameIndex}번 미니게임 Prefab이 비어 있습니다."
+                $"Chapter {chapterNumber}의 " +
+                $"{currentMinigameIndex}번 " +
+                "미니게임 Prefab이 비어 있습니다."
             );
 
             return;
         }
 
 
+       
         currentActiveGameInstance =
             Instantiate(
                 gamePrefab,
@@ -134,6 +161,7 @@ public class ChapterManager : MonoBehaviour
             );
 
 
+      
         MinigameBase gameScript =
             currentActiveGameInstance
                 .GetComponent<MinigameBase>();
@@ -146,22 +174,23 @@ public class ChapterManager : MonoBehaviour
         else
         {
             Debug.LogError(
-                $"{gamePrefab.name}에 MinigameBase를 상속받은 스크립트가 없습니다."
+                $"{gamePrefab.name}에 " +
+                "MinigameBase를 상속받은 " +
+                "스크립트가 없습니다."
             );
         }
     }
 
 
-   
     private void HandleMinigameSuccess()
     {
         if (isTransitioning)
-        {
             return;
-        }
 
 
-        Debug.Log("미니게임 성공!");
+        Debug.Log(
+            $"Chapter {chapterNumber} - 미니게임 성공!"
+        );
 
 
         if (currentActiveGameInstance != null)
@@ -174,13 +203,23 @@ public class ChapterManager : MonoBehaviour
         }
 
 
+        
         currentMinigameIndex++;
+
+
+
+        SessionProgress.SetProgress(
+            chapterNumber,
+            currentMinigameIndex
+        );
 
 
         StartCoroutine(
             LoadNextMinigame()
         );
     }
+
+
 
 
     private IEnumerator LoadNextMinigame()
@@ -200,7 +239,8 @@ public class ChapterManager : MonoBehaviour
         float timer = 0f;
 
 
-        while (timer < loadingDuration)
+        while (timer <
+               loadingDuration)
         {
             timer += Time.deltaTime;
 
@@ -264,21 +304,39 @@ public class ChapterManager : MonoBehaviour
     }
 
 
- 
-    private IEnumerator LoadNextChapterScene()
+
+    private void CompleteChapter()
     {
         if (isTransitioning)
-        {
-            yield break;
-        }
-
-
-        isTransitioning = true;
+            return;
 
 
         Debug.Log(
-            "현재 챕터의 모든 미니게임을 완료했습니다."
+            $"Chapter {chapterNumber} 완료!"
         );
+
+
+       
+        SessionProgress.CompleteChapter(
+            chapterNumber
+        );
+
+
+        
+        SessionProgress
+            .openChapterSelectOnLoad = true;
+
+
+        StartCoroutine(
+            ReturnToMainScene()
+        );
+    }
+
+
+
+    private IEnumerator ReturnToMainScene()
+    {
+        isTransitioning = true;
 
 
         if (loadingPanel != null)
@@ -293,7 +351,8 @@ public class ChapterManager : MonoBehaviour
         float timer = 0f;
 
 
-        while (timer < loadingDuration)
+        while (timer <
+               loadingDuration)
         {
             timer += Time.deltaTime;
 
@@ -344,43 +403,21 @@ public class ChapterManager : MonoBehaviour
         );
 
 
-        string sceneToLoad;
-
-
-        if (!string.IsNullOrWhiteSpace(
-            nextSceneName))
-        {
-            sceneToLoad =
-                nextSceneName;
-        }
-        else
-        {
-            sceneToLoad =
-                fallbackSceneName;
-        }
-
-
-        Debug.Log(
-            $"다음 Scene으로 이동: {sceneToLoad}"
-        );
-
-
         SceneManager.LoadScene(
-            sceneToLoad
+            mainSceneName
         );
     }
 
 
-    
+
+
     private void HandleMinigameFailure()
     {
-        Debug.Log("미니게임 실패");
-
-        
+        Debug.Log(
+            $"Chapter {chapterNumber} - 미니게임 실패"
+        );
     }
 
-
- 
 
     private void ResetLoadingUI()
     {
