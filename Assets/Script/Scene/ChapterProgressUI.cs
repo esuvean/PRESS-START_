@@ -4,7 +4,7 @@ using TMPro;
 
 public class ChapterProgressUI : MonoBehaviour
 {
-    
+  
     public TMP_Text chapter1ProgressText;
     public TMP_Text chapter2ProgressText;
     public TMP_Text chapter3ProgressText;
@@ -15,11 +15,12 @@ public class ChapterProgressUI : MonoBehaviour
     public Slider progressSlider;
 
 
-   
+  
     public int minigamesPerChapter = 5;
     public int totalChapters = 4;
 
 
+  
     private void OnEnable()
     {
         RefreshProgress();
@@ -60,7 +61,7 @@ public class ChapterProgressUI : MonoBehaviour
             );
 
 
-        
+      
         if (chapter1ProgressText != null)
         {
             chapter1ProgressText.text =
@@ -74,6 +75,8 @@ public class ChapterProgressUI : MonoBehaviour
                 $"{chapter2}/{minigamesPerChapter}";
         }
 
+
+       
 
         if (chapter3ProgressText != null)
         {
@@ -89,28 +92,27 @@ public class ChapterProgressUI : MonoBehaviour
         }
 
 
-     
-
-        int completedMinigames =
+       
+        int completed =
             chapter1 +
             chapter2 +
             chapter3 +
             chapter4;
 
 
-        int totalMinigames =
+        int total =
             minigamesPerChapter *
             totalChapters;
 
 
-        float overallProgress = 0f;
+        float progress = 0f;
 
 
-        if (totalMinigames > 0)
+        if (total > 0)
         {
-            overallProgress =
-                (float)completedMinigames /
-                totalMinigames;
+            progress =
+                (float)completed /
+                total;
         }
 
 
@@ -120,10 +122,19 @@ public class ChapterProgressUI : MonoBehaviour
             progressSlider.maxValue = 1f;
 
             progressSlider.value =
-                overallProgress;
+                progress;
 
             progressSlider.interactable =
                 false;
         }
+
+
+        Debug.Log(
+            "SYSTEM CHECK ÁøÇàµµ | " +
+            $"C1 {chapter1}/5 | " +
+            $"C2 {chapter2}/5 | " +
+            $"C3 {chapter3}/5 | " +
+            $"C4 {chapter4}/5"
+        );
     }
 }

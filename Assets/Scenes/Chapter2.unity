@@ -1302,6 +1302,8 @@ MonoBehaviour:
     - {fileID: 5011738245977228482, guid: 9f877453530a2cb41b863c4821fe8ddc, type: 3}
     - {fileID: 1847466556680343471, guid: a43d0f82cc2e9bf4c9b84792fb6952fc, type: 3}
     - {fileID: 3735909273749746481, guid: 1d5ab81f95b47ff4ca4b96da634d21da, type: 3}
+  chapterNumber: 2
+  mainSceneName: MainScene
 --- !u!4 &1935694891
 Transform:
   m_ObjectHideFlags: 0

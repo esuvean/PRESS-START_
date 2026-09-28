@@ -4,18 +4,15 @@ public static class SessionProgress
 {
     public const int TotalChapters = 4;
 
-    
+    // 챕터별 진행도
     public static int[] chapterProgress =
         new int[TotalChapters];
 
+    // 챕터 완료 여부
     public static bool[] chapterCompleted =
         new bool[TotalChapters];
 
-  
-    public static bool[] chapterUnlocked =
-        new bool[TotalChapters];
-
-    
+   
     public static bool openChapterSelectOnLoad = false;
 
 
@@ -29,12 +26,6 @@ public static class SessionProgress
 
         chapterCompleted =
             new bool[TotalChapters];
-
-        chapterUnlocked =
-            new bool[TotalChapters];
-
-        // Chapter 1은 처음부터 해금
-        chapterUnlocked[0] = true;
 
         openChapterSelectOnLoad = false;
     }
@@ -54,7 +45,6 @@ public static class SessionProgress
             return;
         }
 
-     
         chapterProgress[index] =
             Mathf.Max(
                 chapterProgress[index],
@@ -63,7 +53,6 @@ public static class SessionProgress
     }
 
 
-   
     public static int GetProgress(
         int chapterNumber)
     {
@@ -79,9 +68,6 @@ public static class SessionProgress
         return chapterProgress[index];
     }
 
-
-  
-
     public static void CompleteChapter(
         int chapterNumber)
     {
@@ -95,17 +81,6 @@ public static class SessionProgress
         }
 
         chapterCompleted[index] = true;
-
-
-        // 다음 챕터 해금
-        int nextIndex =
-            index + 1;
-
-        if (nextIndex <
-            chapterUnlocked.Length)
-        {
-            chapterUnlocked[nextIndex] = true;
-        }
     }
 
 
@@ -123,21 +98,5 @@ public static class SessionProgress
         }
 
         return chapterCompleted[index];
-    }
-
-
-    public static bool IsChapterUnlocked(
-        int chapterNumber)
-    {
-        int index =
-            chapterNumber - 1;
-
-        if (index < 0 ||
-            index >= chapterUnlocked.Length)
-        {
-            return false;
-        }
-
-        return chapterUnlocked[index];
     }
 }

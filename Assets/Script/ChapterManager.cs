@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 public class ChapterManager : MonoBehaviour
 {
-   
+  
     public Transform canvasTransform;
 
 
@@ -17,7 +17,7 @@ public class ChapterManager : MonoBehaviour
     public TMP_Text loadingPercentText;
 
 
-    
+   
     public float loadingDuration = 0.35f;
 
 
@@ -29,16 +29,15 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-   
     public List<ChapterData> chapters;
 
 
-   
-    [Tooltip("현재 Scene의 챕터 번호")]
+    
+    [Tooltip("Chapter1 Scene = 1 / Chapter2 Scene = 2 / Chapter3 Scene = 3")]
     public int chapterNumber = 1;
 
 
-    [Tooltip("챕터 완료 후 돌아갈 Scene")]
+    [Header("Scene Settings")]
     public string mainSceneName = "MainScene";
 
 
@@ -50,7 +49,7 @@ public class ChapterManager : MonoBehaviour
     private bool isTransitioning = false;
 
 
-    
+
     private void OnEnable()
     {
         MinigameBase.OnGameSuccess +=
@@ -71,7 +70,8 @@ public class ChapterManager : MonoBehaviour
     }
 
 
- 
+
+
     private void Start()
     {
         if (loadingPanel != null)
@@ -85,15 +85,14 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-    
-
+ 
     private void StartCurrentMinigame()
     {
         if (isTransitioning)
             return;
 
 
-      
+        // 이 Scene의 모든 ChapterData 완료
         if (currentChapterIndex >=
             chapters.Count)
         {
@@ -116,16 +115,15 @@ public class ChapterManager : MonoBehaviour
         }
 
 
-        // 현재 챕터의 모든 미니게임 완료
+        // 현재 ChapterData의 모든 미니게임 완료
         if (currentMinigameIndex >=
             activeChapter.minigamePrefabs.Count)
         {
             Debug.Log(
-                $"{activeChapter.chapterName} 미니게임 전부 완료"
+                $"{activeChapter.chapterName} 완료!"
             );
 
             currentChapterIndex++;
-
             currentMinigameIndex = 0;
 
             StartCurrentMinigame();
@@ -135,10 +133,9 @@ public class ChapterManager : MonoBehaviour
 
 
         GameObject gamePrefab =
-            activeChapter
-                .minigamePrefabs[
-                    currentMinigameIndex
-                ];
+            activeChapter.minigamePrefabs[
+                currentMinigameIndex
+            ];
 
 
         if (gamePrefab == null)
@@ -153,7 +150,6 @@ public class ChapterManager : MonoBehaviour
         }
 
 
-       
         currentActiveGameInstance =
             Instantiate(
                 gamePrefab,
@@ -161,7 +157,6 @@ public class ChapterManager : MonoBehaviour
             );
 
 
-      
         MinigameBase gameScript =
             currentActiveGameInstance
                 .GetComponent<MinigameBase>();
@@ -175,11 +170,11 @@ public class ChapterManager : MonoBehaviour
         {
             Debug.LogError(
                 $"{gamePrefab.name}에 " +
-                "MinigameBase를 상속받은 " +
-                "스크립트가 없습니다."
+                "MinigameBase 상속 스크립트가 없습니다."
             );
         }
     }
+
 
 
     private void HandleMinigameSuccess()
@@ -203,14 +198,20 @@ public class ChapterManager : MonoBehaviour
         }
 
 
-        
         currentMinigameIndex++;
 
 
-
+        // 현재 챕터 진행도 저장
         SessionProgress.SetProgress(
             chapterNumber,
             currentMinigameIndex
+        );
+
+
+        Debug.Log(
+            $"Chapter {chapterNumber} 진행도 : " +
+            $"{SessionProgress.GetProgress(chapterNumber)}/" +
+            $"{GetTotalMinigameCount()}"
         );
 
 
@@ -220,8 +221,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-
-
+  
     private IEnumerator LoadNextMinigame()
     {
         isTransitioning = true;
@@ -239,8 +239,7 @@ public class ChapterManager : MonoBehaviour
         float timer = 0f;
 
 
-        while (timer <
-               loadingDuration)
+        while (timer < loadingDuration)
         {
             timer += Time.deltaTime;
 
@@ -304,32 +303,69 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-
     private void CompleteChapter()
     {
         if (isTransitioning)
             return;
 
 
-        Debug.Log(
-            $"Chapter {chapterNumber} 완료!"
+        int totalGames =
+            GetTotalMinigameCount();
+
+
+        // 마지막에 확실하게 5/5 저장
+        SessionProgress.SetProgress(
+            chapterNumber,
+            totalGames
         );
 
 
-       
         SessionProgress.CompleteChapter(
             chapterNumber
         );
 
 
-        
-        SessionProgress
-            .openChapterSelectOnLoad = true;
+        Debug.Log(
+            $"Chapter {chapterNumber} 최종 완료 : " +
+            $"{SessionProgress.GetProgress(chapterNumber)}/" +
+            $"{totalGames}"
+        );
+
+
+        // MainScene에서 SYSTEM CHECK 바로 열기
+        SessionProgress.openChapterSelectOnLoad =
+            true;
 
 
         StartCoroutine(
             ReturnToMainScene()
         );
+    }
+
+
+ 
+    private int GetTotalMinigameCount()
+    {
+        int total = 0;
+
+
+        if (chapters == null)
+            return 0;
+
+
+        foreach (ChapterData chapter
+                 in chapters)
+        {
+            if (chapter != null &&
+                chapter.minigamePrefabs != null)
+            {
+                total +=
+                    chapter.minigamePrefabs.Count;
+            }
+        }
+
+
+        return total;
     }
 
 
@@ -351,8 +387,7 @@ public class ChapterManager : MonoBehaviour
         float timer = 0f;
 
 
-        while (timer <
-               loadingDuration)
+        while (timer < loadingDuration)
         {
             timer += Time.deltaTime;
 
@@ -410,7 +445,6 @@ public class ChapterManager : MonoBehaviour
 
 
 
-
     private void HandleMinigameFailure()
     {
         Debug.Log(
@@ -419,6 +453,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
+  
     private void ResetLoadingUI()
     {
         if (loadingBar != null)
