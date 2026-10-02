@@ -19,11 +19,11 @@ public class ButtonHoverColor : MonoBehaviour,
 
     [SerializeField]
     private Color hoverColor =
-        new Color32(102, 255, 214, 255); // #66FFD6
+        new Color32(254, 230, 35, 255); // #FEE623
 
     [SerializeField]
     private Color glowColor =
-        new Color32(102, 255, 214, 170); // 반투명 민트
+        new Color32(254, 230, 35, 170); // 반투명 노랑
 
     private void Awake()
     {
@@ -42,14 +42,12 @@ public class ButtonHoverColor : MonoBehaviour,
 
     private void SetHover()
     {
-        // 테두리와 글자 민트색
         if (buttonImage != null)
             buttonImage.color = hoverColor;
 
         if (buttonText != null)
             buttonText.color = hoverColor;
 
-        // 빛나는 효과 켜기
         if (buttonGlow != null)
         {
             buttonGlow.effectColor = glowColor;
@@ -65,14 +63,12 @@ public class ButtonHoverColor : MonoBehaviour,
 
     private void SetNormal()
     {
-        // 원래 흰색으로 복구
         if (buttonImage != null)
             buttonImage.color = normalColor;
 
         if (buttonText != null)
             buttonText.color = normalColor;
 
-        // 빛나는 효과 끄기
         if (buttonGlow != null)
             buttonGlow.enabled = false;
 

@@ -27,7 +27,9 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: 2820282000497542982}
   m_RendererFeatureMap: 4687157689a72327
-  m_UseNativeRenderPass: 0
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_TransparencySortMode: 0
   m_TransparencySortAxis: {x: 0, y: 1, z: 0}
   m_HDREmulationScale: 1
@@ -56,7 +58,7 @@ MonoBehaviour:
   m_DefaultCustomMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
 --- !u!114 &2820282000497542982
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -66,12 +68,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d26b8cda2614cfd49b62617c9c17c63c, type: 3}
   m_Name: CRT Filter
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   shader: {fileID: 4800000, guid: 6f2fcdc189458914eb8a323f19e3a27b, type: 3}
   shaderLite: {fileID: 4800000, guid: b0c642c60472bfa4fbc7a9c6f5a14d12, type: 3}
   useShaderLite: 0
+  useVolumeComponent: 0
   injectionPoint: 550
-  preset: 2
+  preset: 6
   pixelResolutionX: 290
   pixelResolutionY: 210
   screenBend: 0.05
@@ -87,9 +90,17 @@ MonoBehaviour:
   shadowlines: 0
   shadowlinesSpeed: 0
   shadowlinesAlpha: 0
-  noiseSize: 0
-  noiseSpeed: 0
-  noiseAlpha: 0
+  noiseSize: 25
+  noiseSpeed: 10
+  noiseAlpha: 1
+  glitchFrequency: 1
+  glitchBands: 6
+  glitchPosition: 0
+  glitchPositionFlicker: 0.45
+  glitchMovementSpeed: 0
+  glitchStrength: 0.7
+  glitchNoise: 1.45
+  glitchNoiseSpeed: 6
   brightness: 0
   contrast: 1.12
   gamma: 1.18
@@ -97,6 +108,6 @@ MonoBehaviour:
   green: 1.16
   blue: 1.18
   chromaticAberration: 0
-  redOffset: {x: 0.05, y: 0.05}
-  blueOffset: {x: 0, y: -0.07}
-  greenOffset: {x: -0.05, y: 0.05}
+  redOffset: {x: 0, y: 0}
+  blueOffset: {x: 0, y: 0}
+  greenOffset: {x: 0, y: 0}
