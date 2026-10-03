@@ -1,167 +1,159 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections;
+using System.Collections.Generic;
 
 public class Minigame12_Breakout : MinigameBase
 {
-    [Header("Play Area")]
+    
+  
     public RectTransform playArea;
 
-    [Header("Paddle / Ball")]
+  
     public RectTransform paddle;
-    public RectTransform ball;
 
-    [Header("START Blocks")]
-    public RectTransform[] startBlocks;
+    public RectTransform ballSpawnPoint;
+    public BreakoutBallUI ballPrefab;
 
-    [Header("Normal Blocks")]
-    public RectTransform[] normalBlocks;
+  
 
-    [Header("END Blocks")]
-    public RectTransform[] endBlocks;
+ 
+
+  
+    public RectTransform brickRowTemplate;
+
+  
+    public RectTransform brickParent;
+
+   
+    public int brickRowCount = 6;
+
+  
+    public float brickRowSpacing = 30f;
+
+    public Color[] brickRowColors;
+
+   
+    [HideInInspector]
+    public List<RectTransform> normalBricks =
+        new List<RectTransform>();
+
+    private bool bricksGenerated = false;
+
+ 
+    [Header("START Button")]
+    public RectTransform startButtonBrick;
+
 
     [Header("UI")]
-    public TextMeshProUGUI hintText;
-    public TextMeshProUGUI timerText;
-    public TextMeshProUGUI missText;
+    public TMP_Text missText;
+    public TMP_Text timerText;
+    public TMP_Text hintText;
 
-    [Header("Ball Settings")]
-    public float ballSpeed = 430f;
-    public float ballRespawnDelay = 0.7f;
 
-    [Header("Paddle Settings")]
-    public float paddleMoveSpeed = 1200f;
 
-    [Header("END Block Effect")]
-    [Range(0.1f, 1f)]
-    public float endSlowMultiplier = 0.45f;
-    public float endSlowDuration = 3f;
+  
+    public float ballSpeed = 700f;
 
-    [Header("Miss Assist")]
-    public float paddleGrowMultiplier = 1.4f;
+   
+    public int maxMissCount = 5;
 
-    [Range(0.1f, 1f)]
-    public float ballSlowMultiplier = 0.75f;
+ 
+    public float paddleBonusWidth = 80f;
 
-    [Header("70 Second Hint")]
-    public float startOutlineTime = 70f;
-    public Color startOutlineColor = Color.yellow;
+   
+    public float startHintRemainingTime = 15f;
 
-    [Header("Message")]
-    public float messageDuration = 2f;
 
-    private Vector2 ballDirection;
 
-    private Vector2 initialBallPosition;
-    private Vector2 initialPaddleSize;
+    private BreakoutBallUI currentBall;
 
-    private float paddleY;
-
-    private float currentBallSpeed;
-    private float currentPaddleSpeed;
-
-    private float elapsedTime = 0f;
-
+    private float remainingTime;
     private int missCount = 0;
-    private int remainingStartBlocks = 0;
 
-    private bool paddleGrowApplied = false;
-    private bool ballSlowApplied = false;
-    private bool startOutlineShown = false;
+    private Vector2 originalPaddleSize;
 
-    private bool ballRespawning = false;
+    private Image startButtonImage;
+    private Color startButtonOriginalColor;
 
-    private Coroutine messageCoroutine;
-    private Coroutine endSlowCoroutine;
-
-    private RectTransform lastHitBlock;
-    private float lastHitTime;
-
-    private bool initialValuesCached = false;
-
-    private Canvas parentCanvas;
+    private bool hintShown = false;
 
 
-    private void Start()
+
+    public bool IsGameRunning()
     {
-        if (!isGameActive)
-        {
-            StartMinigame();
-        }
+        return isGameActive;
+    }
+
+    public RectTransform GetPlayArea()
+    {
+        return playArea;
+    }
+
+    public RectTransform GetPaddle()
+    {
+        return paddle;
     }
 
 
+ 
+
     public override void StartMinigame()
     {
-        gameName = "실행 방해 요소 제거 검사";
-
-        instruction =
-            "공을 튕겨 START 글자 블록을 모두 제거하세요.";
-
         base.StartMinigame();
 
-        StopAllCoroutines();
+        gameName = "벽돌깨기 실행 검사";
 
-        CacheInitialValues();
+        instruction =
+            "벽돌을 제거하고 START 버튼을 맞추세요.";
 
-        elapsedTime = 0f;
+        remainingTime = timeLimit;
+
         missCount = 0;
+        hintShown = false;
 
-        paddleGrowApplied = false;
-        ballSlowApplied = false;
-        startOutlineShown = false;
 
-        ballRespawning = false;
-
-        currentBallSpeed = ballSpeed;
-        currentPaddleSpeed = paddleMoveSpeed;
-
-        paddle.sizeDelta = initialPaddleSize;
-
-        ResetBlocks();
-
-        SetupStartBlockOutlines(false);
-
-        remainingStartBlocks = CountStartBlocks();
-
-        if (hintText != null)
+        // 패들 원래 크기 저장
+        if (paddle != null)
         {
-            hintText.text = instruction;
+            originalPaddleSize =
+                paddle.sizeDelta;
+
+            paddle.sizeDelta =
+                originalPaddleSize;
         }
 
-        UpdateMissUI();
-        UpdateTimerUI();
 
+        // START 버튼 원래 색 저장
+        if (startButtonBrick != null)
+        {
+            startButtonImage =
+                startButtonBrick.GetComponent<Image>();
+
+            if (startButtonImage != null)
+            {
+                startButtonOriginalColor =
+                    startButtonImage.color;
+            }
+        }
+
+
+        // 벽돌 자동 생성
+        GenerateBrickRows();
+
+
+        // 모든 벽돌 다시 활성화
+        ResetAllBricks();
+
+
+        UpdateUI();
+
+
+        // 공 생성
         SpawnBall();
     }
 
 
-    private void CacheInitialValues()
-    {
-        if (initialValuesCached)
-            return;
-
-        if (ball != null)
-        {
-            initialBallPosition =
-                ball.anchoredPosition;
-        }
-
-        if (paddle != null)
-        {
-            initialPaddleSize =
-                paddle.sizeDelta;
-
-            paddleY =
-                paddle.anchoredPosition.y;
-        }
-
-        parentCanvas =
-            GetComponentInParent<Canvas>();
-
-        initialValuesCached = true;
-    }
 
 
     protected override void Update()
@@ -171,760 +163,527 @@ public class Minigame12_Breakout : MinigameBase
         if (!isGameActive)
             return;
 
-        elapsedTime += Time.deltaTime;
 
-        MovePaddle();
+        // 시간 감소
+        remainingTime -= Time.deltaTime;
 
-        if (!ballRespawning &&
-            ball != null &&
-            ball.gameObject.activeSelf)
+
+        // 시간 종료
+        if (remainingTime <= 0f)
         {
-            MoveBall();
+            remainingTime = 0f;
+
+            UpdateUI();
+
+            Fail();
+
+            return;
         }
 
-        Check70SecondHint();
 
-        UpdateTimerUI();
+        // 패들 이동
+        MovePaddleWithMouse();
+
+
+        // UI 갱신
+        UpdateUI();
+
+
+        // START 힌트
+        if (!hintShown &&
+            remainingTime <= startHintRemainingTime)
+        {
+            hintShown = true;
+
+            ShowStartButtonHint();
+        }
     }
 
 
-    // =====================================================
-    // 패들
-    // =====================================================
-
-    private void MovePaddle()
+  
+    private void GenerateBrickRows()
     {
-        if (paddle == null ||
-            playArea == null)
+        // 이미 만들어졌다면 다시 생성하지 않음
+        if (bricksGenerated)
+            return;
+
+
+        if (brickRowTemplate == null)
+        {
+            Debug.LogError(
+                "Brick Row Template이 연결되지 않았습니다."
+            );
+
+            return;
+        }
+
+
+        if (brickParent == null)
+        {
+            brickParent = playArea;
+        }
+
+
+        normalBricks.Clear();
+
+
+   
+
+        brickRowTemplate.name =
+            "BrickRow_01";
+
+
+        AddRowBricksToList(
+            brickRowTemplate,
+            0
+        );
+
+
+
+        for (int row = 1;
+             row < brickRowCount;
+             row++)
+        {
+            GameObject newRowObject =
+                Instantiate(
+                    brickRowTemplate.gameObject,
+                    brickParent
+                );
+
+
+            newRowObject.name =
+                $"BrickRow_{row + 1:00}";
+
+
+            RectTransform newRow =
+                newRowObject
+                    .GetComponent<RectTransform>();
+
+
+            // 첫 번째 줄 기준으로 아래쪽 생성
+            newRow.anchoredPosition =
+                brickRowTemplate.anchoredPosition +
+                Vector2.down *
+                brickRowSpacing *
+                row;
+
+
+            AddRowBricksToList(
+                newRow,
+                row
+            );
+        }
+
+
+        bricksGenerated = true;
+
+
+        Debug.Log(
+            $"벽돌 자동 생성 완료 : {normalBricks.Count}개"
+        );
+    }
+
+
+    private void AddRowBricksToList(
+        RectTransform row,
+        int rowIndex)
+    {
+        if (row == null)
+            return;
+
+
+        Color rowColor =
+            Color.white;
+
+
+        // 줄별 색상 선택
+        if (brickRowColors != null &&
+            brickRowColors.Length > 0)
+        {
+            int colorIndex =
+                rowIndex %
+                brickRowColors.Length;
+
+
+            rowColor =
+                brickRowColors[
+                    colorIndex
+                ];
+        }
+
+
+        for (int i = 0;
+             i < row.childCount;
+             i++)
+        {
+            Transform child =
+                row.GetChild(i);
+
+
+            RectTransform brick =
+                child
+                    .GetComponent<RectTransform>();
+
+
+            if (brick == null)
+                continue;
+
+
+            normalBricks.Add(brick);
+
+
+            brick.name =
+                $"Normal_Block_R{rowIndex + 1}_C{i + 1}";
+
+
+            // 색상 설정
+            Image image =
+                brick.GetComponent<Image>();
+
+
+            if (image != null)
+            {
+                image.color =
+                    rowColor;
+
+                image.raycastTarget =
+                    false;
+            }
+        }
+    }
+
+
+
+    private void MovePaddleWithMouse()
+    {
+        if (playArea == null ||
+            paddle == null)
         {
             return;
         }
 
+
+        Vector2 localPoint;
+
+
+        Canvas canvas =
+            GetComponentInParent<Canvas>();
+
+
         Camera uiCamera = null;
 
-        if (parentCanvas != null &&
-            parentCanvas.renderMode !=
+
+        if (canvas != null &&
+            canvas.renderMode !=
             RenderMode.ScreenSpaceOverlay)
         {
-            uiCamera = parentCanvas.worldCamera;
+            uiCamera =
+                canvas.worldCamera;
         }
 
-        if (!RectTransformUtility
+
+        RectTransformUtility
             .ScreenPointToLocalPointInRectangle(
                 playArea,
                 Input.mousePosition,
                 uiCamera,
-                out Vector2 mousePosition))
-        {
-            return;
-        }
+                out localPoint
+            );
+
 
         float halfWidth =
             paddle.rect.width * 0.5f;
 
-        float targetX =
+
+        float minX =
+            playArea.rect.xMin +
+            halfWidth;
+
+
+        float maxX =
+            playArea.rect.xMax -
+            halfWidth;
+
+
+        Vector2 position =
+            paddle.anchoredPosition;
+
+
+        position.x =
             Mathf.Clamp(
-                mousePosition.x,
-                playArea.rect.xMin + halfWidth,
-                playArea.rect.xMax - halfWidth
+                localPoint.x,
+                minX,
+                maxX
             );
 
-        Vector2 targetPosition =
-            new Vector2(
-                targetX,
-                paddleY
-            );
 
         paddle.anchoredPosition =
-            Vector2.MoveTowards(
-                paddle.anchoredPosition,
-                targetPosition,
-                currentPaddleSpeed *
-                Time.deltaTime
-            );
+            position;
     }
 
 
-    // =====================================================
-    // 공
-    // =====================================================
-
+  
     private void SpawnBall()
-    {
-        if (ball == null)
-            return;
-
-        ball.gameObject.SetActive(true);
-
-        ball.anchoredPosition =
-            initialBallPosition;
-
-        float randomX =
-            Random.Range(-0.45f, 0.45f);
-
-        ballDirection =
-            new Vector2(
-                randomX,
-                1f
-            ).normalized;
-
-        ballRespawning = false;
-    }
-
-
-    private void MoveBall()
-    {
-        ball.anchoredPosition +=
-            ballDirection *
-            currentBallSpeed *
-            Time.deltaTime;
-
-        CheckWallCollision();
-
-        CheckPaddleCollision();
-
-        CheckBlockCollisions();
-    }
-
-
-    // =====================================================
-    // 벽 충돌
-    // =====================================================
-
-    private void CheckWallCollision()
-    {
-        float ballHalfWidth =
-            ball.rect.width * 0.5f;
-
-        float ballHalfHeight =
-            ball.rect.height * 0.5f;
-
-        Vector2 pos =
-            ball.anchoredPosition;
-
-        // 왼쪽
-        if (pos.x - ballHalfWidth <=
-            playArea.rect.xMin)
-        {
-            pos.x =
-                playArea.rect.xMin +
-                ballHalfWidth;
-
-            ballDirection.x =
-                Mathf.Abs(ballDirection.x);
-        }
-
-        // 오른쪽
-        if (pos.x + ballHalfWidth >=
-            playArea.rect.xMax)
-        {
-            pos.x =
-                playArea.rect.xMax -
-                ballHalfWidth;
-
-            ballDirection.x =
-                -Mathf.Abs(ballDirection.x);
-        }
-
-        // 위
-        if (pos.y + ballHalfHeight >=
-            playArea.rect.yMax)
-        {
-            pos.y =
-                playArea.rect.yMax -
-                ballHalfHeight;
-
-            ballDirection.y =
-                -Mathf.Abs(ballDirection.y);
-        }
-
-        // 아래로 떨어짐
-        if (pos.y - ballHalfHeight <=
-            playArea.rect.yMin)
-        {
-            OnBallMiss();
-            return;
-        }
-
-        ball.anchoredPosition = pos;
-    }
-
-
-    // =====================================================
-    // 패들 충돌
-    // =====================================================
-
-    private void CheckPaddleCollision()
-    {
-        if (paddle == null)
-            return;
-
-        // 아래로 내려가는 공만 패들과 충돌
-        if (ballDirection.y >= 0f)
-            return;
-
-        if (!RectsOverlap(ball, paddle))
-            return;
-
-        float contact =
-            (ball.anchoredPosition.x -
-             paddle.anchoredPosition.x)
-            /
-            (paddle.rect.width * 0.5f);
-
-        contact =
-            Mathf.Clamp(
-                contact,
-                -1f,
-                1f
-            );
-
-        ballDirection =
-            new Vector2(
-                contact * 0.75f,
-                1f
-            ).normalized;
-
-        Vector2 pos =
-            ball.anchoredPosition;
-
-        pos.y =
-            paddle.anchoredPosition.y +
-            paddle.rect.height * 0.5f +
-            ball.rect.height * 0.5f +
-            2f;
-
-        ball.anchoredPosition = pos;
-    }
-
-
-    // =====================================================
-    // 블록 충돌
-    // =====================================================
-
-    private void CheckBlockCollisions()
-    {
-        // START
-        if (CheckBlockArray(
-            startBlocks,
-            BlockType.Start))
-        {
-            return;
-        }
-
-        // 일반
-        if (CheckBlockArray(
-            normalBlocks,
-            BlockType.Normal))
-        {
-            return;
-        }
-
-        // END
-        CheckBlockArray(
-            endBlocks,
-            BlockType.End
-        );
-    }
-
-
-    private enum BlockType
-    {
-        Start,
-        Normal,
-        End
-    }
-
-
-    private bool CheckBlockArray(
-        RectTransform[] blocks,
-        BlockType blockType)
-    {
-        if (blocks == null)
-            return false;
-
-        foreach (RectTransform block in blocks)
-        {
-            if (block == null ||
-                !block.gameObject.activeSelf)
-            {
-                continue;
-            }
-
-            if (!RectsOverlap(ball, block))
-                continue;
-
-            // 같은 블록에 너무 연속으로 충돌하는 것 방지
-            if (lastHitBlock == block &&
-                Time.time - lastHitTime < 0.06f)
-            {
-                continue;
-            }
-
-            lastHitBlock = block;
-            lastHitTime = Time.time;
-
-            BounceFromBlock(block);
-
-            if (blockType ==
-                BlockType.Start)
-            {
-                HitStartBlock(block);
-            }
-            else if (blockType ==
-                     BlockType.End)
-            {
-                HitEndBlock();
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-
-    private void BounceFromBlock(
-        RectTransform block)
-    {
-        Rect ballRect =
-            GetWorldRect(ball);
-
-        Rect blockRect =
-            GetWorldRect(block);
-
-        float overlapLeft =
-            ballRect.xMax -
-            blockRect.xMin;
-
-        float overlapRight =
-            blockRect.xMax -
-            ballRect.xMin;
-
-        float overlapBottom =
-            ballRect.yMax -
-            blockRect.yMin;
-
-        float overlapTop =
-            blockRect.yMax -
-            ballRect.yMin;
-
-        float overlapX =
-            Mathf.Min(
-                overlapLeft,
-                overlapRight
-            );
-
-        float overlapY =
-            Mathf.Min(
-                overlapBottom,
-                overlapTop
-            );
-
-        if (overlapX < overlapY)
-        {
-            ballDirection.x *= -1f;
-        }
-        else
-        {
-            ballDirection.y *= -1f;
-        }
-
-        // 블록 내부에 공이 붙는 현상 방지
-        ball.anchoredPosition +=
-            ballDirection.normalized * 4f;
-    }
-
-
-    private void HitStartBlock(
-        RectTransform block)
-    {
-        block.gameObject.SetActive(false);
-
-        remainingStartBlocks--;
-
-        if (remainingStartBlocks <= 0)
-        {
-            CompleteGame();
-        }
-    }
-
-
-    private void HitEndBlock()
-    {
-        if (endSlowCoroutine != null)
-        {
-            StopCoroutine(
-                endSlowCoroutine
-            );
-        }
-
-        endSlowCoroutine =
-            StartCoroutine(
-                EndSlowRoutine()
-            );
-    }
-
-
-    private IEnumerator EndSlowRoutine()
-    {
-        currentPaddleSpeed =
-            paddleMoveSpeed *
-            endSlowMultiplier;
-
-        ShowMessage(
-            "END 접촉 : 패들 이동 속도가 감소했습니다."
-        );
-
-        yield return new WaitForSeconds(
-            endSlowDuration
-        );
-
-        currentPaddleSpeed =
-            paddleMoveSpeed;
-
-        endSlowCoroutine = null;
-    }
-
-
-    // =====================================================
-    // 공 놓침
-    // =====================================================
-
-    private void OnBallMiss()
-    {
-        if (ballRespawning)
-            return;
-
-        ballRespawning = true;
-
-        missCount++;
-
-        UpdateMissUI();
-
-        // 3회 놓침
-        if (missCount >= 3 &&
-            !paddleGrowApplied)
-        {
-            paddleGrowApplied = true;
-
-            Vector2 newSize =
-                paddle.sizeDelta;
-
-            newSize.x =
-                initialPaddleSize.x *
-                paddleGrowMultiplier;
-
-            paddle.sizeDelta = newSize;
-
-            ShowMessage(
-                "[ HINT ] 패들의 크기가 증가했습니다."
-            );
-        }
-
-        // 5회 놓침
-        if (missCount >= 5 &&
-            !ballSlowApplied)
-        {
-            ballSlowApplied = true;
-
-            currentBallSpeed *=
-                ballSlowMultiplier;
-
-            ShowMessage(
-                "[ HINT ] 공의 속도가 감소했습니다."
-            );
-        }
-
-        ball.gameObject.SetActive(false);
-
-        StartCoroutine(
-            RespawnBallRoutine()
-        );
-    }
-
-
-    private IEnumerator RespawnBallRoutine()
-    {
-        yield return new WaitForSeconds(
-            ballRespawnDelay
-        );
-
-        if (isGameActive)
-        {
-            SpawnBall();
-        }
-    }
-
-
-    // =====================================================
-    // 70초 힌트
-    // =====================================================
-
-    private void Check70SecondHint()
-    {
-        if (startOutlineShown)
-            return;
-
-        if (elapsedTime <
-            startOutlineTime)
-        {
-            return;
-        }
-
-        startOutlineShown = true;
-
-        SetupStartBlockOutlines(true);
-
-        ShowMessage(
-            "[ HINT ] START 글자 블록을 확인하세요."
-        );
-    }
-
-
-    private void SetupStartBlockOutlines(
-        bool show)
-    {
-        if (startBlocks == null)
-            return;
-
-        foreach (RectTransform block
-                 in startBlocks)
-        {
-            if (block == null)
-                continue;
-
-            Outline outline =
-                block.GetComponent<Outline>();
-
-            if (outline == null)
-            {
-                outline =
-                    block.gameObject
-                    .AddComponent<Outline>();
-
-                outline.effectColor =
-                    startOutlineColor;
-
-                outline.effectDistance =
-                    new Vector2(4f, -4f);
-            }
-
-            outline.enabled = show;
-        }
-    }
-
-
-    // =====================================================
-    // 초기화
-    // =====================================================
-
-    private void ResetBlocks()
-    {
-        SetBlockArrayActive(
-            startBlocks,
-            true
-        );
-
-        SetBlockArrayActive(
-            normalBlocks,
-            true
-        );
-
-        SetBlockArrayActive(
-            endBlocks,
-            true
-        );
-    }
-
-
-    private void SetBlockArrayActive(
-        RectTransform[] blocks,
-        bool active)
-    {
-        if (blocks == null)
-            return;
-
-        foreach (RectTransform block
-                 in blocks)
-        {
-            if (block != null)
-            {
-                block.gameObject
-                    .SetActive(active);
-            }
-        }
-    }
-
-
-    private int CountStartBlocks()
-    {
-        if (startBlocks == null)
-            return 0;
-
-        int count = 0;
-
-        foreach (RectTransform block
-                 in startBlocks)
-        {
-            if (block != null)
-                count++;
-        }
-
-        return count;
-    }
-
-
-    // =====================================================
-    // UI
-    // =====================================================
-
-    private void UpdateMissUI()
-    {
-        if (missText != null)
-        {
-            missText.text =
-                $"MISS {missCount}";
-        }
-    }
-
-
-    private void UpdateTimerUI()
-    {
-        if (timerText == null)
-            return;
-
-        // 시간 초과로 실패하는 게임이 아니므로
-        // 0초가 되어도 게임은 계속됨.
-        float remaining =
-            Mathf.Max(
-                0f,
-                timeLimit - elapsedTime
-            );
-
-        int minutes =
-            Mathf.FloorToInt(
-                remaining / 60f
-            );
-
-        int seconds =
-            Mathf.FloorToInt(
-                remaining % 60f
-            );
-
-        timerText.text =
-            string.Format(
-                "TIME {0:00}:{1:00}",
-                minutes,
-                seconds
-            );
-    }
-
-
-    private void ShowMessage(
-        string message)
-    {
-        if (hintText == null)
-            return;
-
-        if (messageCoroutine != null)
-        {
-            StopCoroutine(
-                messageCoroutine
-            );
-        }
-
-        hintText.text = message;
-
-        messageCoroutine =
-            StartCoroutine(
-                ClearMessageRoutine()
-            );
-    }
-
-
-    private IEnumerator ClearMessageRoutine()
-    {
-        yield return new WaitForSeconds(
-            messageDuration
-        );
-
-        if (hintText != null &&
-            isGameActive)
-        {
-            hintText.text =
-                instruction;
-        }
-
-        messageCoroutine = null;
-    }
-
-
-    // =====================================================
-    // Rect 충돌
-    // =====================================================
-
-    private bool RectsOverlap(
-        RectTransform a,
-        RectTransform b)
-    {
-        if (a == null || b == null)
-            return false;
-
-        Rect rectA =
-            GetWorldRect(a);
-
-        Rect rectB =
-            GetWorldRect(b);
-
-        return rectA.Overlaps(rectB);
-    }
-
-
-    private Rect GetWorldRect(
-        RectTransform rect)
-    {
-        Vector3[] corners =
-            new Vector3[4];
-
-        rect.GetWorldCorners(corners);
-
-        return Rect.MinMaxRect(
-            corners[0].x,
-            corners[0].y,
-            corners[2].x,
-            corners[2].y
-        );
-    }
-
-
-    // =====================================================
-    // 완료
-    // =====================================================
-
-    private void CompleteGame()
     {
         if (!isGameActive)
             return;
 
-        if (hintText != null)
+
+        if (ballPrefab == null ||
+            ballSpawnPoint == null ||
+            playArea == null)
         {
-            hintText.text =
-                "실행 방해 요소 제거 검사 완료";
+            Debug.LogError(
+                "Ball Prefab / Ball Spawn Point / Play Area를 확인해주세요."
+            );
+
+            return;
         }
+
+
+        if (currentBall != null)
+        {
+            Destroy(
+                currentBall.gameObject
+            );
+        }
+
+
+        currentBall =
+            Instantiate(
+                ballPrefab,
+                playArea
+            );
+
+
+        RectTransform ballRect =
+            currentBall
+                .GetComponent<RectTransform>();
+
+
+        ballRect.anchoredPosition =
+            ballSpawnPoint
+                .anchoredPosition;
+
+
+        // 위쪽으로 시작
+        Vector2 direction =
+            new Vector2(
+                Random.Range(
+                    -0.45f,
+                    0.45f
+                ),
+                1f
+            )
+            .normalized;
+
+
+        currentBall.Launch(
+            this,
+            direction,
+            ballSpeed
+        );
+    }
+
+
+    public void OnBallLost(
+        BreakoutBallUI ball)
+    {
+        if (!isGameActive)
+            return;
+
+
+        if (ball != null)
+        {
+            Destroy(
+                ball.gameObject
+            );
+        }
+
+
+        currentBall = null;
+
+
+        missCount++;
+
+
+        // MISS 2회 이상이면 패들 확대
+        if (missCount >= 2 &&
+            paddle != null)
+        {
+            paddle.sizeDelta =
+                new Vector2(
+                    originalPaddleSize.x +
+                    paddleBonusWidth,
+
+                    originalPaddleSize.y
+                );
+        }
+
+
+        UpdateUI();
+
+
+        // 최대 MISS 도달
+        if (missCount >=
+            maxMissCount)
+        {
+            Fail();
+
+            return;
+        }
+
+
+        // 다시 공 생성
+        SpawnBall();
+    }
+
+
+ 
+    public void OnHitNormalBrick(
+        RectTransform brick)
+    {
+        if (!isGameActive)
+            return;
+
+
+        if (brick != null)
+        {
+            brick.gameObject
+                .SetActive(false);
+        }
+    }
+
+
+    public void OnHitStartButton()
+    {
+        if (!isGameActive)
+            return;
+
+
+        Debug.Log(
+            "START 버튼 명중! 미니게임 성공!"
+        );
+
+
+        if (currentBall != null)
+        {
+            Destroy(
+                currentBall.gameObject
+            );
+
+            currentBall = null;
+        }
+
 
         Success();
     }
 
 
-    // MinigameBase 기본 힌트는 사용하지 않음
-    protected override void GiveHint()
+  
+    private void ResetAllBricks()
     {
+        foreach (
+            RectTransform brick
+            in normalBricks)
+        {
+            if (brick != null)
+            {
+                brick.gameObject
+                    .SetActive(true);
+            }
+        }
+
+
+        if (startButtonBrick != null)
+        {
+            startButtonBrick.gameObject
+                .SetActive(true);
+
+
+            if (startButtonImage != null)
+            {
+                startButtonImage.color =
+                    startButtonOriginalColor;
+            }
+        }
     }
 
 
+
+    private void ShowStartButtonHint()
+    {
+        if (hintText != null)
+        {
+            hintText.text =
+                "HINT : START 버튼을 맞추세요.";
+        }
+
+
+        if (startButtonImage != null)
+        {
+            startButtonImage.color =
+                Color.green;
+        }
+    }
+
+
+
+
+    private void UpdateUI()
+    {
+        if (missText != null)
+        {
+            missText.text =
+                "MISS " +
+                missCount;
+        }
+
+
+        if (timerText != null)
+        {
+            int minute =
+                Mathf.FloorToInt(
+                    remainingTime / 60f
+                );
+
+
+            int second =
+                Mathf.FloorToInt(
+                    remainingTime % 60f
+                );
+
+
+            timerText.text =
+                $"TIME {minute:00}:{second:00}";
+        }
+    }
+
+
+    
+    protected override void GiveHint()
+    {
+        ShowStartButtonHint();
+    }
+
+
+    
+
     protected override void RestartGame()
     {
+        isGameActive = false;
+
+
+        if (currentBall != null)
+        {
+            Destroy(
+                currentBall.gameObject
+            );
+
+            currentBall = null;
+        }
+
+
         StartMinigame();
     }
 }
