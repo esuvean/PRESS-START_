@@ -3,458 +3,481 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Minigame14_PowerCircuit : MinigameBase
 {
+   
     [System.Serializable]
     public class CableData
     {
-        [Header("Cable")]
-        public RectTransform cableStart;
-        public RectTransform cableEnd;
+       
         public RectTransform cableLine;
+        public RectTransform cableEnd;
 
-        [Header("Correct Target")]
-        public RectTransform correctPort;
+        
+        public RectTransform startAnchor;
 
-        [Header("Hint")]
-        public GameObject hintLine;
+
+        public CircuitPortShape requiredShape;
+
+
+      
+        public List<CircuitPort> targetPorts =
+            new List<CircuitPort>();
+
+
+       
+        public bool isFinalCable = false;
+
 
         [HideInInspector]
-        public Vector2 initialEndPosition;
+        public Vector2 originalEndPosition;
 
         [HideInInspector]
-        public bool connected;
+        public bool connected = false;
+
+        [HideInInspector]
+        public CircuitPort connectedPort;
     }
 
-    [Header("Play Area")]
+
+   
+
     public RectTransform playArea;
 
-    [Header("Cables")]
-    public CableData[] cables;
 
-    [Header("START Button")]
+  
+    public List<CableData> cables =
+        new List<CableData>();
+
+
+  
     public Button startButton;
     public Image startButtonImage;
 
-    [Header("START Button Colors")]
-    public Color startOffColor = Color.gray;
-    public Color startOnColor = Color.green;
+    public Color startDisabledColor =
+        Color.gray;
 
-    [Header("UI")]
-    public TextMeshProUGUI hintText;
-    public TextMeshProUGUI timerText;
-    public TextMeshProUGUI errorText;
-
-    [Header("Drop Settings")]
-    public float connectDistance = 80f;
-
-    [Header("Error 2 Hint")]
-    public Graphic firstTargetPortGraphic;
-    public float blinkDuration = 2f;
-
-    [Header("Error 6 Optional")]
-    public Animator[] deviceAnimators;
-
-    [Header("Message")]
-    public float messageDuration = 2f;
-
-    private int errorCount = 0;
-    private int connectedCount = 0;
-
-    private bool hint2Applied = false;
-    private bool hint4Applied = false;
-    private bool hint6Applied = false;
-
-    private bool circuitCompleted = false;
-
-    private CableData draggingCable;
-
-    private Coroutine messageCoroutine;
-
-
-    private void Start()
-    {
-        if (!isGameActive)
-        {
-            StartMinigame();
-        }
-    }
+    public Color startEnabledColor =
+        Color.green;
 
 
     
+  
+    public TMP_Text errorText;
+    public TMP_Text timerText;
+    public TMP_Text hintText;
 
+
+  
+   
+    public List<RectTransform> hintLines =
+        new List<RectTransform>();
+
+
+
+  
+
+    public float finalDisconnectDelay = 0.7f;
+
+
+    private int errorCount = 0;
+
+    private float remainingTime;
+
+    private bool finalFakeDisconnectDone = false;
+
+    private bool finalDisconnectRunning = false;
+
+
+  
     public override void StartMinigame()
     {
-        gameName = "실행 회로 연결 검사";
-
-        instruction =
-            "전원 장치부터 START 버튼까지 케이블을 올바른 순서로 연결하세요.";
-
         base.StartMinigame();
 
-        StopAllCoroutines();
+
+        gameName =
+            "START 전원 연결 검사";
+
+        instruction =
+            "색상이 아니라 포트의 모양을 보고 연결하세요.";
+
+
+        remainingTime =
+            timeLimit;
 
         errorCount = 0;
-        connectedCount = 0;
 
-        hint2Applied = false;
-        hint4Applied = false;
-        hint6Applied = false;
+        finalFakeDisconnectDone =
+            false;
 
-        circuitCompleted = false;
-        draggingCable = null;
+        finalDisconnectRunning =
+            false;
 
-        SetupCables();
-        SetupStartButton();
 
+      
+
+        for (int i = 0;
+             i < cables.Count;
+             i++)
+        {
+            CableData cable =
+                cables[i];
+
+            if (cable == null)
+                continue;
+
+
+            if (cable.cableEnd != null)
+            {
+                cable.originalEndPosition =
+                    cable.cableEnd.anchoredPosition;
+            }
+
+
+            cable.connected =
+                false;
+
+            cable.connectedPort =
+                null;
+
+
+            UpdateCableLine(i);
+        }
+
+
+        // START 비활성화
+        SetStartButtonActive(false);
+
+
+        // 힌트 라인 숨김
         HideHintLines();
+
 
         if (hintText != null)
         {
-            hintText.text = instruction;
+            hintText.text =
+                "색상이 아니라 포트의 모양을 확인하세요.";
         }
 
-        UpdateErrorUI();
-        UpdateTimerUI();
+
+        UpdateUI();
     }
 
 
-    
 
     protected override void Update()
     {
         base.Update();
 
+
         if (!isGameActive)
             return;
 
-        UpdateTimerUI();
 
-        if (draggingCable != null)
+        remainingTime -=
+            Time.deltaTime;
+
+
+        if (remainingTime <= 0f)
         {
-            UpdateCableLine(draggingCable);
+            remainingTime = 0f;
+
+            UpdateUI();
+
+            Fail();
+
+            return;
+        }
+
+
+        UpdateUI();
+
+
+        for (int i = 0;
+             i < cables.Count;
+             i++)
+        {
+            UpdateCableLine(i);
         }
     }
 
 
-    private void SetupCables()
+    public void BeginCableDrag(
+        int cableIndex)
     {
-        if (cables == null)
+        if (!isGameActive)
             return;
 
-        foreach (CableData cable in cables)
-        {
-            if (cable == null ||
-                cable.cableEnd == null)
-            {
-                continue;
-            }
 
-            cable.initialEndPosition =
-                cable.cableEnd.anchoredPosition;
-
-            cable.connected = false;
-
-            SetupCableEvent(cable);
-
-            UpdateCableLine(cable);
-        }
-    }
-
-
-    private void SetupCableEvent(
-        CableData cable)
-    {
-        EventTrigger trigger =
-            cable.cableEnd.GetComponent<EventTrigger>();
-
-        if (trigger == null)
-        {
-            trigger =
-                cable.cableEnd.gameObject
-                    .AddComponent<EventTrigger>();
-        }
-
-        trigger.triggers.Clear();
-
-
-        // Begin Drag
-        EventTrigger.Entry beginEntry =
-            new EventTrigger.Entry();
-
-        beginEntry.eventID =
-            EventTriggerType.BeginDrag;
-
-        beginEntry.callback.AddListener(
-            (data) =>
-            {
-                BeginCableDrag(
-                    cable,
-                    (PointerEventData)data
-                );
-            });
-
-        trigger.triggers.Add(beginEntry);
-
-
-        // Drag
-        EventTrigger.Entry dragEntry =
-            new EventTrigger.Entry();
-
-        dragEntry.eventID =
-            EventTriggerType.Drag;
-
-        dragEntry.callback.AddListener(
-            (data) =>
-            {
-                DragCable(
-                    cable,
-                    (PointerEventData)data
-                );
-            });
-
-        trigger.triggers.Add(dragEntry);
-
-
-        // End Drag
-        EventTrigger.Entry endEntry =
-            new EventTrigger.Entry();
-
-        endEntry.eventID =
-            EventTriggerType.EndDrag;
-
-        endEntry.callback.AddListener(
-            (data) =>
-            {
-                EndCableDrag(cable);
-            });
-
-        trigger.triggers.Add(endEntry);
-    }
-
-
-    private void BeginCableDrag(
-        CableData cable,
-        PointerEventData data)
-    {
-        if (!isGameActive ||
-            circuitCompleted ||
-            cable.connected)
+        if (!IsValidCableIndex(
+                cableIndex))
         {
             return;
         }
 
-        draggingCable = cable;
 
-        cable.cableEnd.SetAsLastSibling();
+        CableData cable =
+            cables[cableIndex];
+
+
+        
+        cable.connected =
+            false;
+
+        cable.connectedPort =
+            null;
+
+
+        SetStartButtonActive(false);
     }
 
 
-    private void DragCable(
-        CableData cable,
-        PointerEventData data)
+ 
+    public void DragCable(
+        int cableIndex,
+        PointerEventData eventData)
     {
-        if (!isGameActive ||
-            cable.connected ||
-            draggingCable != cable)
+        if (!isGameActive)
+            return;
+
+
+        if (!IsValidCableIndex(
+                cableIndex))
         {
             return;
         }
 
-        RectTransform parent =
+
+        CableData cable =
+            cables[cableIndex];
+
+
+        if (cable.cableEnd == null)
+            return;
+
+
+        RectTransform endParent =
             cable.cableEnd.parent
+            as RectTransform;
+
+
+        if (endParent == null)
+            return;
+
+
+        Vector2 localPosition;
+
+
+        Camera uiCamera =
+            GetUICamera();
+
+
+        if (RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                endParent,
+                eventData.position,
+                uiCamera,
+                out localPosition))
+        {
+            cable.cableEnd.anchoredPosition =
+                localPosition;
+        }
+
+
+        UpdateCableLine(
+            cableIndex
+        );
+    }
+
+
+    
+
+    public void EndCableDrag(
+        int cableIndex,
+        PointerEventData eventData)
+    {
+        if (!isGameActive)
+            return;
+
+
+        if (!IsValidCableIndex(
+                cableIndex))
+        {
+            return;
+        }
+
+
+        CableData cable =
+            cables[cableIndex];
+
+
+        CircuitPort droppedPort =
+            FindPortUnderPointer(
+                cable,
+                eventData.position
+            );
+
+
+        // 아무 포트에도 놓지 않음
+        if (droppedPort == null)
+        {
+            ResetSingleCable(
+                cableIndex
+            );
+
+            return;
+        }
+
+
+     
+        if (droppedPort.shape !=
+            cable.requiredShape)
+        {
+            WrongConnection();
+
+            return;
+        }
+
+
+      
+
+        ConnectCableToPort(
+            cableIndex,
+            droppedPort
+        );
+
+
+        EvaluateConnections();
+    }
+
+
+
+    private void ConnectCableToPort(
+        int cableIndex,
+        CircuitPort port)
+    {
+        CableData cable =
+            cables[cableIndex];
+
+
+        cable.connected =
+            true;
+
+        cable.connectedPort =
+            port;
+
+
+        if (cable.cableEnd != null &&
+            port != null)
+        {
+            RectTransform endParent =
+                cable.cableEnd.parent
                 as RectTransform;
 
-        if (parent == null)
-            return;
 
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                parent,
-                data.position,
-                data.pressEventCamera,
-                out Vector2 localPosition
-            );
-
-        cable.cableEnd.anchoredPosition =
-            localPosition;
-
-        UpdateCableLine(cable);
-    }
-
-
-    private void EndCableDrag(
-        CableData cable)
-    {
-        if (!isGameActive ||
-            cable.connected)
-        {
-            return;
-        }
-
-        draggingCable = null;
-
-        if (IsNearCorrectPort(cable))
-        {
-            ConnectCable(cable);
-        }
-        else
-        {
-            WrongConnection(cable);
-        }
-
-        UpdateCableLine(cable);
-    }
-
-
-    private bool IsNearCorrectPort(
-        CableData cable)
-    {
-        if (cable.correctPort == null)
-            return false;
-
-        float distance =
-            Vector2.Distance(
-                cable.cableEnd.position,
-                cable.correctPort.position
-            );
-
-        return distance <= connectDistance;
-    }
-
-
-    private void ConnectCable(
-        CableData cable)
-    {
-        cable.connected = true;
-
-        cable.cableEnd.position =
-            cable.correctPort.position;
-
-        connectedCount++;
-
-        ShowMessage(
-            "회로가 연결되었습니다."
-        );
-
-        UpdateCableLine(cable);
-
-        CheckCircuitComplete();
-    }
-
-
-    private void WrongConnection(
-        CableData cable)
-    {
-        errorCount++;
-
-        cable.cableEnd.anchoredPosition =
-            cable.initialEndPosition;
-
-        ShowMessage(
-            "잘못된 포트입니다. 다시 연결하세요."
-        );
-
-        UpdateErrorUI();
-
-        CheckErrorHints();
-    }
-
-
-
-    private void UpdateCableLine(
-        CableData cable)
-    {
-        if (cable.cableStart == null ||
-            cable.cableEnd == null ||
-            cable.cableLine == null)
-        {
-            return;
-        }
-
-        RectTransform line =
-            cable.cableLine;
-
-        RectTransform parent =
-            line.parent as RectTransform;
-
-        if (parent == null)
-            return;
-
-        Vector2 startPos =
-            parent.InverseTransformPoint(
-                cable.cableStart.position
-            );
-
-        Vector2 endPos =
-            parent.InverseTransformPoint(
-                cable.cableEnd.position
-            );
-
-        Vector2 direction =
-            endPos - startPos;
-
-        float distance =
-            direction.magnitude;
-
-        line.anchoredPosition =
-            startPos +
-            direction * 0.5f;
-
-        line.sizeDelta =
-            new Vector2(
-                distance,
-                line.sizeDelta.y
-            );
-
-        float angle =
-            Mathf.Atan2(
-                direction.y,
-                direction.x
-            ) * Mathf.Rad2Deg;
-
-        line.localRotation =
-            Quaternion.Euler(
-                0f,
-                0f,
-                angle
-            );
-    }
-
-
-    private void CheckCircuitComplete()
-    {
-        if (cables == null)
-            return;
-
-        foreach (CableData cable in cables)
-        {
-            if (cable == null ||
-                !cable.connected)
+            if (endParent != null)
             {
-                return;
+                Vector3 localPosition =
+                    endParent.InverseTransformPoint(
+                        port.RectTransform.position
+                    );
+
+
+                cable.cableEnd.localPosition =
+                    localPosition;
             }
         }
 
-        CircuitComplete();
+
+        UpdateCableLine(
+            cableIndex
+        );
     }
 
 
-    private void CircuitComplete()
+
+    private void EvaluateConnections()
     {
-        circuitCompleted = true;
+        if (finalDisconnectRunning)
+            return;
 
-        if (startButton != null)
+
+        int finalCableIndex =
+            -1;
+
+        bool allConnected =
+            true;
+
+
+        for (int i = 0;
+             i < cables.Count;
+             i++)
         {
-            startButton.interactable = true;
+            CableData cable =
+                cables[i];
+
+
+            if (cable == null)
+                continue;
+
+
+            if (cable.isFinalCable)
+            {
+                finalCableIndex =
+                    i;
+            }
+
+
+            if (!cable.connected)
+            {
+                allConnected =
+                    false;
+            }
         }
 
-        if (startButtonImage != null)
+
+       
+        if (!allConnected)
         {
-            startButtonImage.color =
-                startOnColor;
+            SetStartButtonActive(
+                false
+            );
+
+            return;
         }
+
+
+        if (finalCableIndex < 0)
+        {
+            SetStartButtonActive(
+                true
+            );
+
+            return;
+        }
+
+
+       
+
+        if (!finalFakeDisconnectDone)
+        {
+            StartCoroutine(
+                FakeFinalDisconnect(
+                    finalCableIndex
+                )
+            );
+
+            return;
+        }
+
+
+      
+        SetStartButtonActive(
+            true
+        );
+
 
         if (hintText != null)
         {
@@ -464,273 +487,488 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
+  
 
-    private void SetupStartButton()
+    private IEnumerator FakeFinalDisconnect(
+        int finalCableIndex)
     {
-        if (startButton == null)
-            return;
+        finalDisconnectRunning =
+            true;
 
-        startButton.interactable = false;
 
-        startButton.onClick
-            .RemoveAllListeners();
-
-        startButton.onClick
-            .AddListener(
-                OnStartButtonClicked
-            );
-
-        if (startButtonImage == null)
+        if (hintText != null)
         {
-            startButtonImage =
-                startButton
-                    .GetComponent<Image>();
+            hintText.text =
+                "연결 확인 중...";
         }
 
-        if (startButtonImage != null)
+
+        yield return
+            new WaitForSeconds(
+                finalDisconnectDelay
+            );
+
+
+        if (!isGameActive)
         {
-            startButtonImage.color =
-                startOffColor;
+            finalDisconnectRunning =
+                false;
+
+            yield break;
+        }
+
+
+        // 마지막 케이블만 빠짐
+        ResetSingleCable(
+            finalCableIndex
+        );
+
+
+        finalFakeDisconnectDone =
+            true;
+
+        finalDisconnectRunning =
+            false;
+
+
+        SetStartButtonActive(
+            false
+        );
+
+
+        if (hintText != null)
+        {
+            hintText.text =
+                "START 연결이 끊어졌습니다. 다시 연결하세요.";
         }
     }
 
 
-    private void OnStartButtonClicked()
+
+
+    private void WrongConnection()
     {
-        if (!isGameActive ||
-            !circuitCompleted)
+        errorCount++;
+
+
+        if (hintText != null)
+        {
+            hintText.text =
+                "잘못된 연결입니다. 모든 케이블이 분리됩니다.";
+        }
+
+
+      
+
+        ResetAllConnections();
+
+
+        // 다시 처음부터
+        finalFakeDisconnectDone =
+            false;
+
+        finalDisconnectRunning =
+            false;
+
+
+        // ERROR 2 이상
+        if (errorCount >= 2)
+        {
+            if (hintText != null)
+            {
+                hintText.text =
+                    "HINT : 색상이 아니라 ○ □ △ 모양을 확인하세요.";
+            }
+        }
+
+
+        // ERROR 4 이상
+        if (errorCount >= 4)
+        {
+            ShowHintLines();
+        }
+
+
+        UpdateUI();
+    }
+
+
+ 
+
+    private void ResetSingleCable(
+        int cableIndex)
+    {
+        if (!IsValidCableIndex(
+                cableIndex))
         {
             return;
         }
+
+
+        CableData cable =
+            cables[cableIndex];
+
+
+        cable.connected =
+            false;
+
+        cable.connectedPort =
+            null;
+
+
+        if (cable.cableEnd != null)
+        {
+            cable.cableEnd.anchoredPosition =
+                cable.originalEndPosition;
+        }
+
+
+        UpdateCableLine(
+            cableIndex
+        );
+    }
+
+
+  
+    private void ResetAllConnections()
+    {
+        for (int i = 0;
+             i < cables.Count;
+             i++)
+        {
+            ResetSingleCable(i);
+        }
+
+
+        SetStartButtonActive(
+            false
+        );
+    }
+
+
+
+    private void SetStartButtonActive(
+        bool active)
+    {
+        if (startButton != null)
+        {
+            startButton.interactable =
+                active;
+        }
+
+
+        if (startButtonImage != null)
+        {
+            startButtonImage.color =
+                active
+                ? startEnabledColor
+                : startDisabledColor;
+        }
+    }
+
+
+
+
+    public void OnClickStartButton()
+    {
+        if (!isGameActive)
+            return;
+
+
+        if (startButton == null ||
+            !startButton.interactable)
+        {
+            return;
+        }
+
+
+        Debug.Log(
+            "START 버튼 실행 성공!"
+        );
+
 
         Success();
     }
 
 
-    private void CheckErrorHints()
+    private CircuitPort FindPortUnderPointer(
+        CableData cable,
+        Vector2 pointerPosition)
     {
-        // 실수 2회
-        if (errorCount >= 2 &&
-            !hint2Applied)
-        {
-            hint2Applied = true;
+        if (cable.targetPorts == null)
+            return null;
 
-            if (firstTargetPortGraphic != null)
+
+        Camera uiCamera =
+            GetUICamera();
+
+
+        foreach (CircuitPort port
+                 in cable.targetPorts)
+        {
+            if (port == null)
+                continue;
+
+
+            if (RectTransformUtility
+                .RectangleContainsScreenPoint(
+                    port.RectTransform,
+                    pointerPosition,
+                    uiCamera))
             {
-                StartCoroutine(
-                    BlinkFirstPort()
-                );
+                return port;
             }
         }
 
-        // 실수 4회
-        if (errorCount >= 4 &&
-            !hint4Applied)
-        {
-            hint4Applied = true;
 
-            ShowHintLines();
-
-            ShowMessage(
-                "[ HINT ] 케이블과 연결해야 할 장치를 확인하세요."
-            );
-        }
-
-        // 실수 6회
-        if (errorCount >= 6 &&
-            !hint6Applied)
-        {
-            hint6Applied = true;
-
-            DisableDeviceAnimations();
-
-            ShowMessage(
-                "[ HINT ] 장치 위치 변경 연출이 제거되었습니다."
-            );
-        }
+        return null;
     }
 
 
 
-    private IEnumerator BlinkFirstPort()
+    private void UpdateCableLine(
+        int cableIndex)
     {
-        Color originalColor =
-            firstTargetPortGraphic.color;
-
-        float timer = 0f;
-
-        while (timer < blinkDuration)
+        if (!IsValidCableIndex(
+                cableIndex))
         {
-            timer += Time.deltaTime;
-
-            float alpha =
-                Mathf.PingPong(
-                    Time.time * 5f,
-                    1f
-                );
-
-            Color c =
-                originalColor;
-
-            c.a =
-                Mathf.Lerp(
-                    0.2f,
-                    1f,
-                    alpha
-                );
-
-            firstTargetPortGraphic.color =
-                c;
-
-            yield return null;
+            return;
         }
 
-        firstTargetPortGraphic.color =
-            originalColor;
-    }
+
+        CableData cable =
+            cables[cableIndex];
 
 
+        if (cable.cableLine == null ||
+            cable.cableEnd == null ||
+            cable.startAnchor == null)
+        {
+            return;
+        }
 
-    private void ShowHintLines()
-    {
-        if (cables == null)
+
+        RectTransform lineParent =
+            cable.cableLine.parent
+            as RectTransform;
+
+
+        if (lineParent == null)
             return;
 
-        foreach (CableData cable in cables)
+
+       
+        cable.cableLine.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+
+
+        Vector3 startWorld =
+            cable.startAnchor.position;
+
+
+        Vector3 endWorld =
+            cable.cableEnd.position;
+
+
+   
+        Vector3 middleWorld =
+            (
+                startWorld +
+                endWorld
+            )
+            * 0.5f;
+
+
+        cable.cableLine.position =
+            middleWorld;
+
+
+      
+        Vector3 direction =
+            endWorld -
+            startWorld;
+
+
+        float worldDistance =
+            direction.magnitude;
+
+
+      
+        float scaleX =
+            Mathf.Abs(
+                lineParent.lossyScale.x
+            );
+
+
+        if (scaleX < 0.0001f)
         {
-            if (cable != null &&
-                cable.hintLine != null)
-            {
-                cable.hintLine
-                    .SetActive(true);
-            }
+            scaleX = 1f;
         }
+
+
+        float localDistance =
+            worldDistance /
+            scaleX;
+
+
+       
+
+        cable.cableLine
+            .SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Horizontal,
+                localDistance
+            );
+
+
+       
+
+        float angle =
+            Mathf.Atan2(
+                direction.y,
+                direction.x
+            )
+            *
+            Mathf.Rad2Deg;
+
+
+        cable.cableLine.rotation =
+            Quaternion.Euler(
+                0f,
+                0f,
+                angle
+            );
     }
 
 
+ 
     private void HideHintLines()
     {
-        if (cables == null)
-            return;
-
-        foreach (CableData cable in cables)
+        foreach (RectTransform line
+                 in hintLines)
         {
-            if (cable != null &&
-                cable.hintLine != null)
+            if (line != null)
             {
-                cable.hintLine
+                line.gameObject
                     .SetActive(false);
             }
         }
     }
 
 
-
-    private void DisableDeviceAnimations()
+    private void ShowHintLines()
     {
-        if (deviceAnimators == null)
-            return;
-
-        foreach (Animator animator
-                 in deviceAnimators)
+        foreach (RectTransform line
+                 in hintLines)
         {
-            if (animator != null)
+            if (line != null)
             {
-                animator.enabled = false;
+                line.gameObject
+                    .SetActive(true);
             }
         }
     }
 
 
-
-    private void UpdateErrorUI()
+  
+    private void UpdateUI()
     {
         if (errorText != null)
         {
             errorText.text =
-                $"ERROR {errorCount}";
+                "ERROR " +
+                errorCount;
         }
-    }
 
 
-    private void UpdateTimerUI()
-    {
-        if (timerText == null)
-            return;
-
-        float displayTime =
-            Mathf.Max(
-                0f,
-                currentTimer
-            );
-
-        int minutes =
-            Mathf.FloorToInt(
-                displayTime / 60f
-            );
-
-        int seconds =
-            Mathf.FloorToInt(
-                displayTime % 60f
-            );
-
-        timerText.text =
-            string.Format(
-                "TIME {0:00}:{1:00}",
-                minutes,
-                seconds
-            );
-    }
-
-
-    private void ShowMessage(
-        string message)
-    {
-        if (hintText == null)
-            return;
-
-        if (messageCoroutine != null)
+        if (timerText != null)
         {
-            StopCoroutine(
-                messageCoroutine
-            );
+            int minute =
+                Mathf.FloorToInt(
+                    remainingTime /
+                    60f
+                );
+
+
+            int second =
+                Mathf.FloorToInt(
+                    remainingTime %
+                    60f
+                );
+
+
+            timerText.text =
+                $"TIME {minute:00}:{second:00}";
         }
-
-        hintText.text = message;
-
-        messageCoroutine =
-            StartCoroutine(
-                ClearMessageRoutine()
-            );
     }
 
 
-    private IEnumerator
-        ClearMessageRoutine()
+
+    private Camera GetUICamera()
     {
-        yield return new WaitForSeconds(
-            messageDuration
-        );
+        Canvas canvas =
+            GetComponentInParent<Canvas>();
 
-        if (hintText != null &&
-            isGameActive &&
-            !circuitCompleted)
+
+        if (canvas == null)
+            return null;
+
+
+        if (canvas.renderMode ==
+            RenderMode.ScreenSpaceOverlay)
         {
-            hintText.text =
-                instruction;
+            return null;
         }
 
-        messageCoroutine = null;
+
+        return canvas.worldCamera;
     }
+
+
+  
+
+    private bool IsValidCableIndex(
+        int index)
+    {
+        return
+            index >= 0 &&
+            index < cables.Count &&
+            cables[index] != null;
+    }
+
+
 
 
     protected override void GiveHint()
     {
+        if (hintText != null)
+        {
+            hintText.text =
+                "HINT : 색상이 아니라 포트의 모양을 확인하세요.";
+        }
+
+
+        ShowHintLines();
     }
 
 
+  
+
     protected override void RestartGame()
     {
+        StopAllCoroutines();
+
+
+        isGameActive =
+            false;
+
+
+        ResetAllConnections();
+
+
         StartMinigame();
     }
 }

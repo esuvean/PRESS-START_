@@ -14,73 +14,70 @@ public class Minigame15_StartTower : MinigameBase
     [Header("Letter Blocks - S T A R T Order")]
     public RectTransform[] letterBlocks;
 
-    [Header("Completed START Button")]
+    [Header("Completed START")]
+    public GameObject completionPanel;
     public Button completedStartButton;
 
     [Header("UI")]
-    public TextMeshProUGUI hintText;
-    public TextMeshProUGUI timerText;
-    public TextMeshProUGUI fallText;
+    public TMP_Text hintText;
+    public TMP_Text timerText;
+    public TMP_Text fallText;
 
-    [Header("Block Movement")]
-    public float normalFallSpeed = 70f;
-    public float fastFallSpeed = 650f;
+    [Header("Gameplay Background")]
+    public Graphic gameplayBackground;
+
+    [Header("Block Control")]
     public float horizontalMoveSpeed = 900f;
+    public float horizontalFollowStrength = 12f;
+    public float fastDropSpeed = 350f;
 
-    [Header("Landing")]
-    [Range(0.1f, 1f)]
-    public float minimumOverlapRatio = 0.5f;
+    [Header("Physics")]
+    public float gravityScale = 30f;
+    public float stableVelocityThreshold = 8f;
+    public float stableAngularThreshold = 10f;
+    public float landingStableTime = 0.7f;
+    public PhysicsMaterial2D blockPhysicsMaterial;
 
+    [Header("Fall Settings")]
     public float respawnDelay = 0.6f;
+    public float fallMargin = 100f;
 
-    [Header("Stability")]
+    [Header("Final Stability")]
     public float stabilityCheckTime = 3f;
 
-    [Header("Fall 2 Assist")]
-    public float floorGrowMultiplier = 1.35f;
-
-    [Header("Fall 4 Assist")]
+    [Header("Fall Assist")]
     [Range(0.1f, 1f)]
-    public float horizontalSlowMultiplier = 0.6f;
+    public float horizontalSlowMultiplier = 0.65f;
 
-    [Header("70 Second Hint")]
+    [Header("Center Hint")]
     public float centerHintTime = 70f;
     public RectTransform centerHintLine;
 
-    [Header("Chapter 3 Complete")]
-    public GameObject completionPanel;
-    public TextMeshProUGUI completionText;
-    public float completionHoldTime = 1.5f;
-
     private RectTransform activeBlock;
+    private Rigidbody2D activeBody;
+    private BoxCollider2D activeCollider;
 
     private readonly List<RectTransform> placedBlocks =
         new List<RectTransform>();
 
-    private int currentBlockIndex = 0;
-    private int fallCount = 0;
+    private int currentBlockIndex;
+    private int fallCount;
 
-    private float elapsedTime = 0f;
+    private float elapsedTime;
     private float currentHorizontalSpeed;
+    private float landingTimer;
 
-    private Vector2 initialFloorSize;
-
-    private bool fastDropping = false;
-    private bool missedSupport = false;
-    private bool isRespawning = false;
-
-    private bool floorAssistApplied = false;
-    private bool speedAssistApplied = false;
-    private bool centerHintShown = false;
-
-    private bool stabilityChecking = false;
-    private bool towerCompleted = false;
-    private bool finalizing = false;
+    private bool hasTouchedSupport;
+    private bool isRespawning;
+    private bool speedAssistApplied;
+    private bool centerHintShown;
+    private bool stabilityChecking;
+    private bool towerCompleted;
 
     private Canvas parentCanvas;
 
     private Coroutine messageCoroutine;
-
+    private Coroutine stabilityCoroutine;
 
     private void Start()
     {
@@ -90,69 +87,79 @@ public class Minigame15_StartTower : MinigameBase
         }
     }
 
-
-   
     public override void StartMinigame()
     {
         gameName = "실행 구조 안정성 검사";
-
-        instruction =
-            "S, T, A, R, T 블록을 순서대로 안정적으로 쌓으세요.";
+        instruction = "S, T, A, R, T 블록을 안정적으로 쌓으세요.";
 
         base.StartMinigame();
 
         StopAllCoroutines();
 
-        parentCanvas =
-            GetComponentInParent<Canvas>();
+        parentCanvas = GetComponentInParent<Canvas>();
 
-        elapsedTime = 0f;
+        if (gameplayBackground == null)
+        {
+            gameplayBackground = GetComponent<Graphic>();
+        }
 
         currentBlockIndex = 0;
         fallCount = 0;
+        elapsedTime = 0f;
+        landingTimer = 0f;
 
-        fastDropping = false;
-        missedSupport = false;
+        currentHorizontalSpeed = horizontalMoveSpeed;
+
+        hasTouchedSupport = false;
         isRespawning = false;
-
-        floorAssistApplied = false;
         speedAssistApplied = false;
         centerHintShown = false;
-
         stabilityChecking = false;
         towerCompleted = false;
-        finalizing = false;
-
-        currentHorizontalSpeed =
-            horizontalMoveSpeed;
 
         placedBlocks.Clear();
 
-        if (floor != null)
+        if (gameplayBackground != null)
         {
-            initialFloorSize =
-                floor.sizeDelta;
+            gameplayBackground.enabled = true;
         }
 
-        ResetLetterBlocks();
+        if (playArea != null)
+        {
+            playArea.gameObject.SetActive(true);
+        }
+
+        if (hintText != null)
+        {
+            hintText.gameObject.SetActive(true);
+            hintText.text = instruction;
+        }
+
+        if (timerText != null)
+        {
+            timerText.gameObject.SetActive(true);
+        }
+
+        if (fallText != null)
+        {
+            fallText.gameObject.SetActive(true);
+        }
 
         if (centerHintLine != null)
         {
-            centerHintLine.gameObject
-                .SetActive(false);
+            centerHintLine.gameObject.SetActive(false);
         }
-
-        SetupCompletedStartButton();
 
         if (completionPanel != null)
         {
             completionPanel.SetActive(false);
         }
 
-        if (hintText != null)
-        {
-            hintText.text = instruction;
-        }
+        SetupCompletedStartButton();
+
+        SetupFloorPhysics();
+        SetupAllBlockPhysics();
+        ResetLetterBlocks();
 
         UpdateFallUI();
         UpdateTimerUI();
@@ -160,25 +167,27 @@ public class Minigame15_StartTower : MinigameBase
         SpawnCurrentBlock();
     }
 
-
-   
     protected override void Update()
     {
         base.Update();
 
-        if (!isGameActive || finalizing)
+        if (!isGameActive)
             return;
 
-        elapsedTime =
-            timeLimit - currentTimer;
+        elapsedTime = timeLimit - currentTimer;
 
         UpdateTimerUI();
-
         CheckCenterHint();
 
         if (centerHintShown)
         {
             UpdateCenterHintLine();
+        }
+
+        if (!isRespawning && CheckPlacedTowerCollapsed())
+        {
+            HandleTowerCollapse();
+            return;
         }
 
         if (activeBlock == null ||
@@ -189,21 +198,154 @@ public class Minigame15_StartTower : MinigameBase
             return;
         }
 
-        MoveBlockHorizontally();
-        MoveBlockDown();
-
-        // 클릭하면 빠르게 낙하
-        if (Input.GetMouseButtonDown(0))
+        if (IsBlockBelowFailLine(activeBlock))
         {
-            fastDropping = true;
+            OnActiveBlockFallen();
+            return;
         }
 
-        CheckLanding();
-        CheckBlockMiss();
+        if (!hasTouchedSupport)
+        {
+            MoveBlockHorizontally();
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                FastDrop();
+            }
+
+            if (activeCollider != null &&
+                activeCollider.IsTouchingLayers())
+            {
+                hasTouchedSupport = true;
+                landingTimer = 0f;
+
+                if (activeBody != null)
+                {
+                    activeBody.constraints =
+                        RigidbodyConstraints2D.None;
+
+                    Vector2 velocity =
+                        activeBody.linearVelocity;
+
+                    velocity.x *= 0.15f;
+
+                    activeBody.linearVelocity =
+                        velocity;
+                }
+            }
+        }
+        else
+        {
+            CheckActiveBlockStability();
+        }
     }
 
+    private void SetupFloorPhysics()
+    {
+        if (floor == null)
+            return;
 
-  
+        BoxCollider2D collider =
+            floor.GetComponent<BoxCollider2D>();
+
+        if (collider == null)
+        {
+            collider =
+                floor.gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        collider.size = floor.rect.size;
+        collider.offset = Vector2.zero;
+
+        if (blockPhysicsMaterial != null)
+        {
+            collider.sharedMaterial =
+                blockPhysicsMaterial;
+        }
+
+        Rigidbody2D body =
+            floor.GetComponent<Rigidbody2D>();
+
+        if (body == null)
+        {
+            body =
+                floor.gameObject.AddComponent<Rigidbody2D>();
+        }
+
+        body.bodyType = RigidbodyType2D.Static;
+        body.gravityScale = 0f;
+        body.constraints = RigidbodyConstraints2D.FreezeAll;
+    }
+
+    private void SetupAllBlockPhysics()
+    {
+        if (letterBlocks == null)
+            return;
+
+        foreach (RectTransform block in letterBlocks)
+        {
+            if (block == null)
+                continue;
+
+            SetupBlockPhysics(block);
+            DisableBlockRaycasts(block);
+        }
+    }
+
+    private void SetupBlockPhysics(RectTransform block)
+    {
+        BoxCollider2D collider =
+            block.GetComponent<BoxCollider2D>();
+
+        if (collider == null)
+        {
+            collider =
+                block.gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        collider.size = block.rect.size;
+        collider.offset = Vector2.zero;
+
+        if (blockPhysicsMaterial != null)
+        {
+            collider.sharedMaterial =
+                blockPhysicsMaterial;
+        }
+
+        Rigidbody2D body =
+            block.GetComponent<Rigidbody2D>();
+
+        if (body == null)
+        {
+            body =
+                block.gameObject.AddComponent<Rigidbody2D>();
+        }
+
+        body.bodyType = RigidbodyType2D.Kinematic;
+        body.gravityScale = 0f;
+        body.linearVelocity = Vector2.zero;
+        body.angularVelocity = 0f;
+        body.constraints = RigidbodyConstraints2D.FreezeRotation;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        body.interpolation = RigidbodyInterpolation2D.Interpolate;
+        body.linearDamping = 0.3f;
+        body.angularDamping = 0.4f;
+    }
+
+    private void DisableBlockRaycasts(RectTransform block)
+    {
+        Graphic[] graphics =
+            block.GetComponentsInChildren<Graphic>(true);
+
+        foreach (Graphic graphic in graphics)
+        {
+            if (graphic != null)
+            {
+                graphic.raycastTarget = false;
+            }
+        }
+    }
+
     private void SpawnCurrentBlock()
     {
         if (letterBlocks == null ||
@@ -220,8 +362,7 @@ public class Minigame15_StartTower : MinigameBase
 
         activeBlock.gameObject.SetActive(true);
 
-        Vector2 spawnPosition =
-            Vector2.zero;
+        Vector2 spawnPosition = Vector2.zero;
 
         if (spawnPoint != null)
         {
@@ -243,34 +384,53 @@ public class Minigame15_StartTower : MinigameBase
         activeBlock.localRotation =
             Quaternion.identity;
 
-        fastDropping = false;
-        missedSupport = false;
-    }
+        activeBody =
+            activeBlock.GetComponent<Rigidbody2D>();
 
+        activeCollider =
+            activeBlock.GetComponent<BoxCollider2D>();
 
-    private IEnumerator RespawnCurrentBlock()
-    {
-        isRespawning = true;
-
-        yield return new WaitForSeconds(
-            respawnDelay
-        );
-
-        isRespawning = false;
-
-        if (isGameActive &&
-            !towerCompleted)
+        if (activeBody == null ||
+            activeCollider == null)
         {
-            SpawnCurrentBlock();
+            SetupBlockPhysics(activeBlock);
+
+            activeBody =
+                activeBlock.GetComponent<Rigidbody2D>();
+
+            activeCollider =
+                activeBlock.GetComponent<BoxCollider2D>();
         }
+
+        activeCollider.size =
+            activeBlock.rect.size;
+
+        activeBody.bodyType =
+            RigidbodyType2D.Dynamic;
+
+        activeBody.gravityScale =
+            gravityScale;
+
+        activeBody.linearVelocity =
+            Vector2.zero;
+
+        activeBody.angularVelocity =
+            0f;
+
+        activeBody.constraints =
+            RigidbodyConstraints2D.FreezeRotation;
+
+        hasTouchedSupport = false;
+        landingTimer = 0f;
+
+        activeBlock.SetAsLastSibling();
     }
-
-
 
     private void MoveBlockHorizontally()
     {
         if (playArea == null ||
-            activeBlock == null)
+            activeBlock == null ||
+            activeBody == null)
         {
             return;
         }
@@ -285,13 +445,11 @@ public class Minigame15_StartTower : MinigameBase
                 parentCanvas.worldCamera;
         }
 
-        if (!RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 playArea,
                 Input.mousePosition,
                 uiCamera,
-                out Vector2 mousePosition
-            ))
+                out Vector2 mousePosition))
         {
             return;
         }
@@ -302,180 +460,142 @@ public class Minigame15_StartTower : MinigameBase
         float targetX =
             Mathf.Clamp(
                 mousePosition.x,
-                playArea.rect.xMin +
-                halfWidth,
-                playArea.rect.xMax -
-                halfWidth
+                playArea.rect.xMin + halfWidth,
+                playArea.rect.xMax - halfWidth
             );
 
-        Vector2 current =
-            activeBlock.anchoredPosition;
-
-        current.x =
-            Mathf.MoveTowards(
-                current.x,
-                targetX,
-                currentHorizontalSpeed *
-                Time.deltaTime
+        Vector3 currentLocal =
+            playArea.InverseTransformPoint(
+                activeBody.position
             );
 
-        activeBlock.anchoredPosition =
-            current;
+        Vector3 targetWorld =
+            playArea.TransformPoint(
+                new Vector3(
+                    targetX,
+                    currentLocal.y,
+                    0f
+                )
+            );
+
+        float difference =
+            targetWorld.x -
+            activeBody.position.x;
+
+        float worldMaxSpeed =
+            playArea.TransformVector(
+                Vector3.right *
+                currentHorizontalSpeed
+            ).magnitude;
+
+        float desiredXVelocity =
+            Mathf.Clamp(
+                difference *
+                horizontalFollowStrength,
+                -worldMaxSpeed,
+                worldMaxSpeed
+            );
+
+        Vector2 velocity =
+            activeBody.linearVelocity;
+
+        velocity.x =
+            desiredXVelocity;
+
+        activeBody.linearVelocity =
+            velocity;
     }
 
-
-
-    private void MoveBlockDown()
+    private void FastDrop()
     {
-        float speed =
-            fastDropping
-            ? fastFallSpeed
-            : normalFallSpeed;
+        if (activeBody == null)
+            return;
 
-        activeBlock.anchoredPosition +=
-            Vector2.down *
-            speed *
-            Time.deltaTime;
+        float worldSpeed =
+            fastDropSpeed;
+
+        if (playArea != null)
+        {
+            worldSpeed =
+                playArea.TransformVector(
+                    Vector3.up *
+                    fastDropSpeed
+                ).magnitude;
+        }
+
+        Vector2 velocity =
+            activeBody.linearVelocity;
+
+        velocity.y =
+            -Mathf.Abs(worldSpeed);
+
+        activeBody.linearVelocity =
+            velocity;
     }
 
-
-    private void CheckLanding()
+    private void CheckActiveBlockStability()
     {
-        if (activeBlock == null ||
-            missedSupport)
+        if (activeBody == null ||
+            activeCollider == null)
         {
             return;
         }
 
-        RectTransform support =
-            GetCurrentSupport();
-
-        if (support == null)
-            return;
-
-        float blockBottom =
-            activeBlock.anchoredPosition.y -
-            activeBlock.rect.height * 0.5f;
-
-        float supportTop =
-            support.anchoredPosition.y +
-            support.rect.height * 0.5f;
-
-        if (blockBottom > supportTop)
-            return;
-
-        float overlapRatio =
-            GetHorizontalOverlapRatio(
-                activeBlock,
-                support
-            );
-
-        if (overlapRatio >=
-            minimumOverlapRatio)
+        if (!activeCollider.IsTouchingLayers())
         {
-            LandBlock(support);
+            landingTimer = 0f;
+            return;
+        }
+
+        bool velocityStable =
+            activeBody.linearVelocity.magnitude
+            <= stableVelocityThreshold;
+
+        bool rotationStable =
+            Mathf.Abs(activeBody.angularVelocity)
+            <= stableAngularThreshold;
+
+        if (velocityStable &&
+            rotationStable)
+        {
+            landingTimer +=
+                Time.deltaTime;
         }
         else
         {
-            // 지지대를 제대로 못 밟았으므로
-            // 그대로 아래로 떨어짐
-            missedSupport = true;
-
-            fastDropping = true;
+            landingTimer = 0f;
         }
-    }
 
-
-    private RectTransform GetCurrentSupport()
-    {
-        if (currentBlockIndex == 0)
+        if (landingTimer >=
+            landingStableTime)
         {
-            return floor;
+            AcceptCurrentBlock();
         }
-
-        if (placedBlocks.Count == 0)
-            return floor;
-
-        return placedBlocks[
-            placedBlocks.Count - 1
-        ];
     }
 
-
-    private float GetHorizontalOverlapRatio(
-        RectTransform block,
-        RectTransform support)
+    private void AcceptCurrentBlock()
     {
-        float blockLeft =
-            block.anchoredPosition.x -
-            block.rect.width * 0.5f;
-
-        float blockRight =
-            block.anchoredPosition.x +
-            block.rect.width * 0.5f;
-
-        float supportLeft =
-            support.anchoredPosition.x -
-            support.rect.width * 0.5f;
-
-        float supportRight =
-            support.anchoredPosition.x +
-            support.rect.width * 0.5f;
-
-        float overlap =
-            Mathf.Max(
-                0f,
-                Mathf.Min(
-                    blockRight,
-                    supportRight
-                )
-                -
-                Mathf.Max(
-                    blockLeft,
-                    supportLeft
-                )
-            );
-
-        return overlap /
-            Mathf.Max(
-                1f,
-                block.rect.width
-            );
-    }
-
-
-    private void LandBlock(
-        RectTransform support)
-    {
-        float correctY =
-            support.anchoredPosition.y +
-            support.rect.height * 0.5f +
-            activeBlock.rect.height * 0.5f;
-
-        Vector2 position =
-            activeBlock.anchoredPosition;
-
-        position.y = correctY;
-
-        activeBlock.anchoredPosition =
-            position;
+        if (activeBlock == null)
+            return;
 
         placedBlocks.Add(activeBlock);
 
         activeBlock = null;
+        activeBody = null;
+        activeCollider = null;
 
         currentBlockIndex++;
 
-        fastDropping = false;
-        missedSupport = false;
+        hasTouchedSupport = false;
+        landingTimer = 0f;
 
-        // 다섯 블록 완료
         if (currentBlockIndex >=
             letterBlocks.Length)
         {
-            StartCoroutine(
-                StabilityCheckRoutine()
-            );
+            stabilityCoroutine =
+                StartCoroutine(
+                    FinalStabilityRoutine()
+                );
 
             return;
         }
@@ -485,53 +605,32 @@ public class Minigame15_StartTower : MinigameBase
         );
     }
 
-
     private IEnumerator SpawnNextBlockRoutine()
     {
-        yield return new WaitForSeconds(
-            0.25f
-        );
+        yield return
+            new WaitForSeconds(0.25f);
 
         SpawnCurrentBlock();
     }
 
-
-    
-
-    private void CheckBlockMiss()
+    private void OnActiveBlockFallen()
     {
         if (activeBlock == null ||
-            playArea == null)
+            isRespawning)
         {
             return;
         }
-
-        float top =
-            activeBlock.anchoredPosition.y +
-            activeBlock.rect.height * 0.5f;
-
-        if (top >
-            playArea.rect.yMin - 80f)
-        {
-            return;
-        }
-
-        OnBlockFallen();
-    }
-
-
-    private void OnBlockFallen()
-    {
-        if (activeBlock == null)
-            return;
 
         RectTransform failedBlock =
             activeBlock;
 
         activeBlock = null;
+        activeBody = null;
+        activeCollider = null;
 
-        failedBlock.gameObject
-            .SetActive(false);
+        DisablePhysicsBlock(
+            failedBlock
+        );
 
         fallCount++;
 
@@ -541,40 +640,127 @@ public class Minigame15_StartTower : MinigameBase
             "블록이 떨어졌습니다. 같은 블록이 다시 제공됩니다."
         );
 
-        ApplyFallAssists();
+        ApplyFallAssist();
 
         StartCoroutine(
             RespawnCurrentBlock()
         );
     }
 
-
-    private void ApplyFallAssists()
+    private IEnumerator RespawnCurrentBlock()
     {
-        // 2회 실패
-        if (fallCount >= 2 &&
-            !floorAssistApplied)
+        isRespawning = true;
+
+        yield return
+            new WaitForSeconds(
+                respawnDelay
+            );
+
+        isRespawning = false;
+
+        if (isGameActive &&
+            !towerCompleted)
         {
-            floorAssistApplied = true;
+            SpawnCurrentBlock();
+        }
+    }
 
-            if (floor != null)
+    private bool CheckPlacedTowerCollapsed()
+    {
+        foreach (RectTransform block
+                 in placedBlocks)
+        {
+            if (block == null)
+                continue;
+
+            if (IsBlockBelowFailLine(block))
             {
-                Vector2 size =
-                    floor.sizeDelta;
-
-                size.x =
-                    initialFloorSize.x *
-                    floorGrowMultiplier;
-
-                floor.sizeDelta = size;
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    private void HandleTowerCollapse()
+    {
+        if (isRespawning)
+            return;
+
+        if (stabilityCoroutine != null)
+        {
+            StopCoroutine(
+                stabilityCoroutine
+            );
+
+            stabilityCoroutine = null;
+        }
+
+        stabilityChecking = false;
+
+        fallCount++;
+
+        UpdateFallUI();
+
+        ShowMessage(
+            "탑이 무너졌습니다. 처음부터 다시 쌓습니다."
+        );
+
+        ApplyFallAssist();
+
+        ResetTowerOnly();
+
+        StartCoroutine(
+            RespawnTowerRoutine()
+        );
+    }
+
+    private IEnumerator RespawnTowerRoutine()
+    {
+        isRespawning = true;
+
+        yield return
+            new WaitForSeconds(
+                respawnDelay
+            );
+
+        isRespawning = false;
+
+        SpawnCurrentBlock();
+    }
+
+    private bool IsBlockBelowFailLine(
+        RectTransform block)
+    {
+        if (block == null ||
+            playArea == null)
+        {
+            return false;
+        }
+
+        Vector3 local =
+            playArea.InverseTransformPoint(
+                block.position
+            );
+
+        return
+            local.y <
+            playArea.rect.yMin -
+            fallMargin;
+    }
+
+    private void ApplyFallAssist()
+    {
+        if (fallCount >= 2 &&
+            !centerHintShown)
+        {
+            ShowCenterHint();
 
             ShowMessage(
-                "[ HINT ] 바닥의 폭이 증가했습니다."
+                "[ HINT ] 블록의 중심 위치가 표시됩니다."
             );
         }
 
-        // 4회 실패
         if (fallCount >= 4 &&
             !speedAssistApplied)
         {
@@ -590,8 +776,6 @@ public class Minigame15_StartTower : MinigameBase
         }
     }
 
-
-
     private void CheckCenterHint()
     {
         if (centerHintShown)
@@ -603,22 +787,25 @@ public class Minigame15_StartTower : MinigameBase
             return;
         }
 
+        ShowCenterHint();
+
+        ShowMessage(
+            "[ HINT ] 블록의 중심 위치가 표시됩니다."
+        );
+    }
+
+    private void ShowCenterHint()
+    {
         centerHintShown = true;
 
         if (centerHintLine != null)
         {
-            centerHintLine
-                .gameObject
+            centerHintLine.gameObject
                 .SetActive(true);
 
             UpdateCenterHintLine();
         }
-
-        ShowMessage(
-            "[ HINT ] 이전 블록의 중앙 위치가 표시됩니다."
-        );
     }
-
 
     private void UpdateCenterHintLine()
     {
@@ -644,14 +831,12 @@ public class Minigame15_StartTower : MinigameBase
         }
 
         Vector2 position =
-            centerHintLine
-                .anchoredPosition;
+            centerHintLine.anchoredPosition;
 
         position.x = targetX;
         position.y = 0f;
 
-        centerHintLine
-            .anchoredPosition =
+        centerHintLine.anchoredPosition =
             position;
 
         Vector2 size =
@@ -664,8 +849,7 @@ public class Minigame15_StartTower : MinigameBase
             size;
     }
 
-
-    private IEnumerator StabilityCheckRoutine()
+    private IEnumerator FinalStabilityRoutine()
     {
         stabilityChecking = true;
 
@@ -674,7 +858,21 @@ public class Minigame15_StartTower : MinigameBase
 
         while (timer > 0f)
         {
-            timer -= Time.deltaTime;
+            if (!isGameActive)
+            {
+                yield break;
+            }
+
+            if (AreAllPlacedBlocksStable())
+            {
+                timer -=
+                    Time.deltaTime;
+            }
+            else
+            {
+                timer =
+                    stabilityCheckTime;
+            }
 
             if (hintText != null)
             {
@@ -686,15 +884,94 @@ public class Minigame15_StartTower : MinigameBase
         }
 
         stabilityChecking = false;
+        stabilityCoroutine = null;
 
-        CreateCompletedStartButton();
+        ShowFinalStartScreen();
     }
 
+    private bool AreAllPlacedBlocksStable()
+    {
+        if (placedBlocks.Count == 0)
+            return false;
 
+        foreach (RectTransform block
+                 in placedBlocks)
+        {
+            if (block == null)
+                return false;
 
-    private void CreateCompletedStartButton()
+            Rigidbody2D body =
+                block.GetComponent<Rigidbody2D>();
+
+            BoxCollider2D collider =
+                block.GetComponent<BoxCollider2D>();
+
+            if (body == null ||
+                collider == null)
+            {
+                return false;
+            }
+
+            if (!collider.IsTouchingLayers())
+            {
+                return false;
+            }
+
+            if (body.linearVelocity.magnitude >
+                stableVelocityThreshold)
+            {
+                return false;
+            }
+
+            if (Mathf.Abs(
+                    body.angularVelocity
+                ) >
+                stableAngularThreshold)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void ShowFinalStartScreen()
     {
         towerCompleted = true;
+
+        foreach (RectTransform block
+                 in placedBlocks)
+        {
+            if (block == null)
+                continue;
+
+            Rigidbody2D body =
+                block.GetComponent<Rigidbody2D>();
+
+            if (body != null)
+            {
+                body.linearVelocity =
+                    Vector2.zero;
+
+                body.angularVelocity =
+                    0f;
+
+                body.bodyType =
+                    RigidbodyType2D.Kinematic;
+            }
+        }
+
+        if (gameplayBackground != null)
+        {
+            gameplayBackground.enabled =
+                false;
+        }
+
+        if (playArea != null)
+        {
+            playArea.gameObject
+                .SetActive(false);
+        }
 
         if (letterBlocks != null)
         {
@@ -709,16 +986,6 @@ public class Minigame15_StartTower : MinigameBase
             }
         }
 
-        if (completedStartButton != null)
-        {
-            completedStartButton
-                .gameObject
-                .SetActive(true);
-
-            completedStartButton
-                .interactable = true;
-        }
-
         if (centerHintLine != null)
         {
             centerHintLine.gameObject
@@ -727,115 +994,177 @@ public class Minigame15_StartTower : MinigameBase
 
         if (hintText != null)
         {
-            hintText.text =
-                "START 버튼이 완성되었습니다. 버튼을 클릭하세요.";
+            hintText.gameObject
+                .SetActive(false);
+        }
+
+        if (timerText != null)
+        {
+            timerText.gameObject
+                .SetActive(false);
+        }
+
+        if (fallText != null)
+        {
+            fallText.gameObject
+                .SetActive(false);
+        }
+
+        if (completionPanel != null)
+        {
+            completionPanel.SetActive(true);
+            completionPanel.transform.SetAsLastSibling();
+        }
+
+        if (completedStartButton != null)
+        {
+            completedStartButton.gameObject
+                .SetActive(true);
+
+            completedStartButton.interactable =
+                true;
+
+            RectTransform buttonRect =
+                completedStartButton.transform
+                    as RectTransform;
+
+            if (buttonRect != null)
+            {
+                buttonRect.anchorMin =
+                    new Vector2(
+                        0.5f,
+                        0.5f
+                    );
+
+                buttonRect.anchorMax =
+                    new Vector2(
+                        0.5f,
+                        0.5f
+                    );
+
+                buttonRect.pivot =
+                    new Vector2(
+                        0.5f,
+                        0.5f
+                    );
+
+                buttonRect.anchoredPosition =
+                    Vector2.zero;
+
+                buttonRect.localRotation =
+                    Quaternion.identity;
+
+                buttonRect.localScale =
+                    Vector3.one;
+            }
+
+            Image buttonImage =
+                completedStartButton
+                    .GetComponent<Image>();
+
+            if (buttonImage != null)
+            {
+                buttonImage.enabled = true;
+                buttonImage.raycastTarget = true;
+            }
+
+            TMP_Text buttonText =
+                completedStartButton
+                    .GetComponentInChildren<TMP_Text>(
+                        true
+                    );
+
+            if (buttonText != null)
+            {
+                buttonText.gameObject.SetActive(true);
+                buttonText.raycastTarget = false;
+            }
+
+            CanvasGroup canvasGroup =
+                completedStartButton
+                    .GetComponent<CanvasGroup>();
+
+            if (canvasGroup == null)
+            {
+                canvasGroup =
+                    completedStartButton
+                        .gameObject
+                        .AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+
+            completedStartButton.transform
+                .SetAsLastSibling();
         }
     }
-
 
     private void SetupCompletedStartButton()
     {
         if (completedStartButton == null)
             return;
 
-        completedStartButton
-            .gameObject
-            .SetActive(false);
-
-        completedStartButton
-            .onClick
+        completedStartButton.onClick
             .RemoveAllListeners();
 
-        completedStartButton
-            .onClick
+        completedStartButton.onClick
             .AddListener(
                 OnCompletedStartClicked
             );
+
+        completedStartButton.interactable =
+            true;
+
+        completedStartButton.gameObject
+            .SetActive(false);
     }
-
-
- 
 
     private void OnCompletedStartClicked()
     {
-        if (!isGameActive ||
-            !towerCompleted ||
-            finalizing)
-        {
+        if (!isGameActive)
             return;
-        }
 
-        StartCoroutine(
-            ChapterCompleteRoutine()
-        );
-    }
+        if (!towerCompleted)
+            return;
 
-
-
-
-    private IEnumerator ChapterCompleteRoutine()
-    {
-        finalizing = true;
-
-        if (completedStartButton != null)
-        {
-            completedStartButton
-                .interactable = false;
-        }
-
-        if (completionPanel != null)
-        {
-            completionPanel.SetActive(true);
-        }
-
-        SetCompletionText(
-            "게임 실행 처리 검사 완료\n\n" +
-            "물리 처리 정상\n" +
-            "입력 반응 정상\n" +
-            "실행 경로 정상\n" +
-            "장치 연결 정상\n" +
-            "실행 구조 정상\n\n" +
-            "게임 실행 프로세스 이미 진행 중입니다."
+        Debug.Log(
+            "미니게임15 완료"
         );
 
-        yield return new WaitForSeconds(
-            0.3f
-        );
-
-        SetCompletionText(
-            "게임 실행 처리 검사 완료\n\n" +
-            "물리 처리 정상\n" +
-            "입력 반응 정상\n" +
-            "실행 경로 정상\n" +
-            "장치 연결 정상\n" +
-            "실행 구조 정상\n\n" +
-            "게임 실행 프로세스 준비 완료\n" +
-            "게임 실행 준비도: 75%"
-        );
-
-        yield return new WaitForSeconds(
-            completionHoldTime
-        );
+        completedStartButton.interactable =
+            false;
 
         Success();
     }
 
-
-    private void SetCompletionText(
-        string message)
+    private void ResetTowerOnly()
     {
-        if (completionText != null)
+        if (letterBlocks != null)
         {
-            completionText.text =
-                message;
-        }
-        else if (hintText != null)
-        {
-            hintText.text =
-                message;
-        }
-    }
+            foreach (RectTransform block
+                     in letterBlocks)
+            {
+                if (block == null)
+                    continue;
 
+                DisablePhysicsBlock(
+                    block
+                );
+            }
+        }
+
+        placedBlocks.Clear();
+
+        activeBlock = null;
+        activeBody = null;
+        activeCollider = null;
+
+        currentBlockIndex = 0;
+        hasTouchedSupport = false;
+        landingTimer = 0f;
+    }
 
     private void ResetLetterBlocks()
     {
@@ -845,21 +1174,48 @@ public class Minigame15_StartTower : MinigameBase
         foreach (RectTransform block
                  in letterBlocks)
         {
-            if (block != null)
-            {
-                block.gameObject
-                    .SetActive(false);
-            }
-        }
+            if (block == null)
+                continue;
 
-        if (floor != null &&
-            initialFloorSize != Vector2.zero)
-        {
-            floor.sizeDelta =
-                initialFloorSize;
+            DisablePhysicsBlock(
+                block
+            );
         }
     }
 
+    private void DisablePhysicsBlock(
+        RectTransform block)
+    {
+        if (block == null)
+            return;
+
+        Rigidbody2D body =
+            block.GetComponent<Rigidbody2D>();
+
+        if (body != null)
+        {
+            body.linearVelocity =
+                Vector2.zero;
+
+            body.angularVelocity =
+                0f;
+
+            body.gravityScale =
+                0f;
+
+            body.bodyType =
+                RigidbodyType2D.Kinematic;
+
+            body.constraints =
+                RigidbodyConstraints2D.FreezeRotation;
+        }
+
+        block.localRotation =
+            Quaternion.identity;
+
+        block.gameObject
+            .SetActive(false);
+    }
 
     private void UpdateFallUI()
     {
@@ -869,7 +1225,6 @@ public class Minigame15_StartTower : MinigameBase
                 $"FALL {fallCount}";
         }
     }
-
 
     private void UpdateTimerUI()
     {
@@ -893,13 +1248,8 @@ public class Minigame15_StartTower : MinigameBase
             );
 
         timerText.text =
-            string.Format(
-                "TIME {0:00}:{1:00}",
-                minutes,
-                seconds
-            );
+            $"TIME {minutes:00}:{seconds:00}";
     }
-
 
     private void ShowMessage(
         string message)
@@ -914,7 +1264,8 @@ public class Minigame15_StartTower : MinigameBase
             );
         }
 
-        hintText.text = message;
+        hintText.text =
+            message;
 
         messageCoroutine =
             StartCoroutine(
@@ -922,12 +1273,10 @@ public class Minigame15_StartTower : MinigameBase
             );
     }
 
-
     private IEnumerator ClearMessageRoutine()
     {
-        yield return new WaitForSeconds(
-            2f
-        );
+        yield return
+            new WaitForSeconds(2f);
 
         if (hintText != null &&
             isGameActive &&
@@ -941,14 +1290,14 @@ public class Minigame15_StartTower : MinigameBase
         messageCoroutine = null;
     }
 
-
     protected override void GiveHint()
     {
+        ShowCenterHint();
     }
-
 
     protected override void RestartGame()
     {
+        StopAllCoroutines();
         StartMinigame();
     }
 }
