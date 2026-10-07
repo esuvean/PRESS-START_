@@ -7,17 +7,12 @@ using System.Collections.Generic;
 
 public class ChapterManager : MonoBehaviour
 {
-  
     public Transform canvasTransform;
 
-
-  
     public GameObject loadingPanel;
     public Image loadingBar;
     public TMP_Text loadingPercentText;
 
-
-   
     public float loadingDuration = 0.35f;
 
 
@@ -32,13 +27,17 @@ public class ChapterManager : MonoBehaviour
     public List<ChapterData> chapters;
 
 
-    
     [Tooltip("Chapter1 Scene = 1 / Chapter2 Scene = 2 / Chapter3 Scene = 3")]
     public int chapterNumber = 1;
 
 
     [Header("Scene Settings")]
     public string mainSceneName = "MainScene";
+
+
+    [Header("Noise Settings")]
+    [SerializeField]
+    private ChapterNoiseController noiseController;
 
 
     private int currentChapterIndex = 0;
@@ -71,7 +70,6 @@ public class ChapterManager : MonoBehaviour
 
 
 
-
     private void Start()
     {
         if (loadingPanel != null)
@@ -85,7 +83,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
- 
+
     private void StartCurrentMinigame()
     {
         if (isTransitioning)
@@ -188,6 +186,37 @@ public class ChapterManager : MonoBehaviour
         );
 
 
+        // =========================================
+        // Chapter2 마지막 미니게임이면
+        // 게임 화면을 지우기 전에 노이즈 먼저 실행
+        // =========================================
+
+        bool isLastChapterData =
+            currentChapterIndex ==
+            chapters.Count - 1;
+
+        bool isLastMinigame =
+            isLastChapterData &&
+            currentMinigameIndex ==
+            chapters[currentChapterIndex]
+                .minigamePrefabs.Count - 1;
+
+
+        if (chapterNumber == 2 &&
+            isLastMinigame)
+        {
+            StartCoroutine(
+                FinishChapter2WithNoise()
+            );
+
+            return;
+        }
+
+
+        // =========================================
+        // 기존 코드
+        // =========================================
+
         if (currentActiveGameInstance != null)
         {
             Destroy(
@@ -221,7 +250,86 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-  
+
+    // =========================================
+    // Chapter2 마지막 미니게임 종료 처리
+    // =========================================
+
+    private IEnumerator FinishChapter2WithNoise()
+    {
+        isTransitioning = true;
+
+
+        Debug.Log(
+            "[ChapterManager] Chapter2 마지막 게임 - 노이즈 시작"
+        );
+
+
+        // 게임 화면이 살아있는 상태에서 노이즈
+        if (noiseController != null)
+        {
+            yield return StartCoroutine(
+                noiseController.PlayLightNoiseAndWait()
+            );
+        }
+        else
+        {
+            Debug.LogError(
+                "[ChapterManager] NoiseController가 연결되지 않았습니다."
+            );
+        }
+
+
+        // 노이즈 끝난 뒤 마지막 게임 제거
+        if (currentActiveGameInstance != null)
+        {
+            Destroy(
+                currentActiveGameInstance
+            );
+
+            currentActiveGameInstance = null;
+        }
+
+
+        currentMinigameIndex++;
+
+
+        int totalGames =
+            GetTotalMinigameCount();
+
+
+        // 진행도 5/5 저장
+        SessionProgress.SetProgress(
+            chapterNumber,
+            totalGames
+        );
+
+
+        SessionProgress.CompleteChapter(
+            chapterNumber
+        );
+
+
+        Debug.Log(
+            $"Chapter {chapterNumber} 최종 완료 : " +
+            $"{SessionProgress.GetProgress(chapterNumber)}/" +
+            $"{totalGames}"
+        );
+
+
+        // MainScene에서 챕터 선택 화면 열기
+        SessionProgress.openChapterSelectOnLoad =
+            true;
+
+
+        // 기존처럼 MainScene으로 이동
+        SceneManager.LoadScene(
+            mainSceneName
+        );
+    }
+
+
+
     private IEnumerator LoadNextMinigame()
     {
         isTransitioning = true;
@@ -303,6 +411,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
+
     private void CompleteChapter()
     {
         if (isTransitioning)
@@ -313,7 +422,7 @@ public class ChapterManager : MonoBehaviour
             GetTotalMinigameCount();
 
 
-        // 마지막에 확실하게 5/5 저장
+        // 마지막에 확실하게 저장
         SessionProgress.SetProgress(
             chapterNumber,
             totalGames
@@ -343,7 +452,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
- 
+
     private int GetTotalMinigameCount()
     {
         int total = 0;
@@ -453,7 +562,7 @@ public class ChapterManager : MonoBehaviour
     }
 
 
-  
+
     private void ResetLoadingUI()
     {
         if (loadingBar != null)
