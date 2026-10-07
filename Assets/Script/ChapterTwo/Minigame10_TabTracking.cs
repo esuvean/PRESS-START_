@@ -952,8 +952,26 @@ public class Minigame10_TabTracking : MinigameBase
     // FINISH
     // =========================================================
 
+    private bool isFinishing = false;
+
+
     private void FinishMinigame()
     {
+        if (isFinishing)
+            return;
+
+
+        StartCoroutine(
+            FinishMinigameWithNoise()
+        );
+    }
+
+
+    private IEnumerator FinishMinigameWithNoise()
+    {
+        isFinishing = true;
+
+
         currentStep =
             Step.Finished;
 
@@ -978,8 +996,32 @@ public class Minigame10_TabTracking : MinigameBase
         Time.timeScale = 1f;
 
 
-        // MinigameBase.Success()
-        // → ChapterManager가 다음 진행
+        // =====================================================
+        // 마지막 게임 화면이 살아있는 동안 노이즈 먼저 실행
+        // =====================================================
+
+        ChapterNoiseController noiseController =
+            FindFirstObjectByType<ChapterNoiseController>();
+
+
+        if (noiseController != null)
+        {
+            yield return StartCoroutine(
+                noiseController.PlayLightNoiseAndWait()
+            );
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[Minigame10] ChapterNoiseController를 찾지 못했습니다."
+            );
+        }
+
+
+        // =====================================================
+        // 노이즈가 끝난 다음에 성공 처리
+        // =====================================================
+
         Success();
     }
 

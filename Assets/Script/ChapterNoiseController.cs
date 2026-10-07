@@ -70,7 +70,7 @@ public class ChapterNoiseController : MonoBehaviour
 
         TurnLightNoiseOn();
 
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(0.25f);
 
         TurnNoiseOff();
 
