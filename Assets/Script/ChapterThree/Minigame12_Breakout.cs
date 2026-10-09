@@ -5,80 +5,79 @@ using System.Collections.Generic;
 
 public class Minigame12_Breakout : MinigameBase
 {
-    
-  
+    [System.Serializable]
+    public class YellowBrickPosition
+    {
+        [Min(1)]
+        public int row = 1;
+
+        [Min(1)]
+        public int column = 1;
+    }
+
+    [Header("Play Area")]
     public RectTransform playArea;
-
-  
     public RectTransform paddle;
-
     public RectTransform ballSpawnPoint;
     public BreakoutBallUI ballPrefab;
 
-  
-
- 
-
-  
+    [Header("Brick Generation")]
     public RectTransform brickRowTemplate;
-
-  
     public RectTransform brickParent;
-
-   
     public int brickRowCount = 6;
-
-  
     public float brickRowSpacing = 30f;
-
     public Color[] brickRowColors;
 
-   
     [HideInInspector]
     public List<RectTransform> normalBricks =
         new List<RectTransform>();
 
     private bool bricksGenerated = false;
 
- 
+    [Header("Special Yellow Bricks")]
+    public YellowBrickPosition[] yellowBrickPositions =
+    {
+        new YellowBrickPosition { row = 1, column = 4 },
+        new YellowBrickPosition { row = 2, column = 8 },
+        new YellowBrickPosition { row = 4, column = 12 },
+        new YellowBrickPosition { row = 5, column = 16 }
+    };
+
+    public Color specialYellowColor = Color.yellow;
+
+    public int maxActiveBalls = 2;
+
+    private readonly HashSet<RectTransform> specialYellowBricks =
+        new HashSet<RectTransform>();
+
     [Header("START Button")]
     public RectTransform startButtonBrick;
-
 
     [Header("UI")]
     public TMP_Text missText;
     public TMP_Text timerText;
     public TMP_Text hintText;
 
-
-
-  
+    [Header("Settings")]
     public float ballSpeed = 700f;
-
-   
     public int maxMissCount = 5;
-
- 
     public float paddleBonusWidth = 80f;
-
-   
     public float startHintRemainingTime = 15f;
 
-
-
-    private BreakoutBallUI currentBall;
+    private readonly List<BreakoutBallUI> activeBalls =
+        new List<BreakoutBallUI>();
 
     private float remainingTime;
-    private int missCount = 0;
+    private int missCount;
 
     private Vector2 originalPaddleSize;
+    private bool paddleSizeCaptured;
 
     private Image startButtonImage;
     private Color startButtonOriginalColor;
+    private bool startButtonColorCaptured;
 
-    private bool hintShown = false;
-
-
+    private bool hintShown;
 
     public bool IsGameRunning()
     {
@@ -95,66 +94,51 @@ public class Minigame12_Breakout : MinigameBase
         return paddle;
     }
 
-
- 
-
     public override void StartMinigame()
     {
-        base.StartMinigame();
+        StopAllCoroutines();
+        ClearAllBalls();
 
         gameName = "벽돌깨기 실행 검사";
+        instruction = "벽돌을 제거하고 START 버튼을 맞추세요.";
 
-        instruction =
-            "벽돌을 제거하고 START 버튼을 맞추세요.";
+        base.StartMinigame();
 
         remainingTime = timeLimit;
-
         missCount = 0;
         hintShown = false;
 
-
-        // 패들 원래 크기 저장
         if (paddle != null)
         {
-            originalPaddleSize =
-                paddle.sizeDelta;
+            if (!paddleSizeCaptured)
+            {
+                originalPaddleSize = paddle.sizeDelta;
+                paddleSizeCaptured = true;
+            }
 
-            paddle.sizeDelta =
-                originalPaddleSize;
+            paddle.sizeDelta = originalPaddleSize;
         }
 
-
-        // START 버튼 원래 색 저장
         if (startButtonBrick != null)
         {
             startButtonImage =
                 startButtonBrick.GetComponent<Image>();
 
-            if (startButtonImage != null)
+            if (startButtonImage != null &&
+                !startButtonColorCaptured)
             {
                 startButtonOriginalColor =
                     startButtonImage.color;
+
+                startButtonColorCaptured = true;
             }
         }
 
-
-        // 벽돌 자동 생성
         GenerateBrickRows();
-
-
-        // 모든 벽돌 다시 활성화
         ResetAllBricks();
-
-
         UpdateUI();
-
-
-        // 공 생성
         SpawnBall();
     }
-
-
-
 
     protected override void Update()
     {
@@ -163,126 +147,86 @@ public class Minigame12_Breakout : MinigameBase
         if (!isGameActive)
             return;
 
-
-        // 시간 감소
         remainingTime -= Time.deltaTime;
 
-
-        // 시간 종료
         if (remainingTime <= 0f)
         {
             remainingTime = 0f;
-
             UpdateUI();
-
             Fail();
-
             return;
         }
 
-
-        // 패들 이동
         MovePaddleWithMouse();
-
-
-        // UI 갱신
         UpdateUI();
 
-
-        // START 힌트
         if (!hintShown &&
             remainingTime <= startHintRemainingTime)
         {
             hintShown = true;
-
             ShowStartButtonHint();
         }
     }
 
-
-  
     private void GenerateBrickRows()
     {
-        // 이미 만들어졌다면 다시 생성하지 않음
         if (bricksGenerated)
             return;
-
 
         if (brickRowTemplate == null)
         {
             Debug.LogError(
                 "Brick Row Template이 연결되지 않았습니다."
             );
-
             return;
         }
 
+        if (brickParent == null)
+            brickParent = playArea;
 
         if (brickParent == null)
         {
-            brickParent = playArea;
+            Debug.LogError(
+                "Brick Parent와 Play Area를 확인해주세요."
+            );
+            return;
         }
 
-
         normalBricks.Clear();
+        specialYellowBricks.Clear();
 
+        brickRowTemplate.name = "BrickRow_01";
 
-   
+        AddRowBricksToList(brickRowTemplate, 0);
 
-        brickRowTemplate.name =
-            "BrickRow_01";
-
-
-        AddRowBricksToList(
-            brickRowTemplate,
-            0
-        );
-
-
-
-        for (int row = 1;
-             row < brickRowCount;
-             row++)
+        for (int row = 1; row < brickRowCount; row++)
         {
-            GameObject newRowObject =
-                Instantiate(
-                    brickRowTemplate.gameObject,
-                    brickParent
-                );
-
+            GameObject newRowObject = Instantiate(
+                brickRowTemplate.gameObject,
+                brickParent
+            );
 
             newRowObject.name =
                 $"BrickRow_{row + 1:00}";
 
-
             RectTransform newRow =
-                newRowObject
-                    .GetComponent<RectTransform>();
+                newRowObject.GetComponent<RectTransform>();
 
-
-            // 첫 번째 줄 기준으로 아래쪽 생성
             newRow.anchoredPosition =
                 brickRowTemplate.anchoredPosition +
-                Vector2.down *
-                brickRowSpacing *
-                row;
+                Vector2.down * brickRowSpacing * row;
 
-
-            AddRowBricksToList(
-                newRow,
-                row
-            );
+            AddRowBricksToList(newRow, row);
         }
 
+        ApplySpecialYellowBricks();
 
         bricksGenerated = true;
 
-
         Debug.Log(
-            $"벽돌 자동 생성 완료 : {normalBricks.Count}개"
+            $"벽돌 생성 완료: {normalBricks.Count}개"
         );
     }
-
 
     private void AddRowBricksToList(
         RectTransform row,
@@ -291,325 +235,364 @@ public class Minigame12_Breakout : MinigameBase
         if (row == null)
             return;
 
+        Color rowColor = Color.white;
 
-        Color rowColor =
-            Color.white;
-
-
-        // 줄별 색상 선택
         if (brickRowColors != null &&
             brickRowColors.Length > 0)
         {
             int colorIndex =
-                rowIndex %
-                brickRowColors.Length;
+                rowIndex % brickRowColors.Length;
 
-
-            rowColor =
-                brickRowColors[
-                    colorIndex
-                ];
+            rowColor = brickRowColors[colorIndex];
         }
 
-
-        for (int i = 0;
-             i < row.childCount;
-             i++)
+        for (int i = 0; i < row.childCount; i++)
         {
-            Transform child =
-                row.GetChild(i);
-
+            Transform child = row.GetChild(i);
 
             RectTransform brick =
-                child
-                    .GetComponent<RectTransform>();
-
+                child.GetComponent<RectTransform>();
 
             if (brick == null)
                 continue;
 
-
             normalBricks.Add(brick);
-
 
             brick.name =
                 $"Normal_Block_R{rowIndex + 1}_C{i + 1}";
 
-
-            // 색상 설정
-            Image image =
-                brick.GetComponent<Image>();
-
+            Image image = brick.GetComponent<Image>();
 
             if (image != null)
             {
-                image.color =
-                    rowColor;
-
-                image.raycastTarget =
-                    false;
+                image.color = rowColor;
+                image.raycastTarget = false;
             }
         }
     }
 
+    private void ApplySpecialYellowBricks()
+    {
+        if (brickRowTemplate == null)
+            return;
 
+        int columnsPerRow = brickRowTemplate.childCount;
+
+        if (columnsPerRow <= 0)
+            return;
+
+        if (yellowBrickPositions == null)
+            return;
+
+        foreach (YellowBrickPosition position
+                 in yellowBrickPositions)
+        {
+            if (position == null)
+                continue;
+
+            if (position.row < 1 ||
+                position.row > brickRowCount ||
+                position.column < 1 ||
+                position.column > columnsPerRow)
+            {
+                Debug.LogWarning(
+                    $"노란색 블록 위치 오류: " +
+                    $"Row {position.row}, Column {position.column}"
+                );
+
+                continue;
+            }
+
+            int index =
+                (position.row - 1) * columnsPerRow +
+                (position.column - 1);
+
+            if (index < 0 || index >= normalBricks.Count)
+                continue;
+
+            RectTransform brick = normalBricks[index];
+
+            if (brick == null)
+                continue;
+
+            Image image = brick.GetComponent<Image>();
+
+            if (image == null)
+                continue;
+
+            image.color = specialYellowColor;
+            specialYellowBricks.Add(brick);
+        }
+    }
 
     private void MovePaddleWithMouse()
     {
-        if (playArea == null ||
-            paddle == null)
-        {
+        if (playArea == null || paddle == null)
             return;
-        }
 
-
-        Vector2 localPoint;
-
-
-        Canvas canvas =
-            GetComponentInParent<Canvas>();
-
+        Canvas canvas = GetComponentInParent<Canvas>();
 
         Camera uiCamera = null;
 
-
         if (canvas != null &&
-            canvas.renderMode !=
-            RenderMode.ScreenSpaceOverlay)
+            canvas.renderMode != RenderMode.ScreenSpaceOverlay)
         {
-            uiCamera =
-                canvas.worldCamera;
+            uiCamera = canvas.worldCamera;
         }
 
-
-        RectTransformUtility
+        if (!RectTransformUtility
             .ScreenPointToLocalPointInRectangle(
                 playArea,
                 Input.mousePosition,
                 uiCamera,
-                out localPoint
-            );
+                out Vector2 localPoint))
+        {
+            return;
+        }
 
+        float halfWidth = paddle.rect.width * 0.5f;
 
-        float halfWidth =
-            paddle.rect.width * 0.5f;
+        float minX = playArea.rect.xMin + halfWidth;
+        float maxX = playArea.rect.xMax - halfWidth;
 
+        Vector2 position = paddle.anchoredPosition;
 
-        float minX =
-            playArea.rect.xMin +
-            halfWidth;
+        position.x = Mathf.Clamp(
+            localPoint.x,
+            minX,
+            maxX
+        );
 
-
-        float maxX =
-            playArea.rect.xMax -
-            halfWidth;
-
-
-        Vector2 position =
-            paddle.anchoredPosition;
-
-
-        position.x =
-            Mathf.Clamp(
-                localPoint.x,
-                minX,
-                maxX
-            );
-
-
-        paddle.anchoredPosition =
-            position;
+        paddle.anchoredPosition = position;
     }
 
-
-  
     private void SpawnBall()
     {
         if (!isGameActive)
             return;
-
 
         if (ballPrefab == null ||
             ballSpawnPoint == null ||
             playArea == null)
         {
             Debug.LogError(
-                "Ball Prefab / Ball Spawn Point / Play Area를 확인해주세요."
+                "Ball Prefab, Ball Spawn Point, Play Area를 확인해주세요."
             );
 
             return;
         }
 
+        Vector2 direction = new Vector2(
+            Random.Range(-0.45f, 0.45f),
+            1f
+        ).normalized;
 
-        if (currentBall != null)
+        SpawnBallAt(
+            ballSpawnPoint.anchoredPosition,
+            direction
+        );
+    }
+
+    private BreakoutBallUI SpawnBallAt(
+        Vector2 position,
+        Vector2 direction)
+    {
+        if (!isGameActive ||
+            ballPrefab == null ||
+            playArea == null)
         {
-            Destroy(
-                currentBall.gameObject
-            );
+            return null;
         }
 
-
-        currentBall =
-            Instantiate(
-                ballPrefab,
-                playArea
-            );
-
+        BreakoutBallUI newBall =
+            Instantiate(ballPrefab, playArea);
 
         RectTransform ballRect =
-            currentBall
-                .GetComponent<RectTransform>();
+            newBall.GetComponent<RectTransform>();
 
+        if (ballRect == null)
+        {
+            Destroy(newBall.gameObject);
+            return null;
+        }
 
-        ballRect.anchoredPosition =
-            ballSpawnPoint
-                .anchoredPosition;
+        ballRect.anchoredPosition = position;
 
-
-        // 위쪽으로 시작
-        Vector2 direction =
-            new Vector2(
-                Random.Range(
-                    -0.45f,
-                    0.45f
-                ),
-                1f
-            )
-            .normalized;
-
-
-        currentBall.Launch(
+        newBall.Launch(
             this,
             direction,
             ballSpeed
         );
+
+        activeBalls.Add(newBall);
+
+        return newBall;
     }
 
-
-    public void OnBallLost(
-        BreakoutBallUI ball)
+    public void OnBallLost(BreakoutBallUI ball)
     {
+        if (ball != null)
+        {
+            activeBalls.Remove(ball);
+            Destroy(ball.gameObject);
+        }
+
         if (!isGameActive)
             return;
 
-
-        if (ball != null)
-        {
-            Destroy(
-                ball.gameObject
-            );
-        }
-
-
-        currentBall = null;
-
+        RemoveMissingBallsFromList();
 
         missCount++;
 
-
-        // MISS 2회 이상이면 패들 확대
-        if (missCount >= 2 &&
-            paddle != null)
+        if (missCount >= 2 && paddle != null)
         {
-            paddle.sizeDelta =
-                new Vector2(
-                    originalPaddleSize.x +
-                    paddleBonusWidth,
-
-                    originalPaddleSize.y
-                );
+            paddle.sizeDelta = new Vector2(
+                originalPaddleSize.x + paddleBonusWidth,
+                originalPaddleSize.y
+            );
         }
-
 
         UpdateUI();
 
-
-        // 최대 MISS 도달
-        if (missCount >=
-            maxMissCount)
+        if (missCount >= maxMissCount)
         {
+            ClearAllBalls();
             Fail();
-
             return;
         }
 
-
-        // 다시 공 생성
-        SpawnBall();
-    }
-
-
- 
-    public void OnHitNormalBrick(
-        RectTransform brick)
-    {
-        if (!isGameActive)
-            return;
-
-
-        if (brick != null)
+        if (activeBalls.Count == 0)
         {
-            brick.gameObject
-                .SetActive(false);
+            ResetAllBricks();
+            SpawnBall();
+
+            if (hintText != null)
+            {
+                hintText.text =
+                    "모든 공을 놓쳤습니다. 블록과 공이 초기화되었습니다.";
+            }
         }
     }
 
+    public void OnHitNormalBrick(
+        RectTransform brick,
+        BreakoutBallUI hittingBall)
+    {
+        if (!isGameActive || brick == null)
+            return;
+
+        bool isYellowBrick =
+            specialYellowBricks.Contains(brick);
+
+        brick.gameObject.SetActive(false);
+
+        if (isYellowBrick)
+        {
+            TrySpawnExtraBall(hittingBall);
+        }
+    }
+
+    private void TrySpawnExtraBall(
+        BreakoutBallUI hittingBall)
+    {
+        RemoveMissingBallsFromList();
+
+        if (hittingBall == null ||
+            activeBalls.Count >= maxActiveBalls)
+        {
+            return;
+        }
+
+        Vector2 sourcePosition =
+            hittingBall.GetAnchoredPosition();
+
+        Vector2 sourceDirection =
+            hittingBall.GetDirection();
+
+        Vector2 sourceSize =
+            hittingBall.GetBallSize();
+
+        float side =
+            Random.value < 0.5f ? -1f : 1f;
+
+        Vector2 extraPosition =
+            sourcePosition +
+            new Vector2(
+                side * sourceSize.x * 0.8f,
+                sourceSize.y * 0.5f
+            );
+
+        float halfWidth = sourceSize.x * 0.5f;
+
+        extraPosition.x = Mathf.Clamp(
+            extraPosition.x,
+            playArea.rect.xMin + halfWidth,
+            playArea.rect.xMax - halfWidth
+        );
+
+        Vector2 extraDirection = new Vector2(
+            -sourceDirection.x +
+            Random.Range(-0.3f, 0.3f),
+            Mathf.Max(0.45f, Mathf.Abs(sourceDirection.y))
+        ).normalized;
+
+        if (SpawnBallAt(extraPosition, extraDirection) != null)
+        {
+            Debug.Log("노란색 블록 명중: 추가 공 생성!");
+        }
+    }
+
+    private void RemoveMissingBallsFromList()
+    {
+        activeBalls.RemoveAll(ball => ball == null);
+    }
+
+    private void ClearAllBalls()
+    {
+        foreach (BreakoutBallUI ball in activeBalls)
+        {
+            if (ball != null)
+            {
+                Destroy(ball.gameObject);
+            }
+        }
+
+        activeBalls.Clear();
+    }
 
     public void OnHitStartButton()
     {
         if (!isGameActive)
             return;
 
+        Debug.Log("START 버튼 명중! 미니게임 성공!");
 
-        Debug.Log(
-            "START 버튼 명중! 미니게임 성공!"
-        );
-
-
-        if (currentBall != null)
-        {
-            Destroy(
-                currentBall.gameObject
-            );
-
-            currentBall = null;
-        }
-
-
+        ClearAllBalls();
         Success();
     }
 
-
-  
     private void ResetAllBricks()
     {
-        foreach (
-            RectTransform brick
-            in normalBricks)
+        foreach (RectTransform brick in normalBricks)
         {
             if (brick != null)
             {
-                brick.gameObject
-                    .SetActive(true);
+                brick.gameObject.SetActive(true);
             }
         }
 
-
         if (startButtonBrick != null)
         {
-            startButtonBrick.gameObject
-                .SetActive(true);
+            startButtonBrick.gameObject.SetActive(true);
 
-
-            if (startButtonImage != null)
+            if (startButtonImage != null &&
+                startButtonColorCaptured)
             {
                 startButtonImage.color =
                     startButtonOriginalColor;
             }
         }
     }
-
-
 
     private void ShowStartButtonHint()
     {
@@ -619,70 +602,42 @@ public class Minigame12_Breakout : MinigameBase
                 "HINT : START 버튼을 맞추세요.";
         }
 
-
         if (startButtonImage != null)
         {
-            startButtonImage.color =
-                Color.green;
+            startButtonImage.color = Color.green;
         }
     }
-
-
-
 
     private void UpdateUI()
     {
         if (missText != null)
         {
-            missText.text =
-                "MISS " +
-                missCount;
+            missText.text = "MISS " + missCount;
         }
-
 
         if (timerText != null)
         {
             int minute =
-                Mathf.FloorToInt(
-                    remainingTime / 60f
-                );
-
+                Mathf.FloorToInt(remainingTime / 60f);
 
             int second =
-                Mathf.FloorToInt(
-                    remainingTime % 60f
-                );
-
+                Mathf.FloorToInt(remainingTime % 60f);
 
             timerText.text =
                 $"TIME {minute:00}:{second:00}";
         }
     }
 
-
-    
     protected override void GiveHint()
     {
         ShowStartButtonHint();
     }
 
-
-    
-
     protected override void RestartGame()
     {
         isGameActive = false;
 
-
-        if (currentBall != null)
-        {
-            Destroy(
-                currentBall.gameObject
-            );
-
-            currentBall = null;
-        }
-
+        ClearAllBalls();
 
         StartMinigame();
     }
