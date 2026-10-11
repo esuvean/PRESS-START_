@@ -490,6 +490,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SettingsSystem
       objectReference: {fileID: 0}
+    - target: {fileID: 3506005127016159149, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3692637385861994995, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_LocalPosition.x
       value: 960
@@ -557,6 +561,10 @@ PrefabInstance:
     - target: {fileID: 4736618627962457303, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_ReferenceResolution.y
       value: 1080
+      objectReference: {fileID: 0}
+    - target: {fileID: 5157406306039103231, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5683200333337141349, guid: 816c3d5109c8c074caab6c1869ec5386, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1399,7 +1407,6 @@ MonoBehaviour:
     - {fileID: 3735909273749746481, guid: 1d5ab81f95b47ff4ca4b96da634d21da, type: 3}
   chapterNumber: 2
   mainSceneName: MainScene
-  noiseController: {fileID: 1030763990}
 --- !u!4 &1935694891
 Transform:
   m_ObjectHideFlags: 0
