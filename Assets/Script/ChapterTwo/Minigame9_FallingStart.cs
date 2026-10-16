@@ -529,6 +529,7 @@ public class Minigame9_FallingStart : MinigameBase
         else
         {
             wrongCount++;
+            ReportMistake();
 
             // 연속 성공 초기화
             combo = 0;

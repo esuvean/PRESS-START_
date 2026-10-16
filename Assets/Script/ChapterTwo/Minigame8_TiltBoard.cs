@@ -288,6 +288,7 @@ public class Minigame8_TiltBoard : MinigameBase
                 ))
             {
                 failCount++;
+                ReportMistake();
 
                 StartCoroutine(
                     ResetAfterCollision(
@@ -343,6 +344,7 @@ public class Minigame8_TiltBoard : MinigameBase
             pos.y > maxY)
         {
             failCount++;
+            ReportMistake();
 
             StartCoroutine(
                 ResetAfterCollision(

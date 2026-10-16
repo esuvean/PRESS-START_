@@ -481,6 +481,7 @@ public class Minigame13_ButtonFactory : MinigameBase
         }
 
         errorCount++;
+        ReportMistake();
 
         UpdateUI();
 

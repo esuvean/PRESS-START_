@@ -443,6 +443,7 @@ public class Minigame12_Breakout : MinigameBase
         RemoveMissingBallsFromList();
 
         missCount++;
+        ReportMistake();
 
         if (missCount >= 2 && paddle != null)
         {

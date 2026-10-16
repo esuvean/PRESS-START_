@@ -7,12 +7,28 @@ public abstract class MinigameBase : MonoBehaviour
     public static event Action OnGameSuccess;
     public static event Action OnGameFailure;
 
+    // 실수(장애물 충돌, 오답 등)가 날 때마다 알림 - 샷건 연출에서 사용
+    public static event Action OnMistake;
+
+    // 제한 시간이 0이 되는 순간 한 번 알림 - 샷건 연출에서 사용
+    public static event Action OnTimeOut;
+    private bool timeOutReported = false;
+
+    protected void ReportMistake()
+    {
+        OnMistake?.Invoke();
+    }
+
     [Header("Game Settings")]
     public string gameName;          // 검사 명칭
     public string instruction;       // 간단한 지시문
     public float timeLimit = 60f;     // 각 유형별 목표 시간 
 
     protected float currentTimer;
+
+    // 남은 시간 (타이머 화면 표시용)
+    public float RemainingTime => currentTimer;
+    public bool IsGameActive => isGameActive;
     protected bool isGameActive = false;
     private bool hintGiven = false;
 
@@ -22,6 +38,7 @@ public abstract class MinigameBase : MonoBehaviour
         currentTimer = timeLimit;
         isGameActive = true;
         hintGiven = false;
+        timeOutReported = false;
         Debug.Log($"{gameName} 시작 지시: {instruction}");
     }
 
@@ -30,6 +47,12 @@ public abstract class MinigameBase : MonoBehaviour
         if (!isGameActive) return;
 
         currentTimer -= Time.deltaTime;
+
+        if (!timeOutReported && currentTimer <= 0f)
+        {
+            timeOutReported = true;
+            OnTimeOut?.Invoke();
+        }
 
        
         if (timeLimit - currentTimer >= 120f && !hintGiven)

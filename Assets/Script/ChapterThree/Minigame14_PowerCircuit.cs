@@ -549,6 +549,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     private void WrongConnection()
     {
         errorCount++;
+        ReportMistake();
 
 
         if (hintText != null)
