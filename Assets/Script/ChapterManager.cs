@@ -75,7 +75,62 @@ public class ChapterManager : MonoBehaviour
 
         ResetLoadingUI();
 
+        // 중간에 나갔다가 다시 들어오면 이어서 시작
+        ResumeFromSavedProgress();
+
         StartCurrentMinigame();
+    }
+
+
+    // 저장된 진행도(깬 미니게임 수)만큼 건너뛰고 시작
+    private void ResumeFromSavedProgress()
+    {
+        int done = SessionProgress.GetProgress(chapterNumber);
+
+        // 챕터를 다 깼거나 진행도가 없으면 처음부터
+        if (done <= 0 ||
+            done >= GetTotalMinigameCount() ||
+            SessionProgress.IsChapterCompleted(chapterNumber))
+        {
+            return;
+        }
+
+        currentChapterIndex = 0;
+        currentMinigameIndex = done;
+
+        while (currentChapterIndex < chapters.Count &&
+               chapters[currentChapterIndex] != null &&
+               currentMinigameIndex >= chapters[currentChapterIndex].minigamePrefabs.Count)
+        {
+            currentMinigameIndex -= chapters[currentChapterIndex].minigamePrefabs.Count;
+            currentChapterIndex++;
+        }
+
+        Debug.Log($"Chapter {chapterNumber} - {done}번째 미니게임부터 이어서 시작");
+    }
+
+
+    // 실패 화면의 RETRY 버튼: 지금 미니게임을 처음부터 다시
+    public void RestartCurrentMinigame()
+    {
+        if (isTransitioning)
+            return;
+
+        if (currentActiveGameInstance != null)
+        {
+            Destroy(currentActiveGameInstance);
+            currentActiveGameInstance = null;
+        }
+
+        StartCurrentMinigame();
+    }
+
+
+    // 실패 화면의 EXIT 버튼: 메인 화면 챕터 선택으로 (진행도는 유지)
+    public void ExitToMainScene()
+    {
+        SessionProgress.openChapterSelectOnLoad = true;
+        SceneManager.LoadScene(mainSceneName);
     }
 
 

@@ -633,6 +633,7 @@ public class Minigame15_StartTower : MinigameBase
         );
 
         fallCount++;
+        ReportMistake();
 
         UpdateFallUI();
 
@@ -699,6 +700,7 @@ public class Minigame15_StartTower : MinigameBase
         stabilityChecking = false;
 
         fallCount++;
+        ReportMistake();
 
         UpdateFallUI();
 

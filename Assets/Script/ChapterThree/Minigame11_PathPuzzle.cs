@@ -599,6 +599,7 @@ public class Minigame11_PathPuzzle : MinigameBase
         // 장애물과 충돌
         if (IsStartTouchingBlock(stage))
         {
+            if (!startDragFailed) ReportMistake();
             startDragFailed = true;
 
             ResetStartPosition(stage);
