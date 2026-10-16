@@ -25,6 +25,10 @@ public abstract class MinigameBase : MonoBehaviour
     public float timeLimit = 60f;     // 각 유형별 목표 시간 
 
     protected float currentTimer;
+
+    // 남은 시간 (타이머 화면 표시용)
+    public float RemainingTime => currentTimer;
+    public bool IsGameActive => isGameActive;
     protected bool isGameActive = false;
     private bool hintGiven = false;
 

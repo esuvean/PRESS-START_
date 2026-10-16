@@ -15,10 +15,10 @@ public static class ShotgunSetupTool
     static readonly Vector2 HoleAnchorMax = new Vector2(1429f / 1920f, 1f - 100f / 1080f);
 
     [MenuItem("PRESS START/샷건 연출 설정 (Chapter2)")]
-    public static void SetupChapter2() { Setup("Chapter2", false); }
+    public static void SetupChapter2() { Setup("Chapter2", true, true); }
 
     [MenuItem("PRESS START/샷건 연출 설정 (Chapter3)")]
-    public static void SetupChapter3() { Setup("Chapter3", true); }
+    public static void SetupChapter3() { Setup("Chapter3", true, false); }
 
     [MenuItem("PRESS START/샷건 연출 지우기 (Chapter2)")]
     public static void RemoveChapter2() { Remove("Chapter2"); }
@@ -26,7 +26,7 @@ public static class ShotgunSetupTool
     [MenuItem("PRESS START/샷건 연출 지우기 (Chapter3)")]
     public static void RemoveChapter3() { Remove("Chapter3"); }
 
-    static void Setup(string sceneName, bool onTimeOut)
+    static void Setup(string sceneName, bool onTimeOut, bool addTimer)
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
         Scene scene = EditorSceneManager.OpenScene($"Assets/Scenes/{sceneName}.unity", OpenSceneMode.Single);
@@ -77,6 +77,19 @@ public static class ShotgunSetupTool
         if (oldCtrl != null) Undo.DestroyObjectImmediate(oldCtrl);
         GameObject oldFail = Find(scene, "FailPanelController");
         if (oldFail != null) Undo.DestroyObjectImmediate(oldFail);
+        GameObject oldTimer = Find(scene, "ChapterTimer");
+        if (oldTimer != null) Undo.DestroyObjectImmediate(oldTimer);
+
+        // 오른쪽 위 TIME 00:00 (챕터 3 타이머와 같은 모양)
+        if (addTimer)
+        {
+            GameObject timerGO = new GameObject("ChapterTimer");
+            Undo.RegisterCreatedObjectUndo(timerGO, "Shotgun Setup");
+            SceneManager.MoveGameObjectToScene(timerGO, scene);
+            ChapterTimerUI timer = timerGO.AddComponent<ChapterTimerUI>();
+            CopyTimerStyle(timer);
+            EditorUtility.SetDirty(timer);
+        }
 
         // 4) 책상+모니터 Canvas (평소에는 투명)
         GameObject canvasGO = new GameObject("Canvas_MonitorFrame", typeof(RectTransform));
@@ -147,7 +160,32 @@ public static class ShotgunSetupTool
             $"{sceneName}에 샷건 연출을 넣었습니다!\n\n" +
             "▶ Play 후 키보드 F9를 누르면 바로 테스트할 수 있어요.\n" +
             "실제 게임에서는 실수 5번 → 샷건, 그 다음부터 7번마다 샷건이 나옵니다." +
+            (addTimer ? "\n오른쪽 위에 TIME 타이머를 넣었습니다." : "") +
             (onTimeOut ? "\n제한 시간이 다 되면 샷건 후 실패 화면(RETRY / EXIT)이 나옵니다." : ""), "확인");
+    }
+
+    // 챕터 3의 Minigame_11Panel > TimerText 모양을 그대로 복사
+    static void CopyTimerStyle(ChapterTimerUI timer)
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefab/Minigame_11Panel.prefab");
+        if (prefab == null) return;
+        foreach (TMPro.TMP_Text t in prefab.GetComponentsInChildren<TMPro.TMP_Text>(true))
+        {
+            string n = t.name.Trim();
+            if (n != "TimerText" && n != "TimeText") continue;
+            timer.font = t.font;
+            timer.fontMaterial = t.fontSharedMaterial;
+            timer.fontSize = t.fontSize;
+            timer.color = t.color;
+            timer.alignment = t.alignment;
+            RectTransform rt = t.rectTransform;
+            timer.anchorMin = rt.anchorMin;
+            timer.anchorMax = rt.anchorMax;
+            timer.anchoredPosition = rt.anchoredPosition;
+            timer.sizeDelta = rt.sizeDelta;
+            timer.pivot = rt.pivot;
+            return;
+        }
     }
 
     static void Remove(string sceneName)
@@ -160,6 +198,8 @@ public static class ShotgunSetupTool
         if (b != null) Undo.DestroyObjectImmediate(b);
         GameObject c = Find(scene, "FailPanelController");
         if (c != null) Undo.DestroyObjectImmediate(c);
+        GameObject d = Find(scene, "ChapterTimer");
+        if (d != null) Undo.DestroyObjectImmediate(d);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         EditorUtility.DisplayDialog("샷건 설정", $"{sceneName}에서 샷건 연출을 지웠습니다.", "확인");
