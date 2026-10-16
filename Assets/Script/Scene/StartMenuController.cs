@@ -33,6 +33,9 @@ public class StartMenuController : MonoBehaviour
 
     public ChapterProgressUI chapterProgressUI;
 
+    [Header("모니터 화면 (비워 두면 기존과 동일하게 동작)")]
+    public MonitorViewController monitorView;
+
     [Header("챕터 씬 이름")]
     public string chapter1SceneName = "Chapter1";
     public string chapter2SceneName = "Chapter2";
@@ -310,6 +313,10 @@ public class StartMenuController : MonoBehaviour
         // ==================================
 
         ShowTitle();
+
+        // 모니터 화면 확대 (연결되어 있을 때만)
+        if (monitorView != null)
+            yield return StartCoroutine(monitorView.PlayZoom());
 
         introFinished = true;
         sequencePlaying = false;
