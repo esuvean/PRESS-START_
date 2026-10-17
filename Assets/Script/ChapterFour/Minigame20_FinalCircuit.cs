@@ -77,6 +77,8 @@ public class Minigame20_FinalCircuit : MinigameBase
         new List<Vector2Int>();
 
     private float remainingTime;
+    private float currentAttemptTimeLimit;
+
     private int failureCount;
     private int hintPreviewCount;
 
@@ -131,27 +133,38 @@ public class Minigame20_FinalCircuit : MinigameBase
         }
 
         failureCount = 0;
-        remainingTime = circuitTimeLimit;
+
+        currentAttemptTimeLimit = circuitTimeLimit;
+        remainingTime = currentAttemptTimeLimit;
 
         hintPreviewCount = 0;
+
         isProcessing = false;
         powerConnected = false;
         finalScreenVisible = false;
 
         if (titleText != null)
+        {
             titleText.text = gameName;
+        }
 
         if (instructionText != null)
+        {
             instructionText.text =
                 "회로 블록을 클릭해 90도씩 회전하세요.";
+        }
 
         if (completionPanel != null)
+        {
             completionPanel.SetActive(false);
+        }
 
         if (resetButton != null)
         {
             resetButton.onClick.RemoveListener(OnReset);
             resetButton.onClick.AddListener(OnReset);
+
+            resetButton.interactable = true;
         }
 
         if (checkButton != null)
@@ -164,17 +177,21 @@ public class Minigame20_FinalCircuit : MinigameBase
         {
             startButton.onClick.RemoveListener(OnStartClicked);
             startButton.onClick.AddListener(OnStartClicked);
+
             startButton.interactable = false;
         }
 
         if (powerLabelText != null)
+        {
             powerLabelText.text = "POWER ▶";
+        }
 
         GenerateSolution();
         GenerateBoard();
         RandomizeCircuit();
 
         SetStatus("회로 블록을 회전해 연결하세요.");
+
         UpdateTimerText();
     }
 
@@ -195,6 +212,7 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (remainingTime <= 0f)
         {
             remainingTime = 0f;
+
             UpdateTimerText();
 
             StartCoroutine(
@@ -205,6 +223,19 @@ public class Minigame20_FinalCircuit : MinigameBase
         }
 
         UpdateTimerText();
+    }
+
+    private void UpdateTimerText()
+    {
+        if (timerText == null)
+            return;
+
+        int seconds = Mathf.CeilToInt(
+            Mathf.Max(0f, remainingTime)
+        );
+
+        timerText.text =
+            $"남은 시간: {seconds}초";
     }
 
     private void GenerateSolution()
@@ -296,7 +327,10 @@ public class Minigame20_FinalCircuit : MinigameBase
             $"CircuitTile_{row}_{col}",
             boardArea,
             new Vector2(x, y),
-            new Vector2(cellSize - 2f, cellSize - 2f),
+            new Vector2(
+                cellSize - 2f,
+                cellSize - 2f
+            ),
             tileColor,
             true
         );
@@ -309,7 +343,9 @@ public class Minigame20_FinalCircuit : MinigameBase
 
         float halfLength = cellSize * 0.26f;
         float armLength = cellSize * 0.53f;
-        float armWidth = Mathf.Max(7f, cellSize * 0.13f);
+
+        float armWidth =
+            Mathf.Max(7f, cellSize * 0.13f);
 
         tile.arms[0] = CreateImage(
             "UpArm",
@@ -351,7 +387,10 @@ public class Minigame20_FinalCircuit : MinigameBase
             "CircuitCenter",
             tile.rect,
             Vector2.zero,
-            new Vector2(armWidth + 3f, armWidth + 3f),
+            new Vector2(
+                armWidth + 3f,
+                armWidth + 3f
+            ),
             circuitColor,
             false
         );
@@ -384,18 +423,23 @@ public class Minigame20_FinalCircuit : MinigameBase
             tile.rotation = Random.Range(0, 4);
         }
 
-        remainingTime = circuitTimeLimit;
+        remainingTime = currentAttemptTimeLimit;
+
         powerConnected = false;
         isProcessing = false;
         hintPreviewCount = 0;
 
         if (startButton != null)
+        {
             startButton.interactable = false;
+        }
 
         SetBoardInteractable(true);
 
         if (checkButton != null)
+        {
             checkButton.interactable = true;
+        }
 
         RefreshCircuitVisuals();
         UpdateTimerText();
@@ -430,7 +474,9 @@ public class Minigame20_FinalCircuit : MinigameBase
         return mask;
     }
 
-    private int GetDirection(Vector2Int from, Vector2Int to)
+    private int GetDirection(
+        Vector2Int from,
+        Vector2Int to)
     {
         if (to.y < from.y)
             return Up;
@@ -477,7 +523,8 @@ public class Minigame20_FinalCircuit : MinigameBase
     {
         path = new List<Vector2Int>();
 
-        HashSet<int> visited = new HashSet<int>();
+        HashSet<int> visited =
+            new HashSet<int>();
 
         int row = 4;
         int col = 0;
@@ -485,8 +532,10 @@ public class Minigame20_FinalCircuit : MinigameBase
 
         for (int step = 0; step < TotalTiles + 1; step++)
         {
-            if (row < 0 || row >= GridSize ||
-                col < 0 || col >= GridSize)
+            if (row < 0 ||
+                row >= GridSize ||
+                col < 0 ||
+                col >= GridSize)
             {
                 return false;
             }
@@ -522,8 +571,10 @@ public class Minigame20_FinalCircuit : MinigameBase
             int nextRow = row + offset.y;
             int nextCol = col + offset.x;
 
-            if (nextRow < 0 || nextRow >= GridSize ||
-                nextCol < 0 || nextCol >= GridSize)
+            if (nextRow < 0 ||
+                nextRow >= GridSize ||
+                nextCol < 0 ||
+                nextCol >= GridSize)
             {
                 return (
                     row == 4 &&
@@ -554,7 +605,9 @@ public class Minigame20_FinalCircuit : MinigameBase
 
     private void RefreshCircuitVisuals()
     {
-        TraceCircuit(out List<Vector2Int> connectedPath);
+        TraceCircuit(
+            out List<Vector2Int> connectedPath
+        );
 
         HashSet<int> connected =
             new HashSet<int>();
@@ -566,13 +619,17 @@ public class Minigame20_FinalCircuit : MinigameBase
             );
         }
 
-        HashSet<int> hints = new HashSet<int>();
+        HashSet<int> hints =
+            new HashSet<int>();
 
-        for (int i = 0;
-             i < Mathf.Min(
-                 hintPreviewCount,
-                 solutionPath.Count);
-             i++)
+        for (
+            int i = 0;
+            i < Mathf.Min(
+                hintPreviewCount,
+                solutionPath.Count
+            );
+            i++
+        )
         {
             Vector2Int position = solutionPath[i];
 
@@ -589,8 +646,11 @@ public class Minigame20_FinalCircuit : MinigameBase
 
                 int index = row * GridSize + col;
 
-                bool isConnected = connected.Contains(index);
-                bool showHint = hints.Contains(index);
+                bool isConnected =
+                    connected.Contains(index);
+
+                bool showHint =
+                    hints.Contains(index);
 
                 int mask = showHint
                     ? tile.correctMask
@@ -598,15 +658,26 @@ public class Minigame20_FinalCircuit : MinigameBase
 
                 Color lineColor = showHint
                     ? hintColor
-                    : (isConnected ? poweredColor : circuitColor);
+                    : (
+                        isConnected
+                        ? poweredColor
+                        : circuitColor
+                    );
 
                 tile.background.color = showHint
                     ? new Color(0.95f, 0.88f, 0.58f)
-                    : (isConnected ? poweredTileColor : tileColor);
+                    : (
+                        isConnected
+                        ? poweredTileColor
+                        : tileColor
+                    );
 
                 int[] directions =
                 {
-                    Up, Right, Down, Left
+                    Up,
+                    Right,
+                    Down,
+                    Left
                 };
 
                 for (int d = 0; d < 4; d++)
@@ -615,6 +686,7 @@ public class Minigame20_FinalCircuit : MinigameBase
                         (mask & directions[d]) != 0;
 
                     tile.arms[d].gameObject.SetActive(enabled);
+
                     tile.arms[d].color = lineColor;
                 }
 
@@ -633,7 +705,8 @@ public class Minigame20_FinalCircuit : MinigameBase
     {
         foreach (CircuitTile tile in tiles)
         {
-            if (tile != null && tile.button != null)
+            if (tile != null &&
+                tile.button != null)
             {
                 tile.button.interactable = enabled;
             }
@@ -656,12 +729,16 @@ public class Minigame20_FinalCircuit : MinigameBase
 
         if (completed)
         {
-            StartCoroutine(PowerSupplyRoutine(path));
+            StartCoroutine(
+                PowerSupplyRoutine(path)
+            );
         }
         else
         {
             StartCoroutine(
-                FailureRoutine("전력 공급 실패 ? 연결 경로를 확인하세요.")
+                FailureRoutine(
+                    "전력 공급 실패 ? 연결 경로를 확인하세요."
+                )
             );
         }
     }
@@ -674,12 +751,18 @@ public class Minigame20_FinalCircuit : MinigameBase
         SetBoardInteractable(false);
 
         if (checkButton != null)
+        {
             checkButton.interactable = false;
+        }
 
         if (resetButton != null)
+        {
             resetButton.interactable = false;
+        }
 
-        SetStatus("전체 회로 검사 완료. 전력 공급 중...");
+        SetStatus(
+            "전체 회로 검사 완료. 전력 공급 중..."
+        );
 
         for (int i = 0; i < path.Count; i++)
         {
@@ -710,17 +793,25 @@ public class Minigame20_FinalCircuit : MinigameBase
 
         powerConnected = true;
 
-        SetStatus("POWER CONNECTED ? 최종 회로 연결 완료");
+        SetStatus(
+            "POWER CONNECTED ? 최종 회로 연결 완료"
+        );
 
         if (powerLabelText != null)
+        {
             powerLabelText.text = "POWER CONNECTED";
+        }
 
         yield return new WaitForSeconds(1.5f);
 
         if (startButton != null)
+        {
             startButton.interactable = true;
+        }
 
-        SetStatus("START 버튼을 클릭해 최종 검사를 완료하세요.");
+        SetStatus(
+            "START 버튼을 클릭해 최종 검사를 완료하세요."
+        );
 
         isProcessing = false;
     }
@@ -737,40 +828,61 @@ public class Minigame20_FinalCircuit : MinigameBase
         SetBoardInteractable(false);
 
         if (checkButton != null)
+        {
             checkButton.interactable = false;
+        }
 
         SetStatus(message);
 
         yield return new WaitForSeconds(1.5f);
 
+        if (failureCount == 5)
+        {
+            currentAttemptTimeLimit = Mathf.Max(
+                currentAttemptTimeLimit,
+                180f
+            );
+
+            timeLimit = currentAttemptTimeLimit;
+        }
+
         RandomizeCircuit();
 
         if (resetButton != null)
+        {
             resetButton.interactable = true;
+        }
 
         if (failureCount >= 7)
         {
             SetStatus(
-                "정답 회로 전체가 3초 동안 표시됩니다."
+                "7회 실패: 전체 정답 경로를 3초 동안 표시합니다."
             );
 
-            StartCoroutine(ShowHintPreview(81, 3f));
+            StartCoroutine(
+                ShowHintPreview(81, 3f)
+            );
         }
         else if (failureCount >= 5)
         {
             SetStatus(
-                "전원 장치부터 시작하는 경로를 확인하세요."
+                "5회 실패: 제한시간이 180초로 증가했습니다.\n" +
+                "전체 정답 회로를 10초 동안 확인하세요."
             );
 
-            StartCoroutine(ShowHintPreview(12, 10f));
+            StartCoroutine(
+                ShowHintPreview(81, 10f)
+            );
         }
         else if (failureCount >= 3)
         {
             SetStatus(
-                "일부 회로의 올바른 연결 방향을 표시합니다."
+                "3회 실패: 일부 정답 회로 방향을 표시합니다."
             );
 
-            StartCoroutine(ShowHintPreview(6, 3f));
+            StartCoroutine(
+                ShowHintPreview(6, 3f)
+            );
         }
         else
         {
@@ -778,9 +890,13 @@ public class Minigame20_FinalCircuit : MinigameBase
                 $"회로 초기화 완료. 다시 도전하세요. 실패 {failureCount}회"
             );
         }
+
+        UpdateTimerText();
     }
 
-    private IEnumerator ShowHintPreview(int count, float duration)
+    private IEnumerator ShowHintPreview(
+        int count,
+        float duration)
     {
         hintPreviewCount = count;
 
@@ -793,7 +909,10 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (!finalScreenVisible)
         {
             RefreshCircuitVisuals();
-            SetStatus("힌트 종료. 회로를 계속 연결하세요.");
+
+            SetStatus(
+                "힌트 종료. 회로를 계속 연결하세요."
+            );
         }
     }
 
@@ -822,7 +941,9 @@ public class Minigame20_FinalCircuit : MinigameBase
             return;
         }
 
-        StartCoroutine(FinalSequenceRoutine());
+        StartCoroutine(
+            FinalSequenceRoutine()
+        );
     }
 
     private IEnumerator FinalSequenceRoutine()
@@ -831,7 +952,9 @@ public class Minigame20_FinalCircuit : MinigameBase
         isProcessing = true;
 
         if (startButton != null)
+        {
             startButton.interactable = false;
+        }
 
         if (completionPanel == null)
         {
@@ -847,7 +970,8 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (finalSummaryText != null)
         {
             finalSummaryText.text =
-                "POWER CONNECTED\n\n최종 실행 회로 연결 완료";
+                "POWER CONNECTED\n\n" +
+                "최종 실행 회로 연결 완료";
         }
 
         yield return new WaitForSeconds(1.5f);
@@ -855,7 +979,8 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (finalSummaryText != null)
         {
             finalSummaryText.text =
-                "SYSTEM CHECK COMPLETE\n\n게임 실행 준비도: 100%";
+                "SYSTEM CHECK COMPLETE\n\n" +
+                "게임 실행 준비도: 100%";
         }
 
         yield return new WaitForSeconds(1.5f);
@@ -879,23 +1004,12 @@ public class Minigame20_FinalCircuit : MinigameBase
         );
     }
 
-    private void UpdateTimerText()
-    {
-        if (timerText == null)
-            return;
-
-        int seconds = Mathf.CeilToInt(
-            Mathf.Max(0f, remainingTime)
-        );
-
-        timerText.text =
-            $"남은 시간: {seconds}초";
-    }
-
     private void SetStatus(string message)
     {
         if (statusText != null)
+        {
             statusText.text = message;
+        }
     }
 
     protected override void GiveHint()
@@ -919,7 +1033,9 @@ public class Minigame20_FinalCircuit : MinigameBase
         foreach (GameObject obj in generatedObjects)
         {
             if (obj != null)
+            {
                 Destroy(obj);
+            }
         }
 
         generatedObjects.Clear();
@@ -947,14 +1063,20 @@ public class Minigame20_FinalCircuit : MinigameBase
         RectTransform rect =
             obj.GetComponent<RectTransform>();
 
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchorMin =
+            new Vector2(0.5f, 0.5f);
+
+        rect.anchorMax =
+            new Vector2(0.5f, 0.5f);
+
+        rect.pivot =
+            new Vector2(0.5f, 0.5f);
 
         rect.anchoredPosition = position;
         rect.sizeDelta = size;
 
-        Image image = obj.GetComponent<Image>();
+        Image image =
+            obj.GetComponent<Image>();
 
         image.color = color;
         image.raycastTarget = raycast;
@@ -965,12 +1087,18 @@ public class Minigame20_FinalCircuit : MinigameBase
     private void OnDestroy()
     {
         if (resetButton != null)
+        {
             resetButton.onClick.RemoveListener(OnReset);
+        }
 
         if (checkButton != null)
+        {
             checkButton.onClick.RemoveListener(OnCheck);
+        }
 
         if (startButton != null)
+        {
             startButton.onClick.RemoveListener(OnStartClicked);
+        }
     }
 }
