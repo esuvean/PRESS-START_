@@ -445,6 +445,7 @@ public class Minigame20_FinalCircuit : MinigameBase
         UpdateTimerText();
     }
 
+
     private void RotateTile(int row, int col)
     {
         if (!isGameActive ||
@@ -460,6 +461,17 @@ public class Minigame20_FinalCircuit : MinigameBase
         tile.rotation = (tile.rotation + 1) % 4;
 
         RefreshCircuitVisuals();
+
+        bool completed = TraceCircuit(
+            out List<Vector2Int> path
+        );
+
+        if (completed)
+        {
+            SetStatus("회로 연결 성공! 전력을 공급합니다.");
+
+            StartCoroutine(PowerSupplyRoutine(path));
+        }
     }
 
     private int GetCurrentMask(CircuitTile tile)
