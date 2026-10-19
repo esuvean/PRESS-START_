@@ -18,7 +18,7 @@ public class ChapterNoiseController : MonoBehaviour
     {
         crtFilter = Resources
             .FindObjectsOfTypeAll<CRTRendererFeature>()
-            .FirstOrDefault();
+            .FirstOrDefault(x => x.name == "CRTRendererFeature");
 
         if (crtFilter == null)
         {
