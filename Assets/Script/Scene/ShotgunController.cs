@@ -45,6 +45,11 @@ public class ShotgunController : MonoBehaviour
     [Header("사운드 (선택)")]
     public AudioSource audioSource;
     public AudioClip slamSound;
+    [Tooltip("주먹을 내려치는 '휙' 소리 (비워 두면 Resources/Sounds/shotgun_whoosh 자동 사용)")]
+    public AudioClip whooshSound;
+    [Tooltip("키캡이 튀어서 떨어지는 '타닥탁' 소리 (비워 두면 Resources/Sounds/shotgun_keycaps 자동 사용)")]
+    public AudioClip keycapsSound;
+    [Range(0f, 1f)] public float shotgunVolume = 1f;
 
     // 내부 상태
     private int mistakeCount = 0;
@@ -68,6 +73,17 @@ public class ShotgunController : MonoBehaviour
 
     private void Awake()
     {
+        // 소리 준비 (Inspector에서 안 넣었으면 Resources/Sounds 폴더의 기본 소리 사용)
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+        }
+        audioSource.ignoreListenerPause = true;
+        if (slamSound == null) slamSound = Resources.Load<AudioClip>("Sounds/shotgun_slam");
+        if (whooshSound == null) whooshSound = Resources.Load<AudioClip>("Sounds/shotgun_whoosh");
+        if (keycapsSound == null) keycapsSound = Resources.Load<AudioClip>("Sounds/shotgun_keycaps");
+
         if (monitorFrame != null)
         {
             frameImage = monitorFrame.GetComponent<Image>();
@@ -175,6 +191,9 @@ public class ShotgunController : MonoBehaviour
 
         playing = true;
 
+        // 샷건 소리가 잘 들리게 배경음악을 잠깐 작게
+        GameBgm.Duck(true);
+
         // 게임 멈추고 클릭 막기
         float oldTimeScale = Time.timeScale;
         Time.timeScale = 0f;
@@ -215,11 +234,20 @@ public class ShotgunController : MonoBehaviour
         {
             if (frameImage != null) frameImage.sprite = shotgunFrames[i];
 
+            // 주먹을 내려치기 직전: '휙'
+            if (i == Mathf.Max(0, impactFrame - 3))
+                PlaySfx(whooshSound, 0.7f);
+
+            // 키보드에 닿는 순간: '쾅!'
             if (i == impactFrame)
             {
-                if (audioSource != null && slamSound != null) audioSource.PlayOneShot(slamSound);
+                PlaySfx(slamSound, 1f);
                 StartCoroutine(Shake());
             }
+
+            // 키캡이 튀어서 떨어짐: '타닥 탁 탁'
+            if (i == impactFrame + 1)
+                PlaySfx(keycapsSound, 0.6f);
 
             float t = 0f;
             while (t < frameTime)
@@ -250,7 +278,17 @@ public class ShotgunController : MonoBehaviour
             Time.timeScale = 0f;
         else
             Time.timeScale = oldTimeScale == 0f ? 1f : oldTimeScale;
+        // 배경음악 원래 크기로 (서서히)
+        GameBgm.Duck(false);
+
         playing = false;
+    }
+
+    // 효과음 재생 (설정의 SFX 볼륨 반영)
+    private void PlaySfx(AudioClip clip, float scale)
+    {
+        if (audioSource != null && clip != null)
+            audioSource.PlayOneShot(clip, shotgunVolume * scale * GameSfx.SfxScale);
     }
 
     // u = 0 : 책상 전체가 보이는 상태 / u = 1 : 모니터 화면이 전체 화면을 꽉 채운 상태

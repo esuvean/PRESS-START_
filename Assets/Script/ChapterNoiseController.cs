@@ -128,6 +128,9 @@ public class ChapterNoiseController : MonoBehaviour
 
     private void TurnLightNoiseOn()
     {
+        // 짧은 지지직 소리 (작게)
+        GameSfx.StartNoise(0.2f);
+
         crtFilter.SetActive(true);
 
         crtFilter.noiseSize = 25f;
@@ -146,6 +149,8 @@ public class ChapterNoiseController : MonoBehaviour
 
     private void TurnNoiseOff()
     {
+        GameSfx.StopNoise();
+
         if (crtFilter == null)
             return;
 

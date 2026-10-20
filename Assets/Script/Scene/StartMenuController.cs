@@ -129,6 +129,9 @@ public class StartMenuController : MonoBehaviour
         if (sequencePlaying)
             return;
 
+        // 게임 시작 소리
+        GameSfx.PlayGameStart();
+
         // 첫 START
         if (!introFinished)
         {
@@ -318,6 +321,9 @@ public class StartMenuController : MonoBehaviour
         if (monitorView != null)
             yield return StartCoroutine(monitorView.PlayZoom());
 
+        // 전체화면이 되면 메인 배경음악 시작
+        GameBgm.PlayMain();
+
         introFinished = true;
         sequencePlaying = false;
     }
@@ -328,6 +334,9 @@ public class StartMenuController : MonoBehaviour
 
     private void TurnNoiseOn()
     {
+        // 지지직 노이즈 소리
+        GameSfx.StartNoise(0.55f);
+
         if (crtFilter == null)
             return;
 
@@ -357,6 +366,8 @@ public class StartMenuController : MonoBehaviour
 
     private void TurnNoiseOff()
     {
+        GameSfx.StopNoise();
+
         if (crtFilter == null)
             return;
 
@@ -381,7 +392,11 @@ public class StartMenuController : MonoBehaviour
         {
             target.text += letter;
 
-            yield return new WaitForSeconds(speed);
+            // 타이핑 소리
+            GameSfx.PlayTyping(letter);
+
+            // 사람이 치는 것처럼 빠르기를 살짝 들쭉날쭉하게 (타타탁 느낌)
+            yield return new WaitForSeconds(speed * Random.Range(0.6f, 1.4f));
         }
     }
 
@@ -396,7 +411,11 @@ public class StartMenuController : MonoBehaviour
         {
             target.text += letter;
 
-            yield return new WaitForSeconds(speed);
+            // 타이핑 소리
+            GameSfx.PlayTyping(letter);
+
+            // 사람이 치는 것처럼 빠르기를 살짝 들쭉날쭉하게 (타타탁 느낌)
+            yield return new WaitForSeconds(speed * Random.Range(0.6f, 1.4f));
         }
     }
 

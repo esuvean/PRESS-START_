@@ -85,6 +85,9 @@ public class SettingsController : MonoBehaviour
 
     private void Start()
     {
+        // SOUND 탭에 BGM(배경음악) / SFX(효과음) 조절 바 추가
+        SoundSettingsRows.Build(volumeSlider, volumeValueText);
+
         LoadSettings();
 
         // 설정창을 처음 열었을 때 DISPLAY 탭

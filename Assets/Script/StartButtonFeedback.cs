@@ -272,7 +272,7 @@ public class StartButtonFeedback : MonoBehaviour
     private void PlaySound(AudioClip clip, float scale)
     {
         if (clip != null && audioSource != null)
-            audioSource.PlayOneShot(clip, SoundVolume * scale);
+            audioSource.PlayOneShot(clip, SoundVolume * scale * GameSfx.SfxScale); // 설정의 SFX 볼륨 반영
     }
 
     private const int SampleRate = 44100;
