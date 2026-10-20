@@ -41,6 +41,16 @@ public class FailPanelController : MonoBehaviour
         root.SetActive(true);
     }
 
+    /// <summary>샷건 연출 중에는 RETRY/EXIT 버튼을 못 누르게 막는다.</summary>
+    public void SetButtonsEnabled(bool on)
+    {
+        if (root == null) return;
+        CanvasGroup g = root.GetComponent<CanvasGroup>();
+        if (g == null) g = root.AddComponent<CanvasGroup>();
+        g.interactable = on;
+        g.blocksRaycasts = true; // 뒤쪽 게임 클릭은 계속 막기
+    }
+
     private void Hide()
     {
         showing = false;
@@ -64,6 +74,7 @@ public class FailPanelController : MonoBehaviour
     private void OnDestroy()
     {
         if (showing) Time.timeScale = 1f;
+        if (root != null) Destroy(root);
     }
 
     // ---------------- 화면 만들기 ----------------
@@ -71,15 +82,33 @@ public class FailPanelController : MonoBehaviour
     private void Build()
     {
         root = new GameObject("FailPanel", typeof(RectTransform));
-        root.transform.SetParent(transform, false);
 
-        Canvas canvas = root.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 40; // 게임보다 위, 샷건 모니터(50)보다 아래
-        CanvasScaler scaler = root.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
+        // 미니게임이 들어가는 Canvas 안에 만든다
+        // → 샷건 연출 때 실패 화면도 모니터 화면 안으로 같이 줄어들었다가 돌아온다
+        Canvas host = null;
+        if (chapterManager != null && chapterManager.canvasTransform != null)
+            host = chapterManager.canvasTransform.GetComponentInParent<Canvas>();
+        Canvas canvas;
+        if (host != null)
+        {
+            host = host.rootCanvas;
+            root.layer = host.gameObject.layer;
+            root.transform.SetParent(host.transform, false);
+            Stretch((RectTransform)root.transform);
+            canvas = root.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+        }
+        else
+        {
+            root.transform.SetParent(transform, false);
+            canvas = root.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            CanvasScaler scaler = root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
+        }
+        canvas.sortingOrder = 40; // 게임보다 위, 빨간 테두리(45)·샷건 모니터(50)보다 아래
         root.AddComponent<GraphicRaycaster>();
 
         // 반투명 어두운 배경 (뒤쪽 클릭 막기)

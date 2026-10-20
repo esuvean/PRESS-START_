@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 496492b1d2c14b4e9115f0dc7c44df9b, type: 3}
+  m_Name: ChapterFxResources
+  m_EditorClassIdentifier: Assembly-CSharp::ChapterFxResources
+  shotgunFrames:
+  - {fileID: 21300000, guid: 47404e7c13460cd489446fa6f9b8d34a, type: 3}
+  - {fileID: 21300000, guid: a6460c6cb447db049ae9f1cfca8ca614, type: 3}
+  - {fileID: 21300000, guid: 4bcb87b53508c8e40abaeaf0e5b4623a, type: 3}
+  - {fileID: 21300000, guid: 17538e0e04647194bbdd49d490abfb27, type: 3}
+  - {fileID: 21300000, guid: a0120e4f360a9404a8e55d45e32203b7, type: 3}
+  - {fileID: 21300000, guid: 7e2af12c0f0109643a4267455b371c2f, type: 3}
+  - {fileID: 21300000, guid: 5fb461747e20e814897571c0773c2f70, type: 3}
+  - {fileID: 21300000, guid: 9dce4e90793d9ce4c91917ea2c708056, type: 3}
+  - {fileID: 21300000, guid: 461003e0d850e3844bd84aa4a6acd034, type: 3}
+  - {fileID: 21300000, guid: d35d19149cb78fb41a2c9276edabd12a, type: 3}
+  - {fileID: 21300000, guid: 99410a37a8aafc14192c74fb31651428, type: 3}
+  - {fileID: 21300000, guid: b67f92e4e135605459b0565bbe0835ae, type: 3}
+  - {fileID: 21300000, guid: da337b467fdb0354f9a3d16464faed37, type: 3}
+  - {fileID: 21300000, guid: 71a69df560e70e84d98ac13657ae59c0, type: 3}
+  - {fileID: 21300000, guid: 247d159bfc636014b95649582c717a38, type: 3}
+  - {fileID: 21300000, guid: f9dd8856e0231924e81d4d08a1540d88, type: 3}
+  failFont: {fileID: 11400000, guid: f9d6dc60d8976594480694d64f44dbbc, type: 2}

@@ -19,8 +19,10 @@ public class ShotgunController : MonoBehaviour
     public bool resetOnSuccess = true;
     [Tooltip("제한 시간이 다 되면 바로 샷건")]
     public bool shotgunOnTimeOut = false;
-    [Tooltip("제한 시간이 다 되면 (샷건 뒤에) 실패 화면 보여 주기")]
+    [Tooltip("제한 시간이 다 되면 실패 화면(게임오버) 먼저 보여 주고 그 다음 샷건")]
     public FailPanelController failPanel;
+    [Tooltip("게임오버 화면을 보여 준 뒤 샷건이 시작되기까지 기다리는 시간(초)")]
+    public float gameOverHoldBeforeShotgun = 1f;
 
     [Header("연결 (자동 설정 메뉴가 채워 줌)")]
     public Canvas gameCanvas;                 // 미니게임들이 들어가는 기존 Canvas
@@ -101,16 +103,30 @@ public class ShotgunController : MonoBehaviour
         if (playing) return;
         if (failPanel != null && failPanel.IsShowing) return;
         if (!shotgunOnTimeOut && failPanel == null) return;
+        // 자체 시간 규칙이 있는 미니게임(예: 안 누르고 기다리기, 사다리, 마지막 회로)은 제외
+        if (ChapterFxBootstrap.UsesOwnTimeRule(FindAnyObjectByType<MinigameBase>())) return;
         StartCoroutine(TimeOutRoutine());
     }
 
+    // 시간 초과: 게임오버 화면 먼저 → 잠깐 보여 준 뒤 샷건 → 다시 원래 화면(게임오버 화면은 그대로 남음)
     private IEnumerator TimeOutRoutine()
     {
+        if (failPanel != null)
+        {
+            failPanel.Show();
+            if (shotgunOnTimeOut) failPanel.SetButtonsEnabled(false); // 샷건 끝날 때까지 버튼 잠금
+            yield return new WaitForSecondsRealtime(gameOverHoldBeforeShotgun);
+        }
+
         if (shotgunOnTimeOut)
             yield return StartCoroutine(PlayShotgun());
 
         if (failPanel != null)
-            failPanel.Show();
+            failPanel.SetButtonsEnabled(true);
+
+        // 샷건이 끝나면 빨간 테두리도 꺼서 화면을 원래대로
+        if (TimeWarningVignette.Instance != null)
+            TimeWarningVignette.Instance.ClearUntilNextGame();
     }
 
     private void HandleSuccess()
@@ -229,7 +245,11 @@ public class ShotgunController : MonoBehaviour
         gameGroup.blocksRaycasts = oldBlocks;
         if (addedGroup) Destroy(gameGroup);
 
-        Time.timeScale = oldTimeScale == 0f ? 1f : oldTimeScale;
+        // 게임오버 화면이 떠 있으면 게임은 계속 멈춘 상태로 둔다 (RETRY/EXIT 누를 때까지)
+        if (failPanel != null && failPanel.IsShowing)
+            Time.timeScale = 0f;
+        else
+            Time.timeScale = oldTimeScale == 0f ? 1f : oldTimeScale;
         playing = false;
     }
 

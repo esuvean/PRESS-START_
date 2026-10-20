@@ -66,8 +66,14 @@ public abstract class MinigameBase : MonoBehaviour
     {
         if (!isGameActive) return;
         isGameActive = false;
-        OnGameSuccess?.Invoke();
-        Destroy(gameObject);     // 플레이 영역에서 제거
+
+        // START 성공 연출(눌림 + 이펙트 + 사운드)을 보여준 뒤 다음 게임으로 넘어감
+        StartButtonFeedback.PlaySuccess(transform, () =>
+        {
+            if (this == null) return;   // 연출 도중 씬이 바뀌었으면 아무것도 안 함
+            OnGameSuccess?.Invoke();
+            Destroy(gameObject);     // 플레이 영역에서 제거
+        });
     }
 
     // 미니게임 실패 시 호출할 메서드 
@@ -79,4 +85,4 @@ public abstract class MinigameBase : MonoBehaviour
 
     protected abstract void GiveHint();   
     protected abstract void RestartGame(); 
-}
+}

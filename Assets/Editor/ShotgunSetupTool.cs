@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// 메뉴: PRESS START > 샷건 연출 설정 (Chapter2)
+// 메뉴: PRESS START > 샷건 연출 설정 (모든 챕터 한 번에 / Chapter1~4)
 public static class ShotgunSetupTool
 {
     const string FramesFolder = "Assets/1. Team Folder/Youngwoo/art/moniter/shotgun";
@@ -14,11 +14,35 @@ public static class ShotgunSetupTool
     static readonly Vector2 HoleAnchorMin = new Vector2(494f / 1920f, 1f - 701f / 1080f);
     static readonly Vector2 HoleAnchorMax = new Vector2(1429f / 1920f, 1f - 100f / 1080f);
 
+    [MenuItem("PRESS START/샷건 연출 설정 (모든 챕터 한 번에)", false, 0)]
+    public static void SetupAll()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        var done = new List<string>();
+        if (Setup("Chapter1", true, false, false)) done.Add("Chapter1");
+        if (Setup("Chapter2", true, true, false)) done.Add("Chapter2");
+        if (Setup("Chapter3", true, false, false)) done.Add("Chapter3");
+        if (Setup("Chapter4", true, false, false)) done.Add("Chapter4");
+
+        EditorUtility.DisplayDialog("샷건 설정",
+            "설정 완료: " + string.Join(", ", done) + "\n\n" +
+            "• 남은 시간 10초부터 화면 테두리가 점점 빨개집니다.\n" +
+            "• 0초가 되면 게임오버 화면 → 샷건 → 원래 화면으로 돌아옵니다.\n" +
+            "• 실수 5번 → 샷건, 그 다음부터 7번마다 샷건.\n\n" +
+            "▶ Play 중 F9 = 샷건 바로 테스트, F10 = 시간 초과 테스트", "확인");
+    }
+
+    [MenuItem("PRESS START/샷건 연출 설정 (Chapter1)")]
+    public static void SetupChapter1() { Setup("Chapter1", true, false); }
+
     [MenuItem("PRESS START/샷건 연출 설정 (Chapter2)")]
     public static void SetupChapter2() { Setup("Chapter2", true, true); }
 
     [MenuItem("PRESS START/샷건 연출 설정 (Chapter3)")]
     public static void SetupChapter3() { Setup("Chapter3", true, false); }
+
+    [MenuItem("PRESS START/샷건 연출 설정 (Chapter4)")]
+    public static void SetupChapter4() { Setup("Chapter4", true, false); }
 
     [MenuItem("PRESS START/샷건 연출 지우기 (Chapter2)")]
     public static void RemoveChapter2() { Remove("Chapter2"); }
@@ -26,9 +50,9 @@ public static class ShotgunSetupTool
     [MenuItem("PRESS START/샷건 연출 지우기 (Chapter3)")]
     public static void RemoveChapter3() { Remove("Chapter3"); }
 
-    static void Setup(string sceneName, bool onTimeOut, bool addTimer)
+    static bool Setup(string sceneName, bool onTimeOut, bool addTimer, bool showDialog = true)
     {
-        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        if (showDialog && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return false;
         Scene scene = EditorSceneManager.OpenScene($"Assets/Scenes/{sceneName}.unity", OpenSceneMode.Single);
 
         // 1) 샷건 프레임 이미지 설정 (shotgun_00 ~ shotgun_15)
@@ -51,7 +75,7 @@ public static class ShotgunSetupTool
         if (frames.Count == 0)
         {
             EditorUtility.DisplayDialog("샷건 설정", "샷건 이미지를 찾지 못했습니다:\n" + FramesFolder, "확인");
-            return;
+            return false;
         }
 
         // 2) 미니게임이 들어가는 Canvas 찾기
@@ -65,8 +89,8 @@ public static class ShotgunSetupTool
         }
         if (gameCanvas == null)
         {
-            EditorUtility.DisplayDialog("샷건 설정", "게임 Canvas를 찾지 못했습니다.", "확인");
-            return;
+            EditorUtility.DisplayDialog("샷건 설정", sceneName + ": 게임 Canvas를 찾지 못했습니다.", "확인");
+            return false;
         }
         gameCanvas = gameCanvas.rootCanvas;
 
@@ -156,12 +180,14 @@ public static class ShotgunSetupTool
         EditorSceneManager.SaveScene(scene);
         Selection.activeGameObject = ctrlGO;
 
+        if (!showDialog) return true;
         EditorUtility.DisplayDialog("샷건 설정",
             $"{sceneName}에 샷건 연출을 넣었습니다!\n\n" +
             "▶ Play 후 키보드 F9를 누르면 바로 테스트할 수 있어요.\n" +
             "실제 게임에서는 실수 5번 → 샷건, 그 다음부터 7번마다 샷건이 나옵니다." +
             (addTimer ? "\n오른쪽 위에 TIME 타이머를 넣었습니다." : "") +
-            (onTimeOut ? "\n제한 시간이 다 되면 샷건 후 실패 화면(RETRY / EXIT)이 나옵니다." : ""), "확인");
+            (onTimeOut ? "\n제한 시간이 다 되면 실패 화면(RETRY / EXIT)이 먼저 나오고 그 다음 샷건이 나옵니다." : ""), "확인");
+        return true;
     }
 
     // 챕터 3의 Minigame_11Panel > TimerText 모양을 그대로 복사
