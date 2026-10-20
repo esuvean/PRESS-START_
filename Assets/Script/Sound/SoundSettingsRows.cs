@@ -20,11 +20,13 @@ public static class SoundSettingsRows
     // 줄 사이 간격 (위아래 거리). 줄이 겹치거나 너무 멀면 이 숫자만 바꾸면 됨
     private const float RowGap = 80f;
 
-    // 미니게임 10 "설정 속 숨은 START" 자리 — 바와 겹치지 않게 오른쪽으로 옮김
-    private static readonly Vector2 StartSlotPosition = new Vector2(720f, -55f);
+    // 미니게임 10 "설정 속 숨은 START" 자리 — 바와 겹치지 않게 SETTINGS 글자 위 가운데(별 아래 검은 공간)로 옮김
+    private static readonly Vector2 StartSlotPosition = new Vector2(0f, 320f);
 
     // 설정 속 숨은 START 버튼 크기 (1 = 원래 크기)
-    private const float StartButtonScale = 1.3f;
+    // 가로·세로를 따로 키워서 눌려 보이지 않게 (원래 미니게임 화면의 START 비율과 비슷하게)
+    private const float StartButtonScaleX = 1.3f;
+    private const float StartButtonScaleY = 1.65f;
 
     public static void Build(Slider volumeSlider, TMP_Text volumeValueText)
     {
@@ -56,7 +58,7 @@ public static class SoundSettingsRows
             foreach (RectTransform slot in pages.GetComponentsInChildren<RectTransform>(true))
             {
                 if (slot.name.Contains("StartSlot"))
-                    slot.localScale = Vector3.one * StartButtonScale;
+                    slot.localScale = new Vector3(StartButtonScaleX, StartButtonScaleY, 1f);
             }
         }
 

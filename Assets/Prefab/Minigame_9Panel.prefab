@@ -351,6 +351,10 @@ MonoBehaviour:
   normalButtonColor: {r: 1, g: 1, b: 1, a: 1}
   startHintColor: {r: 0.4, g: 1, b: 0.84, a: 1}
   buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
+  buttonSprites:
+  - {fileID: 21300000, guid: 708d7031eabcf634c88e983f6ab3e3b8, type: 3}
+  - {fileID: 21300000, guid: bb31b35410b8d3342a66437af839fc08, type: 3}
+  - {fileID: 21300000, guid: bad73ccc858010f44824e3e3a951b5fd, type: 3}
 --- !u!1 &2431016922573166561
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,7 +420,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 709369918f82b6148a4767650026c54d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -493,7 +497,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 01779e7716ac9b143a6d7e914d672e27, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

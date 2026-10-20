@@ -103,6 +103,18 @@ public class Minigame9_FallingStart : MinigameBase
 
 
     // ============================================
+    // 버튼 그림 (랜덤)
+    // ============================================
+
+    [Header("Button Sprites (랜덤)")]
+
+    // 떨어지는 버튼마다 이 중 하나를 랜덤으로 씀
+    // (09_button1 / 09_button2 / 09_button3)
+    // 비워 두면 원래 FallingButton 프리팹 그림 그대로
+    public Sprite[] buttonSprites;
+
+
+    // ============================================
     // 내부 변수
     // ============================================
 
@@ -435,6 +447,24 @@ public class Minigame9_FallingStart : MinigameBase
 
                 hintMode
             );
+
+
+            // 버튼 그림 랜덤으로 바꾸기
+            if (item.buttonImage != null &&
+                buttonSprites != null &&
+                buttonSprites.Length > 0)
+            {
+                Sprite randomSprite =
+                    buttonSprites[
+                        Random.Range(
+                            0,
+                            buttonSprites.Length
+                        )
+                    ];
+
+                if (randomSprite != null)
+                    item.buttonImage.sprite = randomSprite;
+            }
         }
     }
 
