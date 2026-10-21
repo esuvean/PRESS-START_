@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -15,6 +14,7 @@ public class Minigame19_StartLadder : MinigameBase
         public int targetGap;
         public bool isFixed;
         public RectTransform rect;
+        public Image handleImage;
         public Image barImage;
         public TMP_Text numberLabel;
     }
@@ -44,19 +44,16 @@ public class Minigame19_StartLadder : MinigameBase
     public Color ghostColor = new Color(0.8f, 0.9f, 1f, 0.13f);
     public Color hintColor = new Color(0.4f, 1f, 0.45f);
     public Color letterColor = Color.white;
+    public Color selectionColor = new Color(1f, 0.35f, 0.7f);
 
     [Header("Settings")]
     public float autoHelpTime = 90f;
     public float movementDuration = 0.22f;
+    public float trayLineSpacing = 65f;
 
-    private readonly List<GameObject> generatedObjects =
-        new List<GameObject>();
-
-    private readonly Dictionary<int, Connector> connectors =
-        new Dictionary<int, Connector>();
-
-    private readonly List<Connector> movableConnectors =
-        new List<Connector>();
+    private readonly List<GameObject> generatedObjects = new List<GameObject>();
+    private readonly Dictionary<int, Connector> connectors = new Dictionary<int, Connector>();
+    private readonly List<Connector> movableConnectors = new List<Connector>();
 
     private Image[,] ghostSlots;
     private TMP_Text[] destinationLabels;
@@ -64,6 +61,7 @@ public class Minigame19_StartLadder : MinigameBase
     private int currentRound;
     private int rungCount;
     private int failureCount;
+    private int selectedRow = -1;
 
     private float railSpacing;
     private float topY;
@@ -79,9 +77,7 @@ public class Minigame19_StartLadder : MinigameBase
     private void Start()
     {
         if (!isGameActive)
-        {
             StartMinigame();
-        }
     }
 
     public override void StartMinigame()
@@ -89,16 +85,13 @@ public class Minigame19_StartLadder : MinigameBase
         StopAllCoroutines();
 
         gameName = "START 사다리";
-        instruction = "가로 연결선을 배치해 START 순서를 만드세요.";
+        instruction = "선택선을 클릭하고 사다리의 회색 연결 칸을 클릭하세요.";
 
         base.StartMinigame();
 
         if (ladderArea == null || connectorTray == null)
         {
-            Debug.LogError(
-                "LadderArea 또는 ConnectorTray가 연결되지 않았습니다."
-            );
-
+            Debug.LogError("LadderArea 또는 ConnectorTray가 연결되지 않았습니다.");
             isGameActive = false;
             return;
         }
@@ -106,15 +99,13 @@ public class Minigame19_StartLadder : MinigameBase
         currentRound = 0;
         failureCount = 0;
         elapsedTime = 0f;
-
         isAnimating = false;
         isClearing = false;
         autoHelpUsed = false;
+        selectedRow = -1;
 
         if (titleText != null)
-        {
             titleText.text = gameName;
-        }
 
         if (executeButton != null)
         {
@@ -129,9 +120,7 @@ public class Minigame19_StartLadder : MinigameBase
         }
 
         if (clearPanel != null)
-        {
             clearPanel.SetActive(false);
-        }
 
         BuildRound();
         UpdateTimerText();
@@ -145,12 +134,9 @@ public class Minigame19_StartLadder : MinigameBase
             return;
 
         elapsedTime += Time.deltaTime;
-
         UpdateTimerText();
 
-        if (!autoHelpUsed &&
-            elapsedTime >= autoHelpTime &&
-            !isAnimating)
+        if (!autoHelpUsed && elapsedTime >= autoHelpTime && !isAnimating)
         {
             autoHelpUsed = true;
             AutoPlaceOneConnector();
@@ -162,30 +148,22 @@ public class Minigame19_StartLadder : MinigameBase
         if (timerText == null)
             return;
 
-        float remainingTime =
-            Mathf.Max(0f, autoHelpTime - elapsedTime);
-
-        timerText.text =
-            $"남은 시간: {Mathf.CeilToInt(remainingTime)}초";
+        float remaining = Mathf.Max(0f, autoHelpTime - elapsedTime);
+        timerText.text = $"남은 시간: {Mathf.CeilToInt(remaining)}초";
     }
 
     private void BuildRound()
     {
         ClearGeneratedObjects();
-
         connectors.Clear();
         movableConnectors.Clear();
 
+        selectedRow = -1;
         failureCount = 0;
         isAnimating = false;
 
         rungCount = currentRound == 0 ? 6 : 8;
-
-        railSpacing = Mathf.Min(
-            190f,
-            (ladderArea.rect.width - 100f) / 4f
-        );
-
+        railSpacing = Mathf.Min(190f, (ladderArea.rect.width - 100f) / 4f);
         topY = ladderArea.rect.height * 0.5f - 38f;
         bottomY = -ladderArea.rect.height * 0.5f + 38f;
 
@@ -193,33 +171,19 @@ public class Minigame19_StartLadder : MinigameBase
         destinationLabels = new TMP_Text[5];
 
         if (roundText != null)
-        {
-            roundText.text =
-                $"ROUND {currentRound + 1} / 2";
-        }
+            roundText.text = $"ROUND {currentRound + 1} / 2";
 
         if (instructionText != null)
-        {
-            instructionText.text =
-                "가로선을 드래그해 배치한 뒤 경로를 실행하세요.";
-        }
+            instructionText.text = "왼쪽 선택선 클릭 → 사다리의 연결 칸 클릭 → 경로 실행";
 
         if (trayLabelText != null)
-        {
-            trayLabelText.text = currentRound == 0
-                ? "이동할 가로선 4개"
-                : "이동할 가로선 5개";
-        }
+            trayLabelText.text = currentRound == 0 ? "선택선 4개" : "선택선 5개";
 
         if (statusText != null)
-        {
-            statusText.text = "";
-        }
+            statusText.text = "왼쪽의 노란 선 하나를 클릭하세요.";
 
         if (executeButton != null)
-        {
             executeButton.interactable = true;
-        }
 
         CreateRails();
         CreateGhostSlots();
@@ -248,6 +212,7 @@ public class Minigame19_StartLadder : MinigameBase
             CreateMovableConnector(7, 3, 4, 5);
         }
 
+        RefreshSelectionVisuals();
         UpdateTimerText();
     }
 
@@ -263,9 +228,7 @@ public class Minigame19_StartLadder : MinigameBase
 
     private float RowY(int row)
     {
-        float step =
-            (topY - bottomY) / (rungCount + 1f);
-
+        float step = (topY - bottomY) / (rungCount + 1f);
         return topY - step * (row + 1);
     }
 
@@ -292,10 +255,7 @@ public class Minigame19_StartLadder : MinigameBase
                 $"RowNumber_{row + 1}",
                 ladderArea,
                 $"{row + 1}",
-                new Vector2(
-                    LaneX(0) - 55f,
-                    RowY(row)
-                ),
+                new Vector2(LaneX(0) - 55f, RowY(row)),
                 new Vector2(35f, 35f),
                 20f,
                 railColor
@@ -306,19 +266,23 @@ public class Minigame19_StartLadder : MinigameBase
                 Image slot = CreateImage(
                     $"Slot_R{row + 1}_G{gap + 1}",
                     ladderArea,
-                    new Vector2(
-                        GapX(gap),
-                        RowY(row)
-                    ),
-                    new Vector2(
-                        railSpacing + 5f,
-                        6f
-                    ),
+                    new Vector2(GapX(gap), RowY(row)),
+                    new Vector2(railSpacing + 5f, 32f),
                     ghostColor,
-                    false
+                    true
                 );
 
                 ghostSlots[row, gap] = slot;
+
+                Button slotButton = slot.gameObject.AddComponent<Button>();
+                slotButton.targetGraphic = slot;
+                slotButton.transition = Selectable.Transition.None;
+
+                int capturedRow = row;
+                int capturedGap = gap;
+                slotButton.onClick.AddListener(
+                    () => OnSlotClicked(capturedRow, capturedGap)
+                );
             }
         }
     }
@@ -331,10 +295,7 @@ public class Minigame19_StartLadder : MinigameBase
                 $"TopLetter_{i + 1}",
                 ladderArea,
                 startLetters[i].ToString(),
-                new Vector2(
-                    LaneX(i),
-                    topY + 34f
-                ),
+                new Vector2(LaneX(i), topY + 34f),
                 new Vector2(75f, 55f),
                 42f,
                 letterColor
@@ -344,10 +305,7 @@ public class Minigame19_StartLadder : MinigameBase
                 $"Destination_{i + 1}",
                 ladderArea,
                 $"{i + 1}",
-                new Vector2(
-                    LaneX(i),
-                    bottomY - 30f
-                ),
+                new Vector2(LaneX(i), bottomY - 30f),
                 new Vector2(75f, 50f),
                 36f,
                 letterColor
@@ -360,19 +318,13 @@ public class Minigame19_StartLadder : MinigameBase
         Image image = CreateImage(
             $"FixedConnector_{row + 1}",
             ladderArea,
-            new Vector2(
-                GapX(gap),
-                RowY(row)
-            ),
-            new Vector2(
-                railSpacing + 10f,
-                12f
-            ),
+            new Vector2(GapX(gap), RowY(row)),
+            new Vector2(railSpacing + 10f, 12f),
             fixedColor,
             false
         );
 
-        Connector connector = new Connector
+        connectors[row] = new Connector
         {
             row = row,
             gap = gap,
@@ -381,29 +333,18 @@ public class Minigame19_StartLadder : MinigameBase
             rect = image.rectTransform,
             barImage = image
         };
-
-        connectors[row] = connector;
     }
 
-    private void CreateMovableConnector(
-        int row,
-        int targetGap,
-        int trayIndex,
-        int trayCount)
+    private void CreateMovableConnector(int row, int targetGap, int trayIndex, int trayCount)
     {
-        float spacing =
-            trayCount == 4 ? 175f : 155f;
-
-        float trayX =
-            (trayIndex - (trayCount - 1) * 0.5f)
-            * spacing;
+        float trayY = ((trayCount - 1) * 0.5f - trayIndex) * trayLineSpacing;
 
         Image handle = CreateImage(
-            $"MovableConnector_{row + 1}",
+            $"SelectableConnector_{row + 1}",
             connectorTray,
-            new Vector2(trayX, 0f),
-            new Vector2(140f, 42f),
-            new Color(1f, 1f, 1f, 0.02f),
+            new Vector2(0f, trayY),
+            new Vector2(170f, 48f),
+            new Color(1f, 1f, 1f, 0.08f),
             true
         );
 
@@ -416,23 +357,17 @@ public class Minigame19_StartLadder : MinigameBase
             false
         );
 
-        RectTransform barRect =
-            bar.rectTransform;
-
-        barRect.anchorMin =
-            new Vector2(0f, 0.5f);
-
-        barRect.anchorMax =
-            new Vector2(1f, 0.5f);
-
-        barRect.sizeDelta =
-            new Vector2(0f, 11f);
+        RectTransform barRect = bar.rectTransform;
+        barRect.anchorMin = new Vector2(0f, 0.5f);
+        barRect.anchorMax = new Vector2(1f, 0.5f);
+        barRect.offsetMin = new Vector2(14f, -5.5f);
+        barRect.offsetMax = new Vector2(-14f, 5.5f);
 
         TMP_Text number = CreateText(
             "ConnectorNumber",
             handle.rectTransform,
             $"{row + 1}",
-            Vector2.zero,
+            new Vector2(0f, 0f),
             new Vector2(55f, 38f),
             24f,
             Color.white
@@ -445,6 +380,7 @@ public class Minigame19_StartLadder : MinigameBase
             targetGap = targetGap,
             isFixed = false,
             rect = handle.rectTransform,
+            handleImage = handle,
             barImage = bar,
             numberLabel = number
         };
@@ -452,163 +388,154 @@ public class Minigame19_StartLadder : MinigameBase
         connectors[row] = connector;
         movableConnectors.Add(connector);
 
-        LadderConnectorDrag drag =
-            handle.gameObject
-                .AddComponent<LadderConnectorDrag>();
+        Button selectButton = handle.gameObject.AddComponent<Button>();
+        selectButton.targetGraphic = handle;
+        selectButton.transition = Selectable.Transition.None;
 
-        RectTransform dragLayer =
-            GetComponent<RectTransform>();
+        int capturedRow = row;
+        selectButton.onClick.AddListener(() => SelectConnector(capturedRow));
+    }
 
-        drag.Initialize(
-            this,
-            row,
-            dragLayer
-        );
+    private void SelectConnector(int row)
+    {
+        if (!isGameActive || isAnimating || isClearing)
+            return;
+
+        if (!connectors.TryGetValue(row, out Connector connector) || connector.isFixed)
+            return;
+
+        selectedRow = selectedRow == row ? -1 : row;
+        RefreshSelectionVisuals();
+
+        if (statusText != null)
+        {
+            statusText.text = selectedRow < 0
+                ? "선택을 취소했습니다. 다른 노란 선을 클릭하세요."
+                : $"{row + 1}번 선 선택! 사다리의 {row + 1}번째 가로줄에서 회색 연결 칸을 클릭하세요.";
+        }
+    }
+
+    private void OnSlotClicked(int row, int gap)
+    {
+        if (!isGameActive || isAnimating || isClearing)
+            return;
+
+        if (selectedRow < 0)
+        {
+            if (statusText != null)
+                statusText.text = "먼저 왼쪽의 노란 선택선을 클릭하세요.";
+            return;
+        }
+
+        if (selectedRow != row)
+        {
+            if (statusText != null)
+                statusText.text = $"선택한 선은 {selectedRow + 1}번째 가로줄에만 설치할 수 있어요.";
+            return;
+        }
+
+        Connector connector = connectors[selectedRow];
+        PlaceConnector(connector, gap);
+        int installedRow = selectedRow;
+        selectedRow = -1;
+        RefreshSelectionVisuals();
+
+        if (statusText != null)
+            statusText.text = $"{installedRow + 1}번 가로선을 {gap + 1}번과 {gap + 2}번 세로줄 사이에 설치했습니다.";
+    }
+
+    private void RefreshSelectionVisuals()
+    {
+        if (ghostSlots != null)
+        {
+            for (int row = 0; row < rungCount; row++)
+            {
+                for (int gap = 0; gap < 4; gap++)
+                {
+                    if (ghostSlots[row, gap] != null)
+                    {
+                        ghostSlots[row, gap].color = row == selectedRow
+                            ? new Color(selectionColor.r, selectionColor.g, selectionColor.b, 0.34f)
+                            : ghostColor;
+                    }
+                }
+            }
+        }
+
+        foreach (Connector connector in movableConnectors)
+        {
+            if (connector.handleImage != null)
+            {
+                connector.handleImage.color = connector.row == selectedRow
+                    ? new Color(selectionColor.r, selectionColor.g, selectionColor.b, 0.3f)
+                    : new Color(1f, 1f, 1f, 0.08f);
+            }
+
+            if (connector.barImage != null)
+            {
+                connector.barImage.color = connector.row == selectedRow
+                    ? selectionColor
+                    : movableColor;
+            }
+        }
+    }
+
+    private void PlaceConnector(Connector connector, int gap)
+    {
+        if (connector == null || connector.isFixed)
+            return;
+
+        connector.gap = gap;
+        connector.rect.SetParent(ladderArea, false);
+        connector.rect.anchorMin = new Vector2(0.5f, 0.5f);
+        connector.rect.anchorMax = new Vector2(0.5f, 0.5f);
+        connector.rect.pivot = new Vector2(0.5f, 0.5f);
+        connector.rect.sizeDelta = new Vector2(railSpacing + 10f, 42f);
+        connector.rect.anchoredPosition = new Vector2(GapX(gap), RowY(connector.row));
+        connector.rect.SetAsLastSibling();
+
+        if (connector.barImage != null)
+        {
+            RectTransform barRect = connector.barImage.rectTransform;
+            barRect.offsetMin = new Vector2(-5f, -5.5f);
+            barRect.offsetMax = new Vector2(5f, 5.5f);
+        }
+
+        if (connector.numberLabel != null)
+            connector.numberLabel.gameObject.SetActive(false);
     }
 
     public bool CanDrag(int row)
     {
-        if (!isGameActive ||
-            isAnimating ||
-            isClearing)
-        {
-            return false;
-        }
-
-        return connectors.ContainsKey(row) &&
-               !connectors[row].isFixed;
+        return false;
     }
 
-    public bool TryDropConnector(
-        int row,
-        RectTransform rect,
-        PointerEventData eventData)
+    public bool TryDropConnector(int row, RectTransform rect, PointerEventData eventData)
     {
-        if (!CanDrag(row))
-            return false;
-
-        if (!RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                ladderArea,
-                eventData.position,
-                eventData.pressEventCamera,
-                out Vector2 localPosition))
-        {
-            return false;
-        }
-
-        Rect bounds = ladderArea.rect;
-
-        if (localPosition.x < bounds.xMin - 25f ||
-            localPosition.x > bounds.xMax + 25f ||
-            localPosition.y < bounds.yMin - 25f ||
-            localPosition.y > bounds.yMax + 25f)
-        {
-            return false;
-        }
-
-        int closestGap = 0;
-        float closestDistance = float.MaxValue;
-
-        for (int gap = 0; gap < 4; gap++)
-        {
-            float distance = Mathf.Abs(
-                localPosition.x - GapX(gap)
-            );
-
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestGap = gap;
-            }
-        }
-
-        PlaceConnector(
-            connectors[row],
-            closestGap
-        );
-
-        return true;
-    }
-
-    private void PlaceConnector(
-        Connector connector,
-        int gap)
-    {
-        if (connector == null ||
-            connector.isFixed)
-        {
-            return;
-        }
-
-        connector.gap = gap;
-
-        connector.rect.SetParent(
-            ladderArea,
-            false
-        );
-
-        connector.rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        connector.rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        connector.rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        connector.rect.sizeDelta =
-            new Vector2(
-                railSpacing + 10f,
-                42f
-            );
-
-        connector.rect.anchoredPosition =
-            new Vector2(
-                GapX(gap),
-                RowY(connector.row)
-            );
-
-        connector.barImage.color =
-            movableColor;
-
-        if (connector.numberLabel != null)
-        {
-            connector.numberLabel
-                .gameObject.SetActive(false);
-        }
+        return false;
     }
 
     private void OnExecuteClicked()
     {
-        if (!isGameActive ||
-            isAnimating ||
-            isClearing)
-        {
+        if (!isGameActive || isAnimating || isClearing)
             return;
-        }
 
-        StartCoroutine(
-            ExecutePathRoutine()
-        );
+        StartCoroutine(ExecutePathRoutine());
     }
 
     private IEnumerator ExecutePathRoutine()
     {
         isAnimating = true;
+        selectedRow = -1;
+        RefreshSelectionVisuals();
 
         if (executeButton != null)
-        {
             executeButton.interactable = false;
-        }
 
         if (statusText != null)
-        {
             statusText.text = "경로 검사 중...";
-        }
 
-        TMP_Text[] movingLetters =
-            new TMP_Text[5];
+        TMP_Text[] movingLetters = new TMP_Text[5];
 
         for (int i = 0; i < 5; i++)
         {
@@ -616,10 +543,7 @@ public class Minigame19_StartLadder : MinigameBase
                 $"MovingLetter_{i + 1}",
                 ladderArea,
                 startLetters[i].ToString(),
-                new Vector2(
-                    LaneX(i),
-                    topY - 10f
-                ),
+                new Vector2(LaneX(i), topY - 10f),
                 new Vector2(75f, 55f),
                 38f,
                 letterColor
@@ -630,66 +554,32 @@ public class Minigame19_StartLadder : MinigameBase
 
         for (int row = 0; row < rungCount; row++)
         {
-            yield return MoveLettersDown(
-                movingLetters,
-                RowY(row),
-                movementDuration
-            );
+            yield return MoveLettersDown(movingLetters, RowY(row), movementDuration);
 
-            if (!connectors.TryGetValue(
-                row,
-                out Connector connector))
-            {
-                continue;
-            }
-
-            if (connector.gap < 0)
+            if (!connectors.TryGetValue(row, out Connector connector) || connector.gap < 0)
                 continue;
 
             int gap = connector.gap;
+            TMP_Text leftLetter = movingLetters[gap];
+            TMP_Text rightLetter = movingLetters[gap + 1];
 
-            TMP_Text leftLetter =
-                movingLetters[gap];
-
-            TMP_Text rightLetter =
-                movingLetters[gap + 1];
-
-            yield return SwapLetters(
-                leftLetter,
-                rightLetter,
-                movementDuration
-            );
-
-            movingLetters[gap] =
-                rightLetter;
-
-            movingLetters[gap + 1] =
-                leftLetter;
+            yield return SwapLetters(leftLetter, rightLetter, movementDuration);
+            movingLetters[gap] = rightLetter;
+            movingLetters[gap + 1] = leftLetter;
         }
 
-        yield return MoveLettersDown(
-            movingLetters,
-            bottomY + 12f,
-            movementDuration
-        );
+        yield return MoveLettersDown(movingLetters, bottomY + 12f, movementDuration);
 
         string result = "";
-
         for (int i = 0; i < 5; i++)
-        {
             result += movingLetters[i].text;
-        }
 
-        bool correct =
-            result == "START";
+        bool correct = result == "START";
 
         if (correct)
         {
             if (statusText != null)
-            {
-                statusText.text =
-                    "도착 결과: START ? 정답입니다!";
-            }
+                statusText.text = "도착 결과: START ? 정답입니다!";
         }
         else
         {
@@ -698,14 +588,10 @@ public class Minigame19_StartLadder : MinigameBase
 
         yield return new WaitForSeconds(1.2f);
 
-        for (int i = 0; i < movingLetters.Length; i++)
+        foreach (TMP_Text letter in movingLetters)
         {
-            if (movingLetters[i] != null)
-            {
-                Destroy(
-                    movingLetters[i].gameObject
-                );
-            }
+            if (letter != null)
+                Destroy(letter.gameObject);
         }
 
         if (correct)
@@ -717,129 +603,71 @@ public class Minigame19_StartLadder : MinigameBase
             }
             else
             {
-                StartCoroutine(
-                    ShowClearRoutine()
-                );
+                StartCoroutine(ShowClearRoutine());
             }
         }
         else
         {
             isAnimating = false;
-
             if (executeButton != null)
-            {
                 executeButton.interactable = true;
-            }
         }
     }
 
-    private IEnumerator MoveLettersDown(
-        TMP_Text[] letters,
-        float targetY,
-        float duration)
+    private IEnumerator MoveLettersDown(TMP_Text[] letters, float targetY, float duration)
     {
-        float startY =
-            letters[0].rectTransform
-                .anchoredPosition.y;
-
+        float startY = letters[0].rectTransform.anchoredPosition.y;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
 
-            float t = Mathf.Clamp01(
-                elapsed / duration
-            );
-
-            for (int i = 0; i < letters.Length; i++)
+            foreach (TMP_Text letter in letters)
             {
-                RectTransform rect =
-                    letters[i].rectTransform;
-
-                Vector2 pos =
-                    rect.anchoredPosition;
-
-                pos.y = Mathf.Lerp(
-                    startY,
-                    targetY,
-                    t
-                );
-
+                RectTransform rect = letter.rectTransform;
+                Vector2 pos = rect.anchoredPosition;
+                pos.y = Mathf.Lerp(startY, targetY, t);
                 rect.anchoredPosition = pos;
             }
 
             yield return null;
         }
 
-        for (int i = 0; i < letters.Length; i++)
+        foreach (TMP_Text letter in letters)
         {
-            RectTransform rect =
-                letters[i].rectTransform;
-
-            Vector2 pos =
-                rect.anchoredPosition;
-
+            RectTransform rect = letter.rectTransform;
+            Vector2 pos = rect.anchoredPosition;
             pos.y = targetY;
             rect.anchoredPosition = pos;
         }
     }
 
-    private IEnumerator SwapLetters(
-        TMP_Text left,
-        TMP_Text right,
-        float duration)
+    private IEnumerator SwapLetters(TMP_Text left, TMP_Text right, float duration)
     {
-        RectTransform leftRect =
-            left.rectTransform;
-
-        RectTransform rightRect =
-            right.rectTransform;
-
-        Vector2 leftStart =
-            leftRect.anchoredPosition;
-
-        Vector2 rightStart =
-            rightRect.anchoredPosition;
-
+        RectTransform leftRect = left.rectTransform;
+        RectTransform rightRect = right.rectTransform;
+        Vector2 leftStart = leftRect.anchoredPosition;
+        Vector2 rightStart = rightRect.anchoredPosition;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-
-            float t = Mathf.Clamp01(
-                elapsed / duration
-            );
-
-            leftRect.anchoredPosition =
-                Vector2.Lerp(
-                    leftStart,
-                    rightStart,
-                    t
-                );
-
-            rightRect.anchoredPosition =
-                Vector2.Lerp(
-                    rightStart,
-                    leftStart,
-                    t
-                );
-
+            float t = Mathf.Clamp01(elapsed / duration);
+            leftRect.anchoredPosition = Vector2.Lerp(leftStart, rightStart, t);
+            rightRect.anchoredPosition = Vector2.Lerp(rightStart, leftStart, t);
             yield return null;
         }
 
-        leftRect.anchoredPosition =
-            rightStart;
-
-        rightRect.anchoredPosition =
-            leftStart;
+        leftRect.anchoredPosition = rightStart;
+        rightRect.anchoredPosition = leftStart;
     }
 
     private void HandleWrongResult(string result)
     {
         failureCount++;
-
         int wrongIndex = -1;
 
         for (int i = 0; i < 5; i++)
@@ -851,60 +679,34 @@ public class Minigame19_StartLadder : MinigameBase
             }
         }
 
-        if (wrongIndex >= 0 &&
-            destinationLabels[wrongIndex] != null)
-        {
-            destinationLabels[wrongIndex].color =
-                Color.red;
-        }
+        if (wrongIndex >= 0 && destinationLabels[wrongIndex] != null)
+            destinationLabels[wrongIndex].color = Color.red;
 
         if (statusText != null)
-        {
-            statusText.text =
-                $"도착: {result} ? 실행 문자 순서가 올바르지 않습니다.";
-        }
+            statusText.text = $"도착: {result} ? 실행 문자 순서가 올바르지 않습니다.";
 
         if (failureCount == 1)
         {
             if (statusText != null)
-            {
-                statusText.text +=
-                    "\n빨간색으로 표시된 도착 칸을 확인하세요.";
-            }
+                statusText.text += "\n빨간색 도착 칸을 확인하세요.";
         }
         else if (failureCount == 2)
         {
-            if (ghostSlots.GetLength(0) > 1)
-            {
-                ghostSlots[1, 0].color =
-                    hintColor;
-            }
+            if (ghostSlots.GetLength(0) > 1 && ghostSlots[1, 0] != null)
+                ghostSlots[1, 0].color = hintColor;
 
-            if (connectors.TryGetValue(
-                0,
-                out Connector fixedConnector))
-            {
-                fixedConnector.barImage.color =
-                    hintColor;
-            }
+            if (connectors.TryGetValue(0, out Connector fixedConnector))
+                fixedConnector.barImage.color = hintColor;
 
             if (statusText != null)
-            {
-                statusText.text +=
-                    "\n힌트: S가 지나갈 첫 번째 경로를 확인하세요.";
-            }
+                statusText.text += "\n힌트: S가 지나갈 첫 번째 경로를 확인하세요.";
         }
         else
         {
             if (statusText != null)
-            {
-                statusText.text +=
-                    "\n힌트: 정답 연결 위치가 깜빡입니다.";
-            }
+                statusText.text += "\n힌트: 정답 연결 위치가 깜빡입니다.";
 
-            StartCoroutine(
-                FlashCorrectSlot()
-            );
+            StartCoroutine(FlashCorrectSlot());
         }
     }
 
@@ -924,22 +726,15 @@ public class Minigame19_StartLadder : MinigameBase
         if (target == null)
             yield break;
 
-        Image slot = ghostSlots[
-            target.row,
-            target.targetGap
-        ];
-
+        Image slot = ghostSlots[target.row, target.targetGap];
         if (slot == null)
             yield break;
 
         for (int i = 0; i < 6; i++)
         {
             slot.color = hintColor;
-
             yield return new WaitForSeconds(0.25f);
-
             slot.color = ghostColor;
-
             yield return new WaitForSeconds(0.25f);
         }
 
@@ -950,22 +745,15 @@ public class Minigame19_StartLadder : MinigameBase
     {
         foreach (Connector connector in movableConnectors)
         {
-            if (connector.gap ==
-                connector.targetGap)
-            {
+            if (connector.gap == connector.targetGap)
                 continue;
-            }
 
-            PlaceConnector(
-                connector,
-                connector.targetGap
-            );
+            PlaceConnector(connector, connector.targetGap);
+            selectedRow = -1;
+            RefreshSelectionVisuals();
 
             if (statusText != null)
-            {
-                statusText.text =
-                    "90초 힌트: 연결선 하나가 자동으로 설치되었습니다.";
-            }
+                statusText.text = "90초 힌트: 연결선 하나가 자동으로 설치되었습니다.";
 
             return;
         }
@@ -984,28 +772,19 @@ public class Minigame19_StartLadder : MinigameBase
         clearPanel.SetActive(true);
 
         if (clearStartButton != null)
-        {
             clearStartButton.interactable = false;
-        }
 
         if (clearTitleText != null)
         {
             clearTitleText.text = "START";
-
             float elapsed = 0f;
             float duration = 1f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-
-                float t = Mathf.Clamp01(
-                    elapsed / duration
-                );
-
-                clearTitleText.characterSpacing =
-                    Mathf.Lerp(60f, 0f, t);
-
+                float t = Mathf.Clamp01(elapsed / duration);
+                clearTitleText.characterSpacing = Mathf.Lerp(60f, 0f, t);
                 yield return null;
             }
 
@@ -1013,9 +792,7 @@ public class Minigame19_StartLadder : MinigameBase
         }
 
         if (clearStartButton != null)
-        {
             clearStartButton.interactable = true;
-        }
     }
 
     private void OnClearStartClicked()
@@ -1028,12 +805,8 @@ public class Minigame19_StartLadder : MinigameBase
 
     protected override void GiveHint()
     {
-        if (statusText != null &&
-            !isAnimating)
-        {
-            statusText.text =
-                "힌트: 연결선은 두 글자의 이동 경로를 서로 바꿉니다.";
-        }
+        if (statusText != null && !isAnimating)
+            statusText.text = "힌트: 선택선을 클릭한 다음 해당 줄의 회색 칸을 클릭하세요.";
     }
 
     protected override void RestartGame()
@@ -1043,18 +816,10 @@ public class Minigame19_StartLadder : MinigameBase
 
     private void ClearGeneratedObjects()
     {
-        for (
-            int i = generatedObjects.Count - 1;
-            i >= 0;
-            i--
-        )
+        for (int i = generatedObjects.Count - 1; i >= 0; i--)
         {
             if (generatedObjects[i] != null)
-            {
-                Destroy(
-                    generatedObjects[i]
-                );
-            }
+                Destroy(generatedObjects[i]);
         }
 
         generatedObjects.Clear();
@@ -1075,34 +840,19 @@ public class Minigame19_StartLadder : MinigameBase
             typeof(Image)
         );
 
-        obj.transform.SetParent(
-            parent,
-            false
-        );
-
+        obj.transform.SetParent(parent, false);
         generatedObjects.Add(obj);
 
-        RectTransform rect =
-            obj.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = position;
         rect.sizeDelta = size;
 
-        Image image =
-            obj.GetComponent<Image>();
-
+        Image image = obj.GetComponent<Image>();
         image.color = color;
         image.raycastTarget = raycast;
-
         return image;
     }
 
@@ -1122,57 +872,28 @@ public class Minigame19_StartLadder : MinigameBase
             typeof(TextMeshProUGUI)
         );
 
-        obj.transform.SetParent(
-            parent,
-            false
-        );
-
+        obj.transform.SetParent(parent, false);
         generatedObjects.Add(obj);
 
-        RectTransform rect =
-            obj.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = position;
         rect.sizeDelta = size;
 
-        TextMeshProUGUI text =
-            obj.GetComponent<TextMeshProUGUI>();
-
-        if (titleText != null &&
-            titleText.font != null)
-        {
-            text.font = titleText.font;
-        }
-        else
-        {
-            text.font =
-                TMP_Settings.defaultFontAsset;
-        }
+        TextMeshProUGUI text = obj.GetComponent<TextMeshProUGUI>();
+        text.font = titleText != null && titleText.font != null
+            ? titleText.font
+            : TMP_Settings.defaultFontAsset;
 
         text.text = content;
         text.fontSize = fontSize;
         text.color = color;
-
-        text.alignment =
-            TextAlignmentOptions.Center;
-
+        text.alignment = TextAlignmentOptions.Center;
         text.enableAutoSizing = false;
-
-        text.textWrappingMode =
-            TextWrappingModes.NoWrap;
-
-        text.overflowMode =
-            TextOverflowModes.Overflow;
-
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Overflow;
         text.raycastTarget = false;
 
         return text;
@@ -1181,17 +902,9 @@ public class Minigame19_StartLadder : MinigameBase
     private void OnDestroy()
     {
         if (executeButton != null)
-        {
-            executeButton.onClick.RemoveListener(
-                OnExecuteClicked
-            );
-        }
+            executeButton.onClick.RemoveListener(OnExecuteClicked);
 
         if (clearStartButton != null)
-        {
-            clearStartButton.onClick.RemoveListener(
-                OnClearStartClicked
-            );
-        }
+            clearStartButton.onClick.RemoveListener(OnClearStartClicked);
     }
 }

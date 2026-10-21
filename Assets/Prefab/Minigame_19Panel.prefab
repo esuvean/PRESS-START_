@@ -512,7 +512,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -490}
+  m_AnchoredPosition: {x: -144, y: -490}
   m_SizeDelta: {x: 1500, y: 65}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7156794940302099075
@@ -1230,7 +1230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -375}
+  m_AnchoredPosition: {x: -671, y: 97}
   m_SizeDelta: {x: 960, y: 65}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6984214634340020828
@@ -1540,8 +1540,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1699,8 +1699,10 @@ MonoBehaviour:
   ghostColor: {r: 0.8, g: 0.9, b: 1, a: 0.13}
   hintColor: {r: 0.4, g: 1, b: 0.45, a: 1}
   letterColor: {r: 1, g: 1, b: 1, a: 1}
+  selectionColor: {r: 1, g: 0.35, b: 0.7, a: 1}
   autoHelpTime: 90
   movementDuration: 0.22
+  trayLineSpacing: 65
 --- !u!1 &8900851789114937476
 GameObject:
   m_ObjectHideFlags: 0
@@ -1737,7 +1739,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -491}
+  m_AnchoredPosition: {x: 0, y: -296}
   m_SizeDelta: {x: 320, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &418652799949600269
