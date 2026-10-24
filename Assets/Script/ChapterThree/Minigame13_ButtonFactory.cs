@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Minigame13_ButtonFactory : MinigameBase
 {
@@ -18,6 +19,10 @@ public class Minigame13_ButtonFactory : MinigameBase
     public float conveyorSpeed = 180f;
     public float wrapPadding = 100f;
     public float partSpacing = 160f;
+
+    [Header("Continuous Conveyor")]
+    [Min(30f)] public float continuousSpacing = 110f;
+    [Min(1)] public int extraBufferParts = 3;
 
     [Header("Assembly")]
     public GameObject[] assemblySlots;
@@ -49,6 +54,17 @@ public class Minigame13_ButtonFactory : MinigameBase
 
     [Header("Message")]
     public float messageDuration = 2f;
+
+    private class SupplyCopy
+    {
+        public Button button;
+        public bool isGood;
+        public int sourceIndex;
+    }
+
+    private readonly List<SupplyCopy> supplyCopies = new List<SupplyCopy>();
+    private float streamSpacing;
+    private bool nextCopyShouldBeBad = true;
 
     private bool[] goodCollected;
 
@@ -83,9 +99,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 게임 시작
-    // =====================================================
 
     public override void StartMinigame()
     {
@@ -99,6 +113,7 @@ public class Minigame13_ButtonFactory : MinigameBase
         StopAllCoroutines();
 
         CacheInitialPositions();
+        DestroySupplyCopies();
 
         collectedCount = 0;
         errorCount = 0;
@@ -125,6 +140,8 @@ public class Minigame13_ButtonFactory : MinigameBase
 
         SetupPartButtons();
 
+        SetupContinuousConveyor();
+
         SetupCompletedButton();
 
         SetGoodOutlines(false);
@@ -139,9 +156,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 초기 위치 저장
-    // =====================================================
 
     private void CacheInitialPositions()
     {
@@ -200,9 +215,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // Update
-    // =====================================================
 
     protected override void Update()
     {
@@ -220,132 +233,293 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 컨베이어 이동
-    // =====================================================
 
     private void MoveConveyor()
     {
         MovePartArray(goodParts);
         MovePartArray(badParts);
+
+        for (int i = 0; i < supplyCopies.Count; i++)
+        {
+            MoveOnePart(supplyCopies[i].button);
+        }
     }
 
-
-    private void MovePartArray(
-        Button[] parts)
+    private void MovePartArray(Button[] parts)
     {
-        if (parts == null ||
-            conveyorArea == null)
-        {
-            return;
-        }
+        if (parts == null) return;
 
         foreach (Button part in parts)
         {
-            if (part == null ||
-                !part.gameObject.activeSelf)
-            {
-                continue;
-            }
-
-            RectTransform rect =
-                part.GetComponent<RectTransform>();
-
-            rect.anchoredPosition +=
-                Vector2.right *
-                currentConveyorSpeed *
-                Time.deltaTime;
-
-            float halfWidth =
-                rect.rect.width * 0.5f;
-
-            if (rect.anchoredPosition.x -
-                halfWidth >
-                conveyorArea.rect.xMax +
-                wrapPadding)
-            {
-                Vector2 pos =
-                    rect.anchoredPosition;
-
-                pos.x =
-                    GetNextWrapPosition(rect);
-
-                rect.anchoredPosition = pos;
-            }
+            MoveOnePart(part);
         }
     }
 
-
-    private float GetNextWrapPosition(
-        RectTransform ignore)
+    private void MoveOnePart(Button part)
     {
-        float leftMost =
-            float.PositiveInfinity;
+        if (conveyorArea == null || part == null ||
+            !part.gameObject.activeSelf) return;
 
-        FindLeftMost(
-            goodParts,
-            ignore,
-            ref leftMost
-        );
+        RectTransform rect = part.GetComponent<RectTransform>();
+        if (rect == null) return;
 
-        FindLeftMost(
-            badParts,
-            ignore,
-            ref leftMost
-        );
+        rect.anchoredPosition += Vector2.right *
+            currentConveyorSpeed * Time.deltaTime;
 
-        float defaultX =
-            conveyorArea.rect.xMin -
-            wrapPadding;
-
-        if (float.IsPositiveInfinity(
-            leftMost))
+        float halfWidth = rect.rect.width * 0.5f;
+        if (rect.anchoredPosition.x - halfWidth >
+            conveyorArea.rect.xMax + wrapPadding)
         {
-            return defaultX;
+            Vector2 position = rect.anchoredPosition;
+            position.x = GetNextWrapPosition(rect);
+            rect.anchoredPosition = position;
         }
-
-        return Mathf.Min(
-            defaultX,
-            leftMost - partSpacing
-        );
     }
 
+    private float GetNextWrapPosition(RectTransform ignore)
+    {
+        float leftMost = float.PositiveInfinity;
+        FindLeftMost(goodParts, ignore, ref leftMost);
+        FindLeftMost(badParts, ignore, ref leftMost);
 
-    private void FindLeftMost(
-        Button[] parts,
-        RectTransform ignore,
+        foreach (SupplyCopy copy in supplyCopies)
+        {
+            CheckLeftMost(copy.button, ignore, ref leftMost);
+        }
+
+        if (float.IsPositiveInfinity(leftMost))
+            return conveyorArea.rect.xMin - streamSpacing;
+
+        return leftMost - streamSpacing;
+    }
+
+    private void FindLeftMost(Button[] parts, RectTransform ignore,
         ref float leftMost)
     {
-        if (parts == null)
-            return;
+        if (parts == null) return;
 
         foreach (Button part in parts)
+            CheckLeftMost(part, ignore, ref leftMost);
+    }
+
+    private void CheckLeftMost(Button part, RectTransform ignore,
+        ref float leftMost)
+    {
+        if (part == null || !part.gameObject.activeSelf) return;
+        RectTransform rect = part.GetComponent<RectTransform>();
+        if (rect == null || rect == ignore) return;
+
+        leftMost = Mathf.Min(leftMost, rect.anchoredPosition.x);
+    }
+
+    private void SetupContinuousConveyor()
+    {
+        if (conveyorArea == null) return;
+
+        streamSpacing = Mathf.Max(30f, continuousSpacing);
+        nextCopyShouldBeBad = true;
+
+        List<Button> original = GetOriginalActiveParts();
+        float widest = 0f;
+        foreach (Button part in original)
         {
-            if (part == null ||
-                !part.gameObject.activeSelf)
-            {
-                continue;
-            }
+            RectTransform rect = part.GetComponent<RectTransform>();
+            if (rect != null) widest = Mathf.Max(widest, rect.rect.width);
+        }
 
-            RectTransform rect =
-                part.GetComponent<RectTransform>();
+        // Keep parts close but never overlap their button hitboxes.
+        streamSpacing = Mathf.Max(streamSpacing, widest + 6f);
 
-            if (rect == ignore)
-                continue;
+        FillContinuousSupply();
 
-            if (rect.anchoredPosition.x <
-                leftMost)
-            {
-                leftMost =
-                    rect.anchoredPosition.x;
-            }
+        // Alternate good/bad originals and copies at the beginning,
+        // instead of grouping all good buttons on one side of the belt.
+        List<Button> goods = new List<Button>();
+        List<Button> bads = new List<Button>();
+        foreach (Button part in goodParts ?? new Button[0])
+            if (part != null && part.gameObject.activeSelf) goods.Add(part);
+        foreach (Button part in badParts ?? new Button[0])
+            if (part != null && part.gameObject.activeSelf) bads.Add(part);
+        foreach (SupplyCopy copy in supplyCopies)
+        {
+            if (copy.button == null || !copy.button.gameObject.activeSelf) continue;
+            if (copy.isGood) goods.Add(copy.button);
+            else bads.Add(copy.button);
+        }
+
+        List<Button> ordered = new List<Button>();
+        int gi = 0, bi = 0;
+        bool chooseBad = true;
+        while (gi < goods.Count || bi < bads.Count)
+        {
+            if (chooseBad && bi < bads.Count) ordered.Add(bads[bi++]);
+            else if (!chooseBad && gi < goods.Count) ordered.Add(goods[gi++]);
+            else if (bi < bads.Count) ordered.Add(bads[bi++]);
+            else if (gi < goods.Count) ordered.Add(goods[gi++]);
+            chooseBad = !chooseBad;
+        }
+
+        float x = conveyorArea.rect.xMin - streamSpacing;
+        foreach (Button part in ordered)
+        {
+            RectTransform rect = part.GetComponent<RectTransform>();
+            Vector2 pos = rect.anchoredPosition;
+            pos.x = x;
+            rect.anchoredPosition = pos;
+            x += streamSpacing;
         }
     }
 
+    private List<Button> GetOriginalActiveParts()
+    {
+        List<Button> result = new List<Button>();
+        if (goodParts != null)
+            foreach (Button part in goodParts)
+                if (part != null && part.gameObject.activeSelf) result.Add(part);
+        if (badParts != null)
+            foreach (Button part in badParts)
+                if (part != null && part.gameObject.activeSelf) result.Add(part);
+        return result;
+    }
 
-    // =====================================================
-    // 버튼 이벤트 연결
-    // =====================================================
+    private List<Button> GetActiveConveyorButtons()
+    {
+        List<Button> result = GetOriginalActiveParts();
+        foreach (SupplyCopy copy in supplyCopies)
+            if (copy.button != null && copy.button.gameObject.activeSelf)
+                result.Add(copy.button);
+        return result;
+    }
+
+    private bool HasAvailableGood(int index)
+    {
+        return goodParts != null && goodCollected != null &&
+            index >= 0 && index < goodParts.Length &&
+            goodParts[index] != null && !goodCollected[index];
+    }
+
+    // Error-6 assistance removes bad types permanently for this attempt.
+    private bool HasAvailableBad(int index)
+    {
+        return badParts != null && index >= 0 && index < badParts.Length &&
+            badParts[index] != null && badParts[index].gameObject.activeSelf;
+    }
+
+    private void FillContinuousSupply()
+    {
+        if (conveyorArea == null || assemblyCompleted) return;
+
+        // Remove clones for collected good parts and removed bad types.
+        for (int i = supplyCopies.Count - 1; i >= 0; i--)
+        {
+            SupplyCopy copy = supplyCopies[i];
+            bool valid = copy.button != null &&
+                (copy.isGood ? HasAvailableGood(copy.sourceIndex)
+                             : HasAvailableBad(copy.sourceIndex));
+            if (valid) continue;
+
+            if (copy.button != null)
+            {
+                copy.button.gameObject.SetActive(false);
+                Destroy(copy.button.gameObject);
+            }
+            supplyCopies.RemoveAt(i);
+        }
+
+        int target = Mathf.Clamp(
+            Mathf.CeilToInt((conveyorArea.rect.width + wrapPadding * 2f)
+                / streamSpacing) + extraBufferParts + 1, 3, 48);
+
+        int total = GetActiveConveyorButtons().Count;
+        while (total < target)
+        {
+            if (!TryPickSupplySource(out Button source,
+                out bool isGood, out int sourceIndex)) break;
+
+            Button copy = Instantiate(source, source.transform.parent, false);
+            copy.name = "ConveyorSupply_" + (isGood ? "Good_" : "Bad_") +
+                        sourceIndex + "_" + total;
+            copy.gameObject.SetActive(true);
+            copy.interactable = true;
+            copy.onClick.RemoveAllListeners();
+
+            int capturedIndex = sourceIndex;
+            Button capturedCopy = copy;
+            if (isGood)
+                copy.onClick.AddListener(() => OnGoodPartClicked(capturedIndex, capturedCopy));
+            else
+                copy.onClick.AddListener(() => OnBadPartClicked(capturedIndex, capturedCopy));
+
+            // Clones of outlined good parts should not keep a stale outline.
+            if (isGood)
+            {
+                Outline outline = copy.GetComponent<Outline>();
+                if (outline != null) outline.enabled = false;
+            }
+
+            // Add new supplies only outside the visible left edge.
+            // Never replace a collected part instantly at its clicked position.
+            RectTransform rect = copy.GetComponent<RectTransform>();
+            Vector2 pos = rect.anchoredPosition;
+            float offscreenLeft = conveyorArea.rect.xMin - wrapPadding
+                - rect.rect.width * 0.5f - streamSpacing;
+            pos.x = Mathf.Min(GetNextWrapPosition(rect), offscreenLeft);
+            rect.anchoredPosition = pos;
+
+            supplyCopies.Add(new SupplyCopy
+            {
+                button = copy,
+                isGood = isGood,
+                sourceIndex = sourceIndex
+            });
+            total++;
+        }
+    }
+
+    // Keep choosing both types. When both are available, alternate types
+    // to prevent long streaks of good-only buttons.
+    private bool TryPickSupplySource(out Button source,
+        out bool isGood, out int sourceIndex)
+    {
+        source = null;
+        isGood = false;
+        sourceIndex = -1;
+
+        List<int> availableGood = new List<int>();
+        List<int> availableBad = new List<int>();
+        if (goodParts != null)
+            for (int i = 0; i < goodParts.Length; i++)
+                if (HasAvailableGood(i)) availableGood.Add(i);
+        if (badParts != null)
+            for (int i = 0; i < badParts.Length; i++)
+                if (HasAvailableBad(i)) availableBad.Add(i);
+
+        if (availableGood.Count == 0 && availableBad.Count == 0)
+            return false;
+
+        bool pickBad = availableGood.Count == 0 ||
+            (availableBad.Count > 0 && nextCopyShouldBeBad);
+        List<int> indices = pickBad ? availableBad : availableGood;
+        sourceIndex = indices[Random.Range(0, indices.Count)];
+        isGood = !pickBad;
+        source = isGood ? goodParts[sourceIndex] : badParts[sourceIndex];
+        nextCopyShouldBeBad = !pickBad;
+        return true;
+    }
+
+    private void DestroySupplyCopies()
+    {
+        foreach (SupplyCopy copy in supplyCopies)
+        {
+            if (copy.button != null)
+            {
+                copy.button.gameObject.SetActive(false);
+                Destroy(copy.button.gameObject);
+            }
+        }
+        supplyCopies.Clear();
+    }
 
     private void SetupPartButtons()
     {
@@ -369,7 +543,7 @@ public class Minigame13_ButtonFactory : MinigameBase
                     .AddListener(
                         () =>
                             OnGoodPartClicked(
-                                index
+                                index, goodParts[index]
                             )
                     );
             }
@@ -395,7 +569,7 @@ public class Minigame13_ButtonFactory : MinigameBase
                     .AddListener(
                         () =>
                             OnBadPartClicked(
-                                index
+                                index, badParts[index]
                             )
                     );
             }
@@ -403,100 +577,49 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 정상 부품
-    // =====================================================
 
-    private void OnGoodPartClicked(
-        int index)
+    private void OnGoodPartClicked(int index, Button clickedButton)
     {
-        if (!isGameActive ||
-            assemblyCompleted)
-        {
-            return;
-        }
-
-        if (index < 0 ||
-            index >= goodParts.Length)
-        {
-            return;
-        }
-
-        if (goodCollected[index])
+        if (!isGameActive || assemblyCompleted || goodParts == null ||
+            goodCollected == null || index < 0 || index >= goodParts.Length ||
+            goodCollected[index] || clickedButton == null ||
+            !clickedButton.gameObject.activeSelf || !clickedButton.interactable)
             return;
 
         goodCollected[index] = true;
-
         collectedCount++;
 
-        goodParts[index]
-            .gameObject
-            .SetActive(false);
+        if (goodParts[index] != null)
+            goodParts[index].gameObject.SetActive(false);
 
-        if (assemblySlots != null &&
-            index < assemblySlots.Length &&
+        if (assemblySlots != null && index < assemblySlots.Length &&
             assemblySlots[index] != null)
-        {
-            assemblySlots[index]
-                .SetActive(true);
-        }
+            assemblySlots[index].SetActive(true);
 
         UpdateUI();
-
-        if (collectedCount >=
-            goodParts.Length)
-        {
+        if (collectedCount >= goodParts.Length)
             CompleteAssembly();
-        }
+        else
+            FillContinuousSupply();
     }
 
 
-    // =====================================================
-    // 불량 부품
-    // =====================================================
-
-    private void OnBadPartClicked(
-        int index)
+    // Bad clones must count as errors just like the original bad buttons.
+    private void OnBadPartClicked(int index, Button clickedButton)
     {
-        if (!isGameActive ||
-            assemblyCompleted)
-        {
+        if (!isGameActive || assemblyCompleted || badParts == null ||
+            index < 0 || index >= badParts.Length ||
+            !HasAvailableBad(index) || clickedButton == null ||
+            !clickedButton.gameObject.activeSelf || !clickedButton.interactable)
             return;
-        }
-
-        if (badParts == null ||
-            index < 0 ||
-            index >= badParts.Length)
-        {
-            return;
-        }
-
-        Button badPart =
-            badParts[index];
-
-        if (badPart == null ||
-            !badPart.interactable)
-        {
-            return;
-        }
 
         errorCount++;
         ReportMistake();
-
         UpdateUI();
-
-        ShowMessage(
-            "불량 부품입니다."
-        );
-
-        StartCoroutine(
-            BadPartCooldown(
-                badPart
-            )
-        );
-
+        ShowMessage("불량 부품입니다.");
+        StartCoroutine(BadPartCooldown(clickedButton));
         PlayBadButtonPreview();
-
         CheckErrorAssists();
     }
 
@@ -519,9 +642,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 불량 버튼 생성 → 밖으로 튕기기
-    // =====================================================
 
     private void PlayBadButtonPreview()
     {
@@ -606,9 +727,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 오류 힌트
-    // =====================================================
 
     private void CheckErrorAssists()
     {
@@ -653,9 +772,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 오류 2회 - 정상 부품 외곽선
-    // =====================================================
 
     private IEnumerator
         FlashGoodPartsRoutine()
@@ -712,12 +829,21 @@ public class Minigame13_ButtonFactory : MinigameBase
                 visible &&
                 part.gameObject.activeSelf;
         }
+
+        foreach (SupplyCopy copy in supplyCopies)
+        {
+            if (!copy.isGood || copy.button == null) continue;
+            Outline outline = copy.button.GetComponent<Outline>();
+            if (outline == null)
+                outline = copy.button.gameObject.AddComponent<Outline>();
+            outline.effectColor = glowColor;
+            outline.effectDistance = new Vector2(4f, -4f);
+            outline.enabled = visible && copy.button.gameObject.activeSelf;
+        }
     }
 
 
-    // =====================================================
     // 오류 6회 - 불량 부품 일부 제거
-    // =====================================================
 
     private void RemoveSomeBadParts()
     {
@@ -745,24 +871,23 @@ public class Minigame13_ButtonFactory : MinigameBase
                 continue;
             }
 
-            badParts[i]
-                .gameObject
-                .SetActive(false);
-
+            badParts[i].gameObject.SetActive(false);
             removed++;
         }
+
+        FillContinuousSupply();
     }
 
 
-    // =====================================================
     // 조립 완료
-    // =====================================================
 
     private void CompleteAssembly()
     {
         assemblyCompleted = true;
 
         SetAllPartInteractable(false);
+        foreach (SupplyCopy copy in supplyCopies)
+            if (copy.button != null) copy.button.interactable = false;
 
         if (completedStartButton != null)
         {
@@ -813,9 +938,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // 리셋
-    // =====================================================
 
     private void ResetParts()
     {
@@ -940,9 +1063,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
 
-    // =====================================================
     // UI
-    // =====================================================
 
     private void UpdateUI()
     {
