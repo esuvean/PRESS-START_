@@ -37,7 +37,7 @@ public class Minigame17_SmallText : MinigameBase
     public override void StartMinigame()
     {
         gameName = "복합 지시 해석 검사";
-        instruction = "큰 글씨와 작은 규칙을 함께 읽으세요.";
+        instruction = "화면에 크게 표시된 지시가 아니라 아래의 작은 규칙에 따라 행동한다.";
 
         base.StartMinigame();
 

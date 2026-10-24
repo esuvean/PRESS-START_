@@ -114,9 +114,9 @@ public class Minigame20_FinalCircuit : MinigameBase
     {
         StopAllCoroutines();
 
-        gameName = "최종 회로 연결";
+        gameName = "최종 실행 회로 검사";
         instruction =
-            "81개의 회로 블록을 모두 연결하세요.";
+            "복잡하게 뒤섞인 회로 조각을 회전시켜 전원 장치부터 START 버튼까지 하나의 연결된 경로를 완성한다.";
 
         timeLimit = circuitTimeLimit;
 

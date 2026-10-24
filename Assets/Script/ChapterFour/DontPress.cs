@@ -12,10 +12,20 @@ public class DontPress : MinigameBase
     public TMP_Text temptationText;
     public Button startButton;
 
+    [Header("Timer Bar")]
+    [Tooltip("16로딩 이미지 (Image Type = Filled). 남은 시간만큼 왼쪽부터 칸이 남습니다.")]
+    public Image timerBarFill;
+    [Tooltip("로딩바 칸 수 (16로딩 이미지의 칸 개수와 같게)")]
+    public int timerBarSegments = 21;
+
     [Header("Settings")]
     public float waitTime = 10f;
 
     private float remainingTime;
+
+    // 연출(DontPressFly)에서 쓰는 값
+    public float RemainingWaitTime => remainingTime;
+    public event System.Action StartPressed;
     private int lastMessageStage = -1;
 
     private void Start()
@@ -100,11 +110,31 @@ public class DontPress : MinigameBase
 
     private void UpdateTimerText()
     {
+        UpdateTimerBar();
+
         if (timerText == null)
             return;
 
         timerText.text =
             $"남은 시간:{Mathf.CeilToInt(remainingTime)}초";
+    }
+
+    // 남은 시간만큼 로딩바 칸을 보여줌 (한 칸씩 사라짐)
+    private void UpdateTimerBar()
+    {
+        if (timerBarFill == null)
+            return;
+
+        float ratio = waitTime > 0f
+            ? Mathf.Clamp01(remainingTime / waitTime)
+            : 0f;
+
+        if (timerBarSegments > 0)
+        {
+            ratio = Mathf.Ceil(ratio * timerBarSegments) / timerBarSegments;
+        }
+
+        timerBarFill.fillAmount = ratio;
     }
 
     private void UpdateTemptationMessage()
@@ -168,6 +198,8 @@ public class DontPress : MinigameBase
         remainingTime = waitTime;
         lastMessageStage = 0;
 
+        StartPressed?.Invoke();
+
         if (temptationText != null)
         {
             temptationText.text =
@@ -184,25 +216,7 @@ public class DontPress : MinigameBase
         if (temptationText == null)
             return;
 
-        RectTransform rect =
-            temptationText.GetComponent<RectTransform>();
-
-        if (rect != null)
-        {
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-
-            rect.pivot = new Vector2(0.5f, 0.5f);
-
-            rect.anchoredPosition =
-                new Vector2(0f, -310f);
-
-            rect.sizeDelta =
-                new Vector2(1200f, 100f);
-
-            rect.localScale = Vector3.one;
-            rect.localRotation = Quaternion.identity;
-        }
+        // 위치는 프리팹에서 배치한 그대로 사용 (코드로 옮기지 않음)
 
         temptationText.alignment =
             TextAlignmentOptions.Center;

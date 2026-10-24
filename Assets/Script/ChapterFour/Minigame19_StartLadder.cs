@@ -84,8 +84,8 @@ public class Minigame19_StartLadder : MinigameBase
     {
         StopAllCoroutines();
 
-        gameName = "START 사다리";
-        instruction = "선택선을 클릭하고 사다리의 회색 연결 칸을 클릭하세요.";
+        gameName = "실행 문자 경로 검사";
+        instruction = "사다리의 가로 연결선을 조정하여 S, T, A, R, T 글자가 아래의 1, 2, 3, 4, 5 칸에 순서대로 도착하게 만든다.";
 
         base.StartMinigame();
 

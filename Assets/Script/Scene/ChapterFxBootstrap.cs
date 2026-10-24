@@ -15,18 +15,17 @@ using UnityEngine.UI;
 public static class ChapterFxBootstrap
 {
     // 자체 시간 규칙이 있어서 "시간 초과 = 게임오버"를 적용하지 않는 미니게임
-    //  - DontPress : 10초 동안 안 누르면 성공하는 게임 (시간이 끝나는 게 성공)
     //  - Minigame19_StartLadder : 시간은 '도움말이 나오기까지 남은 시간'일 뿐 실패가 아님
     //  - Minigame20_FinalCircuit : 자체 제한시간 + 실패 후 재도전 규칙이 따로 있음 (빨간 테두리만 적용)
     private static readonly string[] OwnTimeRuleGames =
     {
-        "DontPress", "Minigame19_StartLadder", "Minigame20_FinalCircuit"
+        "Minigame19_StartLadder", "Minigame20_FinalCircuit"
     };
 
     // 빨간 테두리는 보여 주지 않을 미니게임
     private static readonly string[] NoWarningGames =
     {
-        "DontPress", "Minigame19_StartLadder"
+        "Minigame19_StartLadder"
     };
 
     // 샷건 연출이 들어갈 모니터 화면 영역 (ShotgunSetupTool과 같은 값)

@@ -42,8 +42,8 @@ public class Minigame18_StartInterview : MinigameBase
     {
         StopAllCoroutines();
 
-        gameName = "시작 버튼 면접";
-        instruction = "질문에 답하고 현재 상황을 판단하세요.";
+        gameName = "사용자 실행 의사 분석";
+        instruction = "시작 버튼이 제시하는 질문에 답하며 게임의 현재 상태를 판단한다.";
 
         base.StartMinigame();
 
