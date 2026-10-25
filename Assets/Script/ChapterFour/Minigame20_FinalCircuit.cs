@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -948,18 +947,12 @@ public class Minigame20_FinalCircuit : MinigameBase
     {
         if (!isGameActive ||
             !powerConnected ||
-            finalScreenVisible)
+            finalScreenVisible ||
+            isProcessing)
         {
             return;
         }
 
-        StartCoroutine(
-            FinalSequenceRoutine()
-        );
-    }
-
-    private IEnumerator FinalSequenceRoutine()
-    {
         finalScreenVisible = true;
         isProcessing = true;
 
@@ -968,52 +961,14 @@ public class Minigame20_FinalCircuit : MinigameBase
             startButton.interactable = false;
         }
 
-        if (completionPanel == null)
+        // 완료 패널은 표시하지 않고 다음 미니게임으로 진행합니다.
+        if (completionPanel != null)
         {
-            Debug.LogError(
-                "CompletionPanel이 연결되지 않았습니다."
-            );
-
-            yield break;
+            completionPanel.SetActive(false);
         }
 
-        completionPanel.SetActive(true);
-
-        if (finalSummaryText != null)
-        {
-            finalSummaryText.text =
-                "POWER CONNECTED\n\n" +
-                "최종 실행 회로 연결 완료";
-        }
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (finalSummaryText != null)
-        {
-            finalSummaryText.text =
-                "SYSTEM CHECK COMPLETE\n\n" +
-                "게임 실행 준비도: 100%";
-        }
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (finalSummaryText != null)
-        {
-            finalSummaryText.text =
-                "입력 억제 정상\n" +
-                "지시 해석 정상\n" +
-                "실행 의사 확인\n" +
-                "문자 경로 판단 정상\n" +
-                "종합 실행 능력 정상\n\n" +
-                "게임 실행 준비도: 100%\n\n" +
-                "모든 준비 검사가 완료되었습니다.";
-        }
-
-        isGameActive = false;
-
-        Debug.Log(
-            "챕터 4 최종 검사 완료. 최종 화면 유지."
-        );
+        Debug.Log("미니게임 20 START 클릭 - 다음 단계로 진행");
+        Success();
     }
 
     private void SetStatus(string message)
