@@ -56,6 +56,16 @@ public class Minigame14_PowerCircuit : MinigameBase
     public Button startButton;
     public Image startButtonImage;
 
+    [Header("Separate START Button (after original START click)")]
+    public Button separateStartButton;
+
+    [Header("Extra puzzle objects to hide (optional)")]
+    public GameObject[] puzzleObjectsToHide;
+
+    private bool waitingForSeparateStart = false;
+    private readonly Dictionary<GameObject, bool> hiddenPuzzleObjects =
+        new Dictionary<GameObject, bool>();
+
     public Color startDisabledColor =
         Color.gray;
 
@@ -94,6 +104,10 @@ public class Minigame14_PowerCircuit : MinigameBase
 
     public override void StartMinigame()
     {
+        // 이전 시도에서 숨긴 회로 장치를 원래 표시 상태로 되돌립니다.
+        RestorePuzzleObjects();
+        waitingForSeparateStart = false;
+
         base.StartMinigame();
 
 
@@ -147,8 +161,17 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-        // START 비활성화
+        // 기존 회로의 START는 원래대로 비활성 상태로 시작합니다.
         SetStartButtonActive(false);
+
+        // 별도 START는 모든 연결을 마치고 기존 START를 누를 때 나타납니다.
+        if (separateStartButton != null)
+        {
+            separateStartButton.onClick.RemoveListener(OnClickSeparateStartButton);
+            separateStartButton.onClick.AddListener(OnClickSeparateStartButton);
+            separateStartButton.interactable = false;
+            separateStartButton.gameObject.SetActive(false);
+        }
 
 
         // 힌트 라인 숨김
@@ -172,7 +195,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         base.Update();
 
 
-        if (!isGameActive)
+        if (!isGameActive || waitingForSeparateStart)
             return;
 
 
@@ -207,7 +230,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     public void BeginCableDrag(
         int cableIndex)
     {
-        if (!isGameActive)
+        if (!isGameActive || waitingForSeparateStart)
             return;
 
 
@@ -239,7 +262,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         int cableIndex,
         PointerEventData eventData)
     {
-        if (!isGameActive)
+        if (!isGameActive || waitingForSeparateStart)
             return;
 
 
@@ -298,7 +321,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         int cableIndex,
         PointerEventData eventData)
     {
-        if (!isGameActive)
+        if (!isGameActive || waitingForSeparateStart)
             return;
 
 
@@ -672,7 +695,7 @@ public class Minigame14_PowerCircuit : MinigameBase
 
     public void OnClickStartButton()
     {
-        if (!isGameActive)
+        if (!isGameActive || waitingForSeparateStart)
             return;
 
 
@@ -683,14 +706,122 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-        Debug.Log(
-            "START 버튼 실행 성공!"
-        );
-
-
-        Success();
+        Debug.Log("회로 START 클릭: 별도 START 표시");
+        ShowSeparateStartStage();
     }
 
+    private void ShowSeparateStartStage()
+    {
+        if (waitingForSeparateStart)
+            return;
+
+        if (separateStartButton == null)
+        {
+            Debug.LogError("Separate Start Button이 Inspector에 연결되지 않았습니다.");
+            return;
+        }
+
+        waitingForSeparateStart = true;
+
+        // 배경/게임 패널/제목/설명은 끄지 않습니다.
+        // 포트가 포함된 장치의 부모만 찾아서 숨깁니다.
+        foreach (CableData cable in cables)
+        {
+            if (cable == null)
+                continue;
+
+            if (cable.targetPorts != null)
+            {
+                foreach (CircuitPort port in cable.targetPorts)
+                {
+                    if (port == null)
+                        continue;
+
+                    // 보통 PowerDevice, InputDevice, ScreenDevice 등이 됩니다.
+                    if (port.transform.parent != null)
+                        HidePuzzleObject(port.transform.parent.gameObject);
+                    else
+                        HidePuzzleObject(port.gameObject);
+                }
+            }
+
+            if (cable.connectedPort != null)
+            {
+                Transform parent = cable.connectedPort.transform.parent;
+                HidePuzzleObject(parent != null ? parent.gameObject :
+                    cable.connectedPort.gameObject);
+            }
+
+            if (cable.cableLine != null)
+                HidePuzzleObject(cable.cableLine.gameObject);
+
+            if (cable.cableEnd != null)
+                HidePuzzleObject(cable.cableEnd.gameObject);
+        }
+
+        // 기존 START 장치는 마지막 연결 포트를 포함하므로
+        // 퍼즐이 끝난 지금에만 숨깁니다.
+        if (startButton != null)
+            HidePuzzleObject(startButton.gameObject);
+
+        HideHintLines();
+
+        // 자동 감지되지 않는 장식/케이블이 있으면 Inspector에서 추가 지정.
+        if (puzzleObjectsToHide != null)
+        {
+            foreach (GameObject obj in puzzleObjectsToHide)
+                HidePuzzleObject(obj);
+        }
+
+        if (hintText != null)
+            hintText.text = "회로 연결 완료! START 버튼을 눌러 다음으로 진행하세요.";
+
+        separateStartButton.gameObject.SetActive(true);
+        separateStartButton.interactable = true;
+        separateStartButton.transform.SetAsLastSibling();
+    }
+
+    private void HidePuzzleObject(GameObject obj)
+    {
+        if (obj == null || obj == gameObject)
+            return;
+
+        // 별도 START 자신이나 그 부모, 또는 게임판 전체를 숨기지 않습니다.
+        if (separateStartButton != null &&
+            separateStartButton.transform.IsChildOf(obj.transform))
+            return;
+
+        if (playArea != null && obj == playArea.gameObject)
+            return;
+
+        if (!hiddenPuzzleObjects.ContainsKey(obj))
+            hiddenPuzzleObjects.Add(obj, obj.activeSelf);
+
+        obj.SetActive(false);
+    }
+
+    private void RestorePuzzleObjects()
+    {
+        foreach (KeyValuePair<GameObject, bool> pair in hiddenPuzzleObjects)
+        {
+            if (pair.Key != null)
+                pair.Key.SetActive(pair.Value);
+        }
+
+        hiddenPuzzleObjects.Clear();
+    }
+
+    public void OnClickSeparateStartButton()
+    {
+        if (!isGameActive || !waitingForSeparateStart)
+            return;
+
+        if (separateStartButton != null)
+            separateStartButton.interactable = false;
+
+        Debug.Log("별도 START 클릭: 미니게임 14 성공");
+        Success();
+    }
 
     private CircuitPort FindPortUnderPointer(
         CableData cable,
