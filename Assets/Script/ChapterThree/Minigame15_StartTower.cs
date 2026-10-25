@@ -129,6 +129,16 @@ public class Minigame15_StartTower : MinigameBase
             playArea.gameObject.SetActive(true);
         }
 
+        if (floor != null)
+        {
+            floor.gameObject.SetActive(true);
+        }
+
+        if (spawnPoint != null)
+        {
+            spawnPoint.gameObject.SetActive(true);
+        }
+
         if (hintText != null)
         {
             hintText.gameObject.SetActive(true);
@@ -155,6 +165,7 @@ public class Minigame15_StartTower : MinigameBase
             completionPanel.SetActive(false);
         }
 
+        PrepareStartButtonInsidePlayArea();
         SetupCompletedStartButton();
 
         SetupFloorPhysics();
@@ -169,6 +180,10 @@ public class Minigame15_StartTower : MinigameBase
 
     protected override void Update()
     {
+        // Keep the completed screen and the displayed timer unchanged.
+        if (towerCompleted)
+            return;
+
         base.Update();
 
         if (!isGameActive)
@@ -937,169 +952,112 @@ public class Minigame15_StartTower : MinigameBase
         return true;
     }
 
+    // The START button stays on the original gameplay screen.
+    // If it was nested inside CompletionPanel, move it under PlayArea
+    // before the old completion panel is disabled.
+    private void PrepareStartButtonInsidePlayArea()
+    {
+        if (completedStartButton == null || playArea == null)
+            return;
+
+        RectTransform buttonRect = completedStartButton.transform as RectTransform;
+        if (buttonRect == null)
+            return;
+
+        if (buttonRect.parent != playArea)
+        {
+            buttonRect.SetParent(playArea, false);
+            buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+            buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+            buttonRect.pivot = new Vector2(0.5f, 0.5f);
+            buttonRect.anchoredPosition = Vector2.zero;
+            buttonRect.localScale = Vector3.one;
+            buttonRect.localRotation = Quaternion.identity;
+        }
+
+        buttonRect.SetAsLastSibling();
+    }
+
     private void ShowFinalStartScreen()
     {
         towerCompleted = true;
 
-        foreach (RectTransform block
-                 in placedBlocks)
+        // Stop physical simulation before hiding the tower pieces.
+        foreach (RectTransform block in placedBlocks)
         {
             if (block == null)
                 continue;
 
-            Rigidbody2D body =
-                block.GetComponent<Rigidbody2D>();
-
+            Rigidbody2D body = block.GetComponent<Rigidbody2D>();
             if (body != null)
             {
-                body.linearVelocity =
-                    Vector2.zero;
-
-                body.angularVelocity =
-                    0f;
-
-                body.bodyType =
-                    RigidbodyType2D.Kinematic;
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.bodyType = RigidbodyType2D.Kinematic;
             }
         }
 
-        if (gameplayBackground != null)
-        {
-            gameplayBackground.enabled =
-                false;
-        }
-
-        if (playArea != null)
-        {
-            playArea.gameObject
-                .SetActive(false);
-        }
-
+        // IMPORTANT: Do not hide PlayArea, the original background,
+        // the explanation, the timer, or the settings UI.
+        // Only the tower-related visuals should disappear.
         if (letterBlocks != null)
         {
-            foreach (RectTransform block
-                     in letterBlocks)
+            foreach (RectTransform block in letterBlocks)
             {
                 if (block != null)
-                {
-                    block.gameObject
-                        .SetActive(false);
-                }
+                    block.gameObject.SetActive(false);
             }
         }
 
+        if (floor != null)
+            floor.gameObject.SetActive(false);
+
+        if (spawnPoint != null)
+            spawnPoint.gameObject.SetActive(false);
+
         if (centerHintLine != null)
-        {
-            centerHintLine.gameObject
-                .SetActive(false);
-        }
+            centerHintLine.gameObject.SetActive(false);
+
+        // Never show the old full-screen completion panel.
+        if (completionPanel != null)
+            completionPanel.SetActive(false);
 
         if (hintText != null)
         {
-            hintText.gameObject
-                .SetActive(false);
+            hintText.gameObject.SetActive(true);
+            hintText.text = "탑쌓기 성공! START 버튼을 누르세요.";
         }
 
-        if (timerText != null)
-        {
-            timerText.gameObject
-                .SetActive(false);
-        }
-
-        if (fallText != null)
-        {
-            fallText.gameObject
-                .SetActive(false);
-        }
-
-        if (completionPanel != null)
-        {
-            completionPanel.SetActive(true);
-            completionPanel.transform.SetAsLastSibling();
-        }
+        PrepareStartButtonInsidePlayArea();
 
         if (completedStartButton != null)
         {
-            completedStartButton.gameObject
-                .SetActive(true);
+            completedStartButton.gameObject.SetActive(true);
+            completedStartButton.interactable = true;
 
-            completedStartButton.interactable =
-                true;
-
-            RectTransform buttonRect =
-                completedStartButton.transform
-                    as RectTransform;
-
-            if (buttonRect != null)
-            {
-                buttonRect.anchorMin =
-                    new Vector2(
-                        0.5f,
-                        0.5f
-                    );
-
-                buttonRect.anchorMax =
-                    new Vector2(
-                        0.5f,
-                        0.5f
-                    );
-
-                buttonRect.pivot =
-                    new Vector2(
-                        0.5f,
-                        0.5f
-                    );
-
-                buttonRect.anchoredPosition =
-                    Vector2.zero;
-
-                buttonRect.localRotation =
-                    Quaternion.identity;
-
-                buttonRect.localScale =
-                    Vector3.one;
-            }
-
-            Image buttonImage =
-                completedStartButton
-                    .GetComponent<Image>();
-
+            Image buttonImage = completedStartButton.GetComponent<Image>();
             if (buttonImage != null)
             {
                 buttonImage.enabled = true;
                 buttonImage.raycastTarget = true;
             }
 
-            TMP_Text buttonText =
-                completedStartButton
-                    .GetComponentInChildren<TMP_Text>(
-                        true
-                    );
-
+            TMP_Text buttonText = completedStartButton.GetComponentInChildren<TMP_Text>(true);
             if (buttonText != null)
             {
                 buttonText.gameObject.SetActive(true);
                 buttonText.raycastTarget = false;
             }
 
-            CanvasGroup canvasGroup =
-                completedStartButton
-                    .GetComponent<CanvasGroup>();
-
-            if (canvasGroup == null)
+            CanvasGroup group = completedStartButton.GetComponent<CanvasGroup>();
+            if (group != null)
             {
-                canvasGroup =
-                    completedStartButton
-                        .gameObject
-                        .AddComponent<CanvasGroup>();
+                group.alpha = 1f;
+                group.interactable = true;
+                group.blocksRaycasts = true;
             }
 
-            canvasGroup.alpha = 1f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-
-            completedStartButton.transform
-                .SetAsLastSibling();
+            completedStartButton.transform.SetAsLastSibling();
         }
     }
 

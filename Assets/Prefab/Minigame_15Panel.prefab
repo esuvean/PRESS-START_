@@ -267,7 +267,7 @@ MonoBehaviour:
   stabilityCheckTime: 3
   horizontalSlowMultiplier: 0.6
   centerHintTime: 70
-  centerHintLine: {fileID: 0}
+  centerHintLine: {fileID: 8828646261030650690}
 --- !u!1 &1008800596693576926
 GameObject:
   m_ObjectHideFlags: 0

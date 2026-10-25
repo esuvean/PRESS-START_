@@ -7,27 +7,27 @@ using System.Collections.Generic;
 
 public class Minigame14_PowerCircuit : MinigameBase
 {
-   
+
     [System.Serializable]
     public class CableData
     {
-       
+
         public RectTransform cableLine;
         public RectTransform cableEnd;
 
-        
+
         public RectTransform startAnchor;
 
 
         public CircuitPortShape requiredShape;
 
 
-      
+
         public List<CircuitPort> targetPorts =
             new List<CircuitPort>();
 
 
-       
+
         public bool isFinalCable = false;
 
 
@@ -42,17 +42,17 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-   
+
 
     public RectTransform playArea;
 
 
-  
+
     public List<CableData> cables =
         new List<CableData>();
 
 
-  
+
     public Button startButton;
     public Image startButtonImage;
 
@@ -63,21 +63,21 @@ public class Minigame14_PowerCircuit : MinigameBase
         Color.green;
 
 
-    
-  
+
+
     public TMP_Text errorText;
     public TMP_Text timerText;
     public TMP_Text hintText;
 
 
-  
-   
+
+
     public List<RectTransform> hintLines =
         new List<RectTransform>();
 
 
 
-  
+
 
     public float finalDisconnectDelay = 0.7f;
 
@@ -91,7 +91,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     private bool finalDisconnectRunning = false;
 
 
-  
+
     public override void StartMinigame()
     {
         base.StartMinigame();
@@ -116,7 +116,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             false;
 
 
-      
+
 
         for (int i = 0;
              i < cables.Count;
@@ -222,7 +222,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             cables[cableIndex];
 
 
-        
+
         cable.connected =
             false;
 
@@ -234,7 +234,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
- 
+
     public void DragCable(
         int cableIndex,
         PointerEventData eventData)
@@ -292,7 +292,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-    
+
 
     public void EndCableDrag(
         int cableIndex,
@@ -331,7 +331,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-     
+
         if (droppedPort.shape !=
             cable.requiredShape)
         {
@@ -341,7 +341,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-      
+
 
         ConnectCableToPort(
             cableIndex,
@@ -438,7 +438,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-       
+
         if (!allConnected)
         {
             SetStartButtonActive(
@@ -459,7 +459,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-       
+
 
         if (!finalFakeDisconnectDone)
         {
@@ -473,7 +473,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-      
+
         SetStartButtonActive(
             true
         );
@@ -487,7 +487,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-  
+
 
     private IEnumerator FakeFinalDisconnect(
         int finalCableIndex)
@@ -559,7 +559,7 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-      
+
 
         ResetAllConnections();
 
@@ -594,7 +594,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
- 
+
 
     private void ResetSingleCable(
         int cableIndex)
@@ -630,7 +630,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-  
+
     private void ResetAllConnections()
     {
         for (int i = 0;
@@ -758,7 +758,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             return;
 
 
-       
+
         cable.cableLine.pivot =
             new Vector2(
                 0.5f,
@@ -775,7 +775,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             cable.cableEnd.position;
 
 
-   
+
         Vector3 middleWorld =
             (
                 startWorld +
@@ -788,7 +788,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             middleWorld;
 
 
-      
+
         Vector3 direction =
             endWorld -
             startWorld;
@@ -798,7 +798,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             direction.magnitude;
 
 
-      
+
         float scaleX =
             Mathf.Abs(
                 lineParent.lossyScale.x
@@ -816,7 +816,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             scaleX;
 
 
-       
+
 
         cable.cableLine
             .SetSizeWithCurrentAnchors(
@@ -825,7 +825,7 @@ public class Minigame14_PowerCircuit : MinigameBase
             );
 
 
-       
+
 
         float angle =
             Mathf.Atan2(
@@ -845,7 +845,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
- 
+
     private void HideHintLines()
     {
         foreach (RectTransform line
@@ -874,7 +874,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-  
+
     private void UpdateUI()
     {
         if (errorText != null)
@@ -929,7 +929,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-  
+
 
     private bool IsValidCableIndex(
         int index)
@@ -956,7 +956,7 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
-  
+
 
     protected override void RestartGame()
     {
