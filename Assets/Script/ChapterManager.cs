@@ -385,9 +385,16 @@ public class ChapterManager : MonoBehaviour
         );
 
 
-        // MainScene에서 SYSTEM CHECK 바로 열기
+        // 4개 챕터를 모두 깼으면 메인 시작 화면으로, 아니면 SYSTEM CHECK(챕터 선택) 화면으로
+        bool allCleared = true;
+        for (int i = 1; i <= SessionProgress.TotalChapters; i++)
+        {
+            if (!SessionProgress.IsChapterCompleted(i))
+                allCleared = false;
+        }
+
         SessionProgress.openChapterSelectOnLoad =
-            true;
+            !allCleared;
 
 
         StartCoroutine(

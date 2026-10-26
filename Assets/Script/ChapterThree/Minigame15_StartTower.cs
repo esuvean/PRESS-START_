@@ -234,6 +234,9 @@ public class Minigame15_StartTower : MinigameBase
                 hasTouchedSupport = true;
                 landingTimer = 0f;
 
+                // ºí·°ÀÌ ´ê´Â ¼ø°£ 'Å¹'
+                GameSfx.Play("block_place", 0.8f, 0.08f);
+
                 if (activeBody != null)
                 {
                     activeBody.constraints =

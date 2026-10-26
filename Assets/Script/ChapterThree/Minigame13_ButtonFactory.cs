@@ -23,6 +23,8 @@ public class Minigame13_ButtonFactory : MinigameBase
     [Header("Continuous Conveyor")]
     [Min(30f)] public float continuousSpacing = 110f;
     [Min(1)] public int extraBufferParts = 3;
+    [Tooltip("레일 위 부품 사이의 빈 간격 (픽셀)")]
+    public float itemGap = 130f;
 
     [Header("Assembly")]
     public GameObject[] assemblySlots;
@@ -63,6 +65,11 @@ public class Minigame13_ButtonFactory : MinigameBase
     }
 
     private readonly List<SupplyCopy> supplyCopies = new List<SupplyCopy>();
+
+    // 레일: 화면 위를 지나가는 부품 / 왼쪽 밖에서 차례를 기다리는 부품
+    private readonly List<Button> beltMoving = new List<Button>();
+    private readonly List<Button> beltQueue = new List<Button>();
+    private const float ParkedX = -5000f;
     private float streamSpacing;
     private bool nextCopyShouldBeBad = true;
 
@@ -235,15 +242,87 @@ public class Minigame13_ButtonFactory : MinigameBase
 
     // 컨베이어 이동
 
+    // 부품을 같은 간격으로 하나씩 흘려보냄.
+    // 오른쪽 끝을 지난 부품은 대기열 맨 뒤로 가고, 맨 왼쪽 부품이 충분히 들어오면 다음 부품이 나옴.
     private void MoveConveyor()
     {
-        MovePartArray(goodParts);
-        MovePartArray(badParts);
+        if (conveyorArea == null)
+            return;
 
-        for (int i = 0; i < supplyCopies.Count; i++)
+        float rightEdge = conveyorArea.rect.xMax + wrapPadding;
+        float spawnX = conveyorArea.rect.xMin - wrapPadding - streamSpacing * 0.5f;
+        float leftMost = float.PositiveInfinity;
+
+        for (int i = beltMoving.Count - 1; i >= 0; i--)
         {
-            MoveOnePart(supplyCopies[i].button);
+            Button part = beltMoving[i];
+
+            if (part == null || !part.gameObject.activeSelf)
+            {
+                beltMoving.RemoveAt(i);
+                continue;
+            }
+
+            RectTransform rect = part.GetComponent<RectTransform>();
+            rect.anchoredPosition += Vector2.right * currentConveyorSpeed * Time.deltaTime;
+
+            if (rect.anchoredPosition.x - VisualHalfWidth(rect) > rightEdge)
+            {
+                beltMoving.RemoveAt(i);
+                ParkPart(part);
+                continue;
+            }
+
+            leftMost = Mathf.Min(leftMost, rect.anchoredPosition.x);
         }
+
+        // 맨 왼쪽 부품이 출발선을 넘어오면 다음 부품을 한 칸 뒤에 배치
+        while (beltMoving.Count == 0 || leftMost > spawnX)
+        {
+            Button next = TakeNextQueued();
+            if (next == null)
+                break;
+
+            float x = beltMoving.Count == 0
+                ? spawnX
+                : Mathf.Min(leftMost - streamSpacing, spawnX);
+
+            RectTransform rect = next.GetComponent<RectTransform>();
+            Vector2 pos = rect.anchoredPosition;
+            pos.x = x;
+            rect.anchoredPosition = pos;
+
+            beltMoving.Add(next);
+            leftMost = x;
+        }
+    }
+
+    private float VisualHalfWidth(RectTransform rect)
+    {
+        return rect.rect.width * Mathf.Abs(rect.localScale.x) * 0.5f;
+    }
+
+    private void ParkPart(Button part)
+    {
+        RectTransform rect = part.GetComponent<RectTransform>();
+        Vector2 pos = rect.anchoredPosition;
+        pos.x = ParkedX;
+        rect.anchoredPosition = pos;
+        beltQueue.Add(part);
+    }
+
+    private Button TakeNextQueued()
+    {
+        while (beltQueue.Count > 0)
+        {
+            Button part = beltQueue[0];
+            beltQueue.RemoveAt(0);
+
+            if (part != null && part.gameObject.activeSelf)
+                return part;
+        }
+
+        return null;
     }
 
     private void MovePartArray(Button[] parts)
@@ -317,7 +396,10 @@ public class Minigame13_ButtonFactory : MinigameBase
     {
         if (conveyorArea == null) return;
 
-        streamSpacing = Mathf.Max(30f, continuousSpacing);
+        // 복제 부품은 쓰지 않음 (같은 부품이 겹쳐 나오지 않도록)
+        DestroySupplyCopies();
+        beltMoving.Clear();
+        beltQueue.Clear();
         nextCopyShouldBeBad = true;
 
         List<Button> original = GetOriginalActiveParts();
@@ -325,28 +407,19 @@ public class Minigame13_ButtonFactory : MinigameBase
         foreach (Button part in original)
         {
             RectTransform rect = part.GetComponent<RectTransform>();
-            if (rect != null) widest = Mathf.Max(widest, rect.rect.width);
+            if (rect != null) widest = Mathf.Max(widest, VisualHalfWidth(rect) * 2f);
         }
 
-        // Keep parts close but never overlap their button hitboxes.
-        streamSpacing = Mathf.Max(streamSpacing, widest + 6f);
+        // 부품 폭 + 빈 간격만큼 떨어뜨려서 하나씩 지나가게 함
+        streamSpacing = Mathf.Max(continuousSpacing, widest + itemGap);
 
-        FillContinuousSupply();
-
-        // Alternate good/bad originals and copies at the beginning,
-        // instead of grouping all good buttons on one side of the belt.
+        // 불량/정상 부품을 번갈아 섞기
         List<Button> goods = new List<Button>();
         List<Button> bads = new List<Button>();
         foreach (Button part in goodParts ?? new Button[0])
             if (part != null && part.gameObject.activeSelf) goods.Add(part);
         foreach (Button part in badParts ?? new Button[0])
             if (part != null && part.gameObject.activeSelf) bads.Add(part);
-        foreach (SupplyCopy copy in supplyCopies)
-        {
-            if (copy.button == null || !copy.button.gameObject.activeSelf) continue;
-            if (copy.isGood) goods.Add(copy.button);
-            else bads.Add(copy.button);
-        }
 
         List<Button> ordered = new List<Button>();
         int gi = 0, bi = 0;
@@ -360,14 +433,25 @@ public class Minigame13_ButtonFactory : MinigameBase
             chooseBad = !chooseBad;
         }
 
-        float x = conveyorArea.rect.xMin - streamSpacing;
+        // 시작할 때부터 레일이 비어 보이지 않도록 화면 안을 간격대로 채우고, 나머지는 대기
+        float x = conveyorArea.rect.xMax - streamSpacing * 0.5f;
+        float spawnX = conveyorArea.rect.xMin - wrapPadding - streamSpacing * 0.5f;
+
         foreach (Button part in ordered)
         {
-            RectTransform rect = part.GetComponent<RectTransform>();
-            Vector2 pos = rect.anchoredPosition;
-            pos.x = x;
-            rect.anchoredPosition = pos;
-            x += streamSpacing;
+            if (x >= spawnX)
+            {
+                RectTransform rect = part.GetComponent<RectTransform>();
+                Vector2 pos = rect.anchoredPosition;
+                pos.x = x;
+                rect.anchoredPosition = pos;
+                beltMoving.Add(part);
+                x -= streamSpacing;
+            }
+            else
+            {
+                ParkPart(part);
+            }
         }
     }
 
@@ -590,6 +674,9 @@ public class Minigame13_ButtonFactory : MinigameBase
         goodCollected[index] = true;
         collectedCount++;
 
+        // 정답 부품 '띠링'
+        GameSfx.Play("correct_ding", 0.6f, 0f);
+
         if (goodParts[index] != null)
             goodParts[index].gameObject.SetActive(false);
 
@@ -600,8 +687,6 @@ public class Minigame13_ButtonFactory : MinigameBase
         UpdateUI();
         if (collectedCount >= goodParts.Length)
             CompleteAssembly();
-        else
-            FillContinuousSupply();
     }
 
 
@@ -616,6 +701,10 @@ public class Minigame13_ButtonFactory : MinigameBase
 
         errorCount++;
         ReportMistake();
+
+        // 불량 부품 '띠-'
+        GameSfx.Play("wrong_buzz", 0.5f, 0f);
+
         UpdateUI();
         ShowMessage("불량 부품입니다.");
         StartCoroutine(BadPartCooldown(clickedButton));
@@ -874,8 +963,6 @@ public class Minigame13_ButtonFactory : MinigameBase
             badParts[i].gameObject.SetActive(false);
             removed++;
         }
-
-        FillContinuousSupply();
     }
 
 

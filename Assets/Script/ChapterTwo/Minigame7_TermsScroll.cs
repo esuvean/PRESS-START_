@@ -136,6 +136,9 @@ public class Minigame7_TermsScroll : MinigameBase
         if (!isGameActive)
             return;
 
+        // 동의 버튼 누르는 소리
+        GameSfx.PlayButton();
+
         // 첫 번째 장난을 아직 안 봤으면 동의 불가
         if (!escapedOnce)
         {

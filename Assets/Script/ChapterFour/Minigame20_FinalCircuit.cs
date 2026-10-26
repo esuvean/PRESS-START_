@@ -20,6 +20,7 @@ public class Minigame20_FinalCircuit : MinigameBase
         public Image background;
         public Image[] arms = new Image[4];
         public Image center;
+        public Image pipe;
         public Button button;
         public int correctMask;
         public int rotation;
@@ -28,6 +29,13 @@ public class Minigame20_FinalCircuit : MinigameBase
     [Header("Circuit Board")]
     public RectTransform boardArea;
     public float cellSize = 65f;
+
+    [Header("Art (현민)")]
+    public Sprite tileSprite;
+    [Tooltip("위-아래로 이어진 곧은 파이프")]
+    public Sprite straightPipeSprite;
+    [Tooltip("아래-오른쪽으로 꺾인 파이프")]
+    public Sprite anglePipeSprite;
 
     [Header("UI")]
     public TMP_Text titleText;
@@ -150,7 +158,7 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (instructionText != null)
         {
             instructionText.text =
-                "회로 블록을 클릭해 90도씩 회전하세요.";
+                "클릭하여\n블록을 회전합니다.";
         }
 
         if (completionPanel != null)
@@ -331,7 +339,8 @@ public class Minigame20_FinalCircuit : MinigameBase
                 cellSize - 2f
             ),
             tileColor,
-            true
+            true,
+            tileSprite
         );
 
         CircuitTile tile = new CircuitTile();
@@ -339,6 +348,26 @@ public class Minigame20_FinalCircuit : MinigameBase
         tile.rect = background.rectTransform;
         tile.background = background;
         tile.correctMask = correctMask;
+
+        if (UsePipeSprites())
+        {
+            // 파이프 이미지 한 장을 회전시켜서 연결 모양을 표현
+            tile.pipe = CreateImage(
+                "Pipe",
+                tile.rect,
+                Vector2.zero,
+                new Vector2(
+                    cellSize - 2f,
+                    cellSize - 2f
+                ),
+                circuitColor,
+                false
+            );
+
+            AddTileButton(tile, background, row, col);
+            tiles[row, col] = tile;
+            return;
+        }
 
         float halfLength = cellSize * 0.26f;
         float armLength = cellSize * 0.53f;
@@ -394,6 +423,17 @@ public class Minigame20_FinalCircuit : MinigameBase
             false
         );
 
+        AddTileButton(tile, background, row, col);
+
+        tiles[row, col] = tile;
+    }
+
+    private void AddTileButton(
+        CircuitTile tile,
+        Image background,
+        int row,
+        int col)
+    {
         Button button =
             background.gameObject.AddComponent<Button>();
 
@@ -408,8 +448,52 @@ public class Minigame20_FinalCircuit : MinigameBase
         );
 
         tile.button = button;
+    }
 
-        tiles[row, col] = tile;
+    private bool UsePipeSprites()
+    {
+        return straightPipeSprite != null &&
+               anglePipeSprite != null;
+    }
+
+    private void ApplyPipeVisual(
+        CircuitTile tile,
+        int mask,
+        Color lineColor)
+    {
+        if (tile.pipe == null)
+            return;
+
+        float angle = 0f;
+
+        if (mask == (Up | Down) || mask == (Left | Right))
+        {
+            tile.pipe.sprite = straightPipeSprite;
+            angle = mask == (Left | Right) ? 90f : 0f;
+        }
+        else
+        {
+            // 기본 이미지는 아래-오른쪽 연결. 시계 방향으로 90도씩 돌려서 맞춤
+            tile.pipe.sprite = anglePipeSprite;
+
+            int baseMask = Right | Down;
+
+            for (int k = 0; k < 4; k++)
+            {
+                if (baseMask == mask)
+                {
+                    angle = -90f * k;
+                    break;
+                }
+
+                baseMask = ((baseMask << 1) | (baseMask >> 3)) & 15;
+            }
+        }
+
+        tile.pipe.rectTransform.localRotation =
+            Quaternion.Euler(0f, 0f, angle);
+
+        tile.pipe.color = lineColor;
     }
 
     private void RandomizeCircuit()
@@ -691,6 +775,12 @@ public class Minigame20_FinalCircuit : MinigameBase
                     Left
                 };
 
+                if (tile.pipe != null)
+                {
+                    ApplyPipeVisual(tile, mask, lineColor);
+                    continue;
+                }
+
                 for (int d = 0; d < 4; d++)
                 {
                     bool enabled =
@@ -775,6 +865,9 @@ public class Minigame20_FinalCircuit : MinigameBase
             "전체 회로 검사 완료. 전력 공급 중..."
         );
 
+        // 회로가 다 이어지면 공기 주입되는 '쉬이익' 소리
+        GameSfx.Play("air_pump", 0.7f, 0f);
+
         for (int i = 0; i < path.Count; i++)
         {
             Vector2Int position = path[i];
@@ -784,12 +877,19 @@ public class Minigame20_FinalCircuit : MinigameBase
 
             tile.background.color = poweredTileColor;
 
-            for (int d = 0; d < 4; d++)
+            if (tile.pipe != null)
             {
-                tile.arms[d].color = poweredColor;
+                tile.pipe.color = poweredColor;
             }
 
-            tile.center.color = poweredColor;
+            for (int d = 0; d < 4; d++)
+            {
+                if (tile.arms[d] != null)
+                    tile.arms[d].color = poweredColor;
+            }
+
+            if (tile.center != null)
+                tile.center.color = poweredColor;
 
             if (progressText != null)
             {
@@ -1014,7 +1114,8 @@ public class Minigame20_FinalCircuit : MinigameBase
         Vector2 position,
         Vector2 size,
         Color color,
-        bool raycast)
+        bool raycast,
+        Sprite sprite = null)
     {
         GameObject obj = new GameObject(
             objectName,
@@ -1045,6 +1146,7 @@ public class Minigame20_FinalCircuit : MinigameBase
         Image image =
             obj.GetComponent<Image>();
 
+        image.sprite = sprite;
         image.color = color;
         image.raycastTarget = raycast;
 

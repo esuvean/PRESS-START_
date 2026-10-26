@@ -1122,7 +1122,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.VerticalLayoutGroup
   m_Padding:
     m_Left: 50
-    m_Right: 30
+    m_Right: 50
     m_Top: 30
     m_Bottom: 30
   m_ChildAlignment: 1

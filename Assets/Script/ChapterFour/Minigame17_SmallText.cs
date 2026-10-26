@@ -23,6 +23,13 @@ public class Minigame17_SmallText : MinigameBase
     [Header("Settings")]
     public float feedbackDelay = 1f;
 
+    [Header("Feedback Colors")]
+    public Color correctColor = new Color(0.45f, 1f, 0.55f);
+    public Color wrongColor = new Color(1f, 0.35f, 0.55f);
+    public Color hintColor = new Color(1f, 0.9f, 0.2f);
+
+    private Coroutine feedbackPopRoutine;
+
     private int currentRound = 0;
     private bool isProcessing = false;
 
@@ -197,6 +204,40 @@ public class Minigame17_SmallText : MinigameBase
         }
     }
 
+    // 정답/오답 문구를 색을 바꿔서 톡 튀어나오게 표시
+    private void ShowFeedback(string message, Color color)
+    {
+        if (feedbackText == null)
+            return;
+
+        feedbackText.text = message;
+        feedbackText.color = color;
+
+        if (feedbackPopRoutine != null)
+            StopCoroutine(feedbackPopRoutine);
+
+        feedbackPopRoutine = StartCoroutine(FeedbackPop());
+    }
+
+    private IEnumerator FeedbackPop()
+    {
+        Transform target = feedbackText.transform;
+        float duration = 0.25f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float scale = Mathf.Lerp(1.4f, 1f, 1f - (1f - t) * (1f - t));
+            target.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        target.localScale = Vector3.one;
+        feedbackPopRoutine = null;
+    }
+
     private void OnLeftButton()
     {
         CheckAnswer(0);
@@ -243,20 +284,13 @@ public class Minigame17_SmallText : MinigameBase
 
         if (isCorrect)
         {
-            if (feedbackText != null)
-            {
-                feedbackText.text = "정답입니다!";
-            }
+            ShowFeedback("정답입니다!", correctColor);
 
             StartCoroutine(CorrectAnswerRoutine());
         }
         else
         {
-            if (feedbackText != null)
-            {
-                feedbackText.text =
-                    "틀렸습니다! 작은 규칙을 다시 읽어보세요.";
-            }
+            ShowFeedback("틀렸습니다! 작은 규칙을 다시 읽어보세요.", wrongColor);
 
             StartCoroutine(WrongAnswerRoutine());
         }
@@ -273,10 +307,7 @@ public class Minigame17_SmallText : MinigameBase
 
         if (currentRound >= 3)
         {
-            if (feedbackText != null)
-            {
-                feedbackText.text = "검사 완료!";
-            }
+            ShowFeedback("검사 완료!", correctColor);
 
             Success();
         }
@@ -298,11 +329,7 @@ public class Minigame17_SmallText : MinigameBase
 
     protected override void GiveHint()
     {
-        if (feedbackText != null)
-        {
-            feedbackText.text =
-                "힌트: 작은 글씨의 규칙을 먼저 확인하세요.";
-        }
+        ShowFeedback("힌트: 작은 글씨의 규칙을 먼저 확인하세요.", hintColor);
     }
 
     protected override void RestartGame()

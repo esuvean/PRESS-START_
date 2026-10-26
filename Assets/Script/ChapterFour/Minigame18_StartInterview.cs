@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 using System.Collections;
 
 public class Minigame18_StartInterview : MinigameBase
@@ -22,6 +23,17 @@ public class Minigame18_StartInterview : MinigameBase
     public TMP_Text answerButton2Text;
     public TMP_Text answerButton3Text;
 
+    [Header("Button Art")]
+    public Sprite normalButtonSprite;
+    [Tooltip("클릭한 답 버튼에 보여줄 핑크 버튼")]
+    public Sprite selectedButtonSprite;
+    [Tooltip("선택하지 않은 버튼은 살짝 어둡게")]
+    public Color unselectedDimColor = new Color(0.55f, 0.55f, 0.55f, 1f);
+
+    [Header("Robot Speech")]
+    [Tooltip("로봇이 한 글자씩 말하는 속도 (초)")]
+    public float typingSpeed = 0.03f;
+
     [Header("Settings")]
     public float answerDelay = 2f;
     public float wrongAnswerDelay = 2.5f;
@@ -29,6 +41,9 @@ public class Minigame18_StartInterview : MinigameBase
 
     private int currentQuestion = 0;
     private bool isProcessing = false;
+
+    private Coroutine typingRoutine;
+    private string currentQuestionLine = "";
 
     private void Start()
     {
@@ -73,7 +88,103 @@ public class Minigame18_StartInterview : MinigameBase
             answerButton3.onClick.AddListener(OnAnswer3);
         }
 
+        AddHoverEffect(answerButton1);
+        AddHoverEffect(answerButton2);
+        AddHoverEffect(answerButton3);
+
         ShowQuestion();
+    }
+
+    private void AddHoverEffect(Button button)
+    {
+        if (button != null &&
+            button.GetComponent<Minigame18_ButtonHover>() == null)
+        {
+            button.gameObject.AddComponent<Minigame18_ButtonHover>();
+        }
+    }
+
+    // 로봇 말풍선에 한 글자씩 대사를 표시
+    private void Say(string line)
+    {
+        if (questionText == null)
+            return;
+
+        if (typingRoutine != null)
+            StopCoroutine(typingRoutine);
+
+        questionText.text = line;
+        typingRoutine = StartCoroutine(TypeRoutine());
+    }
+
+    private IEnumerator TypeRoutine()
+    {
+        questionText.maxVisibleCharacters = 0;
+        questionText.ForceMeshUpdate();
+
+        int total = questionText.textInfo.characterCount;
+
+        for (int i = 1; i <= total; i++)
+        {
+            questionText.maxVisibleCharacters = i;
+            yield return new WaitForSeconds(typingSpeed);
+        }
+
+        questionText.maxVisibleCharacters = 99999;
+        typingRoutine = null;
+    }
+
+    private void ResetButtonVisuals()
+    {
+        Button[] buttons = { answerButton1, answerButton2, answerButton3 };
+
+        foreach (Button button in buttons)
+        {
+            if (button == null)
+                continue;
+
+            Image image = button.GetComponent<Image>();
+
+            if (image != null)
+            {
+                if (normalButtonSprite != null)
+                    image.sprite = normalButtonSprite;
+
+                image.color = Color.white;
+            }
+        }
+
+        // 이전에 누른 버튼이 '선택됨' 상태로 남아 있으면 마우스를 올려도 반응하지 않으므로 해제
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+    }
+
+    private void MarkChosenButton(int answerIndex)
+    {
+        Button[] buttons = { answerButton1, answerButton2, answerButton3 };
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i] == null)
+                continue;
+
+            Image image = buttons[i].GetComponent<Image>();
+
+            if (image == null)
+                continue;
+
+            if (i == answerIndex)
+            {
+                if (selectedButtonSprite != null)
+                    image.sprite = selectedButtonSprite;
+
+                image.color = Color.white;
+            }
+            else
+            {
+                image.color = unselectedDimColor;
+            }
+        }
     }
 
     private void ShowQuestion()
@@ -88,6 +199,7 @@ public class Minigame18_StartInterview : MinigameBase
             responseText.text = "";
         }
 
+        ResetButtonVisuals();
         SetButtonsInteractable(true);
 
         if (questionNumberText != null)
@@ -133,10 +245,8 @@ public class Minigame18_StartInterview : MinigameBase
         string answer2,
         string answer3)
     {
-        if (questionText != null)
-        {
-            questionText.text = question;
-        }
+        currentQuestionLine = question;
+        Say(question);
 
         if (answerButton1Text != null)
         {
@@ -189,6 +299,7 @@ public class Minigame18_StartInterview : MinigameBase
         isProcessing = true;
 
         SetButtonsInteractable(false);
+        MarkChosenButton(answerIndex);
 
         switch (currentQuestion)
         {
@@ -208,32 +319,20 @@ public class Minigame18_StartInterview : MinigameBase
 
     private void HandleQuestion1(int answerIndex)
     {
-        if (responseText != null)
-        {
-            responseText.text = "";
-        }
-
         StartCoroutine(NextQuestionRoutine(answerDelay));
     }
 
     private void HandleQuestion2(int answerIndex)
     {
-        if (responseText != null)
+        switch (answerIndex)
         {
-            switch (answerIndex)
-            {
-                case 0:
-                    responseText.text = "그렇게 느껴졌나요?";
-                    break;
+            case 0:
+                Say("그렇게 느껴졌나요?");
+                break;
 
-                case 1:
-                    responseText.text = "";
-                    break;
-
-                case 2:
-                    responseText.text = "판단을 보류했습니다.";
-                    break;
-            }
+            case 2:
+                Say("판단을 보류했습니다.");
+                break;
         }
 
         StartCoroutine(NextQuestionRoutine(answerDelay));
@@ -243,27 +342,19 @@ public class Minigame18_StartInterview : MinigameBase
     {
         if (answerIndex == 2)
         {
-            if (responseText != null)
-            {
-                responseText.text = "검사 완료";
-            }
+            Say("검사 완료");
 
             StartCoroutine(SuccessRoutine());
         }
         else
         {
-            if (responseText != null)
+            if (answerIndex == 0)
             {
-                if (answerIndex == 0)
-                {
-                    responseText.text =
-                        "아직 시작되지 않았다고 확신할 수 있습니까?";
-                }
-                else
-                {
-                    responseText.text =
-                        "그렇다면 지금까지의 행동은 무엇이었습니까?";
-                }
+                Say("아직 시작되지 않았다고 확신할 수 있습니까?");
+            }
+            else
+            {
+                Say("그렇다면 지금까지의 행동은 무엇이었습니까?");
             }
 
             StartCoroutine(RetryQuestionRoutine());
@@ -310,10 +401,10 @@ public class Minigame18_StartInterview : MinigameBase
 
     protected override void GiveHint()
     {
-        if (responseText != null && !isProcessing)
+        if (questionText != null && !isProcessing)
         {
-            responseText.text =
-                "힌트: 질문의 의미를 다시 생각해 보세요.";
+            Say(currentQuestionLine +
+                "\n<size=70%><color=#E0287D>힌트: 질문의 의미를 다시 생각해 보세요.</color></size>");
         }
     }
 

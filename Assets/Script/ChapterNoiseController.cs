@@ -14,6 +14,13 @@ public class ChapterNoiseController : MonoBehaviour
     private CRTRendererFeature crtFilter;
     private Coroutine randomNoiseCoroutine;
 
+    // 씬에 미리 배치하지 않고 코드로 만들 때 연결 (Chapter4Glitch에서 사용)
+    public void Setup(Canvas canvas, Camera camera)
+    {
+        gameCanvas = canvas;
+        mainCamera = camera;
+    }
+
     private void Start()
     {
         crtFilter = Resources
@@ -70,7 +77,8 @@ public class ChapterNoiseController : MonoBehaviour
 
         TurnLightNoiseOn();
 
-        yield return new WaitForSeconds(0.25f);
+        // 설정창으로 일시정지해도 노이즈가 멈춘 채 계속되지 않게 실제 시간으로 기다림
+        yield return new WaitForSecondsRealtime(0.25f);
 
         TurnNoiseOff();
 
@@ -86,6 +94,58 @@ public class ChapterNoiseController : MonoBehaviour
 
         gameCanvas.planeDistance =
             oldPlaneDistance;
+    }
+
+    // =========================================
+    // 강한 노이즈 (게임이 튕기기 직전 연출)
+    // 캔버스를 카메라 모드로 바꾼 채로 끝냄 (바로 씬이 바뀌므로 되돌리지 않음)
+    // =========================================
+    public IEnumerator PlayHeavyNoise(float duration)
+    {
+        if (crtFilter == null ||
+            gameCanvas == null ||
+            mainCamera == null)
+        {
+            yield return new WaitForSecondsRealtime(duration);
+            yield break;
+        }
+
+        gameCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+        gameCanvas.worldCamera = mainCamera;
+        gameCanvas.planeDistance = 10f;
+
+        yield return null;
+
+        GameSfx.StartNoise(0.6f);
+
+        crtFilter.SetActive(true);
+        crtFilter.noiseSize = 40f;
+        crtFilter.noiseSpeed = 20f;
+        crtFilter.glitchFrequency = 1f;
+        crtFilter.glitchPosition = 0.5f;
+        crtFilter.glitchMovementSpeed = 2f;
+        crtFilter.glitchNoise = 2f;
+        crtFilter.glitchNoiseSpeed = 8f;
+
+        // 점점 심해지게
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            crtFilter.noiseAlpha = Mathf.Lerp(0.3f, 0.9f, t);
+            crtFilter.glitchBands = Mathf.RoundToInt(Mathf.Lerp(2f, 8f, t));
+            crtFilter.glitchStrength = Mathf.Lerp(0.2f, 0.8f, t);
+            crtFilter.glitchPositionFlicker = Mathf.Lerp(0.15f, 0.6f, t);
+
+            yield return null;
+        }
+    }
+
+    public void StopAllNoise()
+    {
+        TurnNoiseOff();
     }
 
     // =========================================

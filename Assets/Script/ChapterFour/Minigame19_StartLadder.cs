@@ -46,6 +46,17 @@ public class Minigame19_StartLadder : MinigameBase
     public Color letterColor = Color.white;
     public Color selectionColor = new Color(1f, 0.35f, 0.7f);
 
+    [Header("Art (다원)")]
+    [Tooltip("위쪽 글자 박스 5개: S, T, A, R, T 순서")]
+    public Sprite[] letterSprites;
+    public Sprite numberBoxSprite;
+    public Sprite railSprite;
+    public Sprite connectorSprite;
+    public Sprite slotSprite;
+    public float letterScale = 0.85f;
+    public float connectorHeight = 22f;
+    public float maxRailSpacing = 190f;
+
     [Header("Settings")]
     public float autoHelpTime = 90f;
     public float movementDuration = 0.22f;
@@ -163,7 +174,7 @@ public class Minigame19_StartLadder : MinigameBase
         isAnimating = false;
 
         rungCount = currentRound == 0 ? 6 : 8;
-        railSpacing = Mathf.Min(190f, (ladderArea.rect.width - 100f) / 4f);
+        railSpacing = Mathf.Min(maxRailSpacing, (ladderArea.rect.width - 100f) / 4f);
         topY = ladderArea.rect.height * 0.5f - 38f;
         bottomY = -ladderArea.rect.height * 0.5f + 38f;
 
@@ -174,13 +185,13 @@ public class Minigame19_StartLadder : MinigameBase
             roundText.text = $"ROUND {currentRound + 1} / 2";
 
         if (instructionText != null)
-            instructionText.text = "왼쪽 선택선 클릭 → 사다리의 연결 칸 클릭 → 경로 실행";
+            instructionText.text = "오른쪽 연결선 클릭 → 사다리의 점선 칸 클릭 → 경로 실행";
 
         if (trayLabelText != null)
-            trayLabelText.text = currentRound == 0 ? "선택선 4개" : "선택선 5개";
+            trayLabelText.text = currentRound == 0 ? "연결선 4개" : "연결선 5개";
 
         if (statusText != null)
-            statusText.text = "왼쪽의 노란 선 하나를 클릭하세요.";
+            statusText.text = "오른쪽 연결선 하나를 클릭하세요.";
 
         if (executeButton != null)
             executeButton.interactable = true;
@@ -240,9 +251,10 @@ public class Minigame19_StartLadder : MinigameBase
                 $"VerticalRail_{i + 1}",
                 ladderArea,
                 new Vector2(LaneX(i), 0f),
-                new Vector2(7f, topY - bottomY),
-                railColor,
-                false
+                new Vector2(railSprite != null ? 16f : 7f, topY - bottomY),
+                railSprite != null ? Color.white : railColor,
+                false,
+                railSprite
             );
         }
     }
@@ -267,9 +279,12 @@ public class Minigame19_StartLadder : MinigameBase
                     $"Slot_R{row + 1}_G{gap + 1}",
                     ladderArea,
                     new Vector2(GapX(gap), RowY(row)),
-                    new Vector2(railSpacing + 5f, 32f),
+                    slotSprite != null
+                        ? new Vector2(railSpacing - 26f, 36f)
+                        : new Vector2(railSpacing + 5f, 32f),
                     ghostColor,
-                    true
+                    true,
+                    slotSprite
                 );
 
                 ghostSlots[row, gap] = slot;
@@ -291,6 +306,27 @@ public class Minigame19_StartLadder : MinigameBase
     {
         for (int i = 0; i < 5; i++)
         {
+            Sprite letterSprite = GetLetterSprite(i);
+
+            if (letterSprite != null)
+            {
+                // 글자 박스 이미지 (오른쪽 화살표 부분만큼 중심을 옮겨서 박스가 세로줄 위에 오게 함)
+                float boxWidth = GetLetterBoxWidth();
+                Vector2 spriteSize = letterSprite.rect.size * letterScale;
+                float arrowOffset = (letterSprite.rect.width - boxWidth) * 0.5f * letterScale;
+
+                CreateImage(
+                    $"TopLetterBox_{i + 1}",
+                    ladderArea,
+                    new Vector2(LaneX(i) + arrowOffset, topY + 34f),
+                    spriteSize,
+                    Color.white,
+                    false,
+                    letterSprite
+                );
+            }
+            else
+            {
             CreateText(
                 $"TopLetter_{i + 1}",
                 ladderArea,
@@ -300,6 +336,20 @@ public class Minigame19_StartLadder : MinigameBase
                 42f,
                 letterColor
             );
+            }
+
+            if (numberBoxSprite != null)
+            {
+                CreateImage(
+                    $"DestinationBox_{i + 1}",
+                    ladderArea,
+                    new Vector2(LaneX(i), bottomY - 30f),
+                    numberBoxSprite.rect.size * letterScale,
+                    Color.white,
+                    false,
+                    numberBoxSprite
+                );
+            }
 
             destinationLabels[i] = CreateText(
                 $"Destination_{i + 1}",
@@ -313,15 +363,40 @@ public class Minigame19_StartLadder : MinigameBase
         }
     }
 
+    private Sprite GetLetterSprite(int index)
+    {
+        if (letterSprites == null || index < 0 || index >= letterSprites.Length)
+            return null;
+
+        return letterSprites[index];
+    }
+
+    private float GetLetterBoxWidth()
+    {
+        float width = float.MaxValue;
+
+        if (letterSprites != null)
+        {
+            foreach (Sprite sprite in letterSprites)
+            {
+                if (sprite != null)
+                    width = Mathf.Min(width, sprite.rect.width);
+            }
+        }
+
+        return width == float.MaxValue ? 0f : width;
+    }
+
     private void CreateFixedConnector(int row, int gap)
     {
         Image image = CreateImage(
             $"FixedConnector_{row + 1}",
             ladderArea,
             new Vector2(GapX(gap), RowY(row)),
-            new Vector2(railSpacing + 10f, 12f),
+            new Vector2(railSpacing + 10f, connectorSprite != null ? connectorHeight : 12f),
             fixedColor,
-            false
+            false,
+            connectorSprite
         );
 
         connectors[row] = new Connector
@@ -343,7 +418,7 @@ public class Minigame19_StartLadder : MinigameBase
             $"SelectableConnector_{row + 1}",
             connectorTray,
             new Vector2(0f, trayY),
-            new Vector2(170f, 48f),
+            new Vector2(connectorSprite != null ? 240f : 170f, 48f),
             new Color(1f, 1f, 1f, 0.08f),
             true
         );
@@ -354,20 +429,33 @@ public class Minigame19_StartLadder : MinigameBase
             Vector2.zero,
             new Vector2(140f, 11f),
             movableColor,
-            false
+            false,
+            connectorSprite
         );
 
         RectTransform barRect = bar.rectTransform;
         barRect.anchorMin = new Vector2(0f, 0.5f);
         barRect.anchorMax = new Vector2(1f, 0.5f);
-        barRect.offsetMin = new Vector2(14f, -5.5f);
-        barRect.offsetMax = new Vector2(-14f, 5.5f);
+
+        float barHalf = GetConnectorHalfHeight();
+
+        if (connectorSprite != null)
+        {
+            // 번호는 왼쪽, 연결선 이미지는 오른쪽에 배치
+            barRect.offsetMin = new Vector2(48f, -barHalf);
+            barRect.offsetMax = new Vector2(-10f, barHalf);
+        }
+        else
+        {
+            barRect.offsetMin = new Vector2(14f, -barHalf);
+            barRect.offsetMax = new Vector2(-14f, barHalf);
+        }
 
         TMP_Text number = CreateText(
             "ConnectorNumber",
             handle.rectTransform,
             $"{row + 1}",
-            new Vector2(0f, 0f),
+            new Vector2(connectorSprite != null ? -95f : 0f, 0f),
             new Vector2(55f, 38f),
             24f,
             Color.white
@@ -396,6 +484,11 @@ public class Minigame19_StartLadder : MinigameBase
         selectButton.onClick.AddListener(() => SelectConnector(capturedRow));
     }
 
+    private float GetConnectorHalfHeight()
+    {
+        return connectorSprite != null ? connectorHeight * 0.5f : 5.5f;
+    }
+
     private void SelectConnector(int row)
     {
         if (!isGameActive || isAnimating || isClearing)
@@ -410,8 +503,8 @@ public class Minigame19_StartLadder : MinigameBase
         if (statusText != null)
         {
             statusText.text = selectedRow < 0
-                ? "선택을 취소했습니다. 다른 노란 선을 클릭하세요."
-                : $"{row + 1}번 선 선택! 사다리의 {row + 1}번째 가로줄에서 회색 연결 칸을 클릭하세요.";
+                ? "선택을 취소했습니다. 다른 연결선을 클릭하세요."
+                : $"{row + 1}번 선 선택! 사다리의 {row + 1}번째 가로줄에서 점선 연결 칸을 클릭하세요.";
         }
     }
 
@@ -423,7 +516,7 @@ public class Minigame19_StartLadder : MinigameBase
         if (selectedRow < 0)
         {
             if (statusText != null)
-                statusText.text = "먼저 왼쪽의 노란 선택선을 클릭하세요.";
+                statusText.text = "먼저 오른쪽의 연결선을 클릭하세요.";
             return;
         }
 
@@ -455,7 +548,7 @@ public class Minigame19_StartLadder : MinigameBase
                     if (ghostSlots[row, gap] != null)
                     {
                         ghostSlots[row, gap].color = row == selectedRow
-                            ? new Color(selectionColor.r, selectionColor.g, selectionColor.b, 0.34f)
+                            ? new Color(selectionColor.r, selectionColor.g, selectionColor.b, slotSprite != null ? 1f : 0.34f)
                             : ghostColor;
                     }
                 }
@@ -497,8 +590,9 @@ public class Minigame19_StartLadder : MinigameBase
         if (connector.barImage != null)
         {
             RectTransform barRect = connector.barImage.rectTransform;
-            barRect.offsetMin = new Vector2(-5f, -5.5f);
-            barRect.offsetMax = new Vector2(5f, 5.5f);
+            float barHalf = GetConnectorHalfHeight();
+            barRect.offsetMin = new Vector2(-5f, -barHalf);
+            barRect.offsetMax = new Vector2(5f, barHalf);
         }
 
         if (connector.numberLabel != null)
@@ -759,40 +853,27 @@ public class Minigame19_StartLadder : MinigameBase
         }
     }
 
+    [Header("Clear")]
+    [Tooltip("마지막 라운드 성공 후 자동으로 클리어되기까지 기다리는 시간")]
+    public float autoClearDelay = 0.8f;
+
     private IEnumerator ShowClearRoutine()
     {
         isClearing = true;
 
-        if (clearPanel == null)
-        {
-            Success();
-            yield break;
-        }
+        // 패널/START 버튼 없이 자연스럽게 자동 클리어
+        if (clearPanel != null)
+            clearPanel.SetActive(false);
 
-        clearPanel.SetActive(true);
+        if (executeButton != null)
+            executeButton.interactable = false;
 
-        if (clearStartButton != null)
-            clearStartButton.interactable = false;
+        if (statusText != null)
+            statusText.text = "실행 문자 START 도착 완료!";
 
-        if (clearTitleText != null)
-        {
-            clearTitleText.text = "START";
-            float elapsed = 0f;
-            float duration = 1f;
+        yield return new WaitForSeconds(autoClearDelay);
 
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                clearTitleText.characterSpacing = Mathf.Lerp(60f, 0f, t);
-                yield return null;
-            }
-
-            clearTitleText.characterSpacing = 0f;
-        }
-
-        if (clearStartButton != null)
-            clearStartButton.interactable = true;
+        Success();
     }
 
     private void OnClearStartClicked()
@@ -806,7 +887,7 @@ public class Minigame19_StartLadder : MinigameBase
     protected override void GiveHint()
     {
         if (statusText != null && !isAnimating)
-            statusText.text = "힌트: 선택선을 클릭한 다음 해당 줄의 회색 칸을 클릭하세요.";
+            statusText.text = "힌트: 연결선을 클릭한 다음 해당 줄의 점선 칸을 클릭하세요.";
     }
 
     protected override void RestartGame()
@@ -831,7 +912,8 @@ public class Minigame19_StartLadder : MinigameBase
         Vector2 position,
         Vector2 size,
         Color color,
-        bool raycast)
+        bool raycast,
+        Sprite sprite = null)
     {
         GameObject obj = new GameObject(
             objectName,
@@ -851,6 +933,7 @@ public class Minigame19_StartLadder : MinigameBase
         rect.sizeDelta = size;
 
         Image image = obj.GetComponent<Image>();
+        image.sprite = sprite;
         image.color = color;
         image.raycastTarget = raycast;
         return image;

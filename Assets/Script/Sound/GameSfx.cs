@@ -131,6 +131,31 @@ public class GameSfx : MonoBehaviour
             Random.Range(0.94f, 1.06f));
     }
 
+    // ==============================
+    // 미니게임 효과음 (Resources/Sounds/이름.wav) — 처음 쓸 때 불러와서 저장해 둠
+    //   piece_place  : 조각 끼우는 '탁'        (MG3)
+    //   block_place  : 블럭 놓는 '탁'          (MG15)
+    //   wrong_buzz   : 오답 '띠-'              (MG13)
+    //   correct_ding : 정답 '띠링'             (MG13)
+    //   spark        : 전기 스파크 '파직'      (MG14)
+    //   air_pump     : 공기 주입 '쉬이익'      (MG20)
+    // ==============================
+    private readonly Dictionary<string, AudioClip> namedClips = new Dictionary<string, AudioClip>();
+
+    /// <summary>이름으로 효과음 재생. pitchJitter만큼 높낮이를 살짝 바꿔서 매번 똑같이 들리지 않게 함</summary>
+    public static void Play(string soundName, float volume = 0.6f, float pitchJitter = 0.04f)
+    {
+        if (instance == null || string.IsNullOrEmpty(soundName)) return;
+
+        if (!instance.namedClips.TryGetValue(soundName, out AudioClip clip))
+        {
+            clip = Resources.Load<AudioClip>("Sounds/" + soundName);
+            instance.namedClips[soundName] = clip;
+        }
+
+        instance.PlayOne(clip, volume, 1f + Random.Range(-pitchJitter, pitchJitter));
+    }
+
     /// <summary>지지직 노이즈 시작 (volume: 0~1)</summary>
     public static void StartNoise(float volume = 0.5f)
     {

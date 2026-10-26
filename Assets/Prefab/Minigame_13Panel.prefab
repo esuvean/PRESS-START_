@@ -3448,7 +3448,7 @@ MonoBehaviour:
   - {fileID: 1261028394771819633}
   - {fileID: 5896526497158368628}
   - {fileID: 8761093962255298565}
-  conveyorSpeed: 180
+  conveyorSpeed: 250
   wrapPadding: 100
   partSpacing: 160
   continuousSpacing: 110

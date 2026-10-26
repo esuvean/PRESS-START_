@@ -55,6 +55,8 @@ public class Minigame14_PowerCircuit : MinigameBase
 
     public Button startButton;
     public Image startButtonImage;
+    [Tooltip("START 장치 안의 START 글씨 (연결 전에는 숨김)")]
+    public TMP_Text startLabel;
 
     [Header("Separate START Button (after original START click)")]
     public Button separateStartButton;
@@ -63,6 +65,11 @@ public class Minigame14_PowerCircuit : MinigameBase
     public GameObject[] puzzleObjectsToHide;
 
     private bool waitingForSeparateStart = false;
+
+    [Header("START Pop")]
+    [Tooltip("회로 연결 완료 후 튀어나오는 START 버튼 크기 배율")]
+    public float startPopScale = 1.3f;
+    private Vector3 startPopBaseScale = Vector3.zero;
     private readonly Dictionary<GameObject, bool> hiddenPuzzleObjects =
         new Dictionary<GameObject, bool>();
 
@@ -162,6 +169,9 @@ public class Minigame14_PowerCircuit : MinigameBase
 
 
         // 기존 회로의 START는 원래대로 비활성 상태로 시작합니다.
+        if (startLabel != null && startPopBaseScale != Vector3.zero)
+            startLabel.rectTransform.localScale = startPopBaseScale;
+
         SetStartButtonActive(false);
 
         // 별도 START는 모든 연결을 마치고 기존 START를 누를 때 나타납니다.
@@ -358,6 +368,9 @@ public class Minigame14_PowerCircuit : MinigameBase
         if (droppedPort.shape !=
             cable.requiredShape)
         {
+            // 잘못 꽂은 포트에서 불꽃이 튐
+            PlaySpark(droppedPort.RectTransform.position);
+
             WrongConnection();
 
             return;
@@ -474,9 +487,7 @@ public class Minigame14_PowerCircuit : MinigameBase
 
         if (finalCableIndex < 0)
         {
-            SetStartButtonActive(
-                true
-            );
+            ShowStartReady();
 
             return;
         }
@@ -497,16 +508,7 @@ public class Minigame14_PowerCircuit : MinigameBase
 
 
 
-        SetStartButtonActive(
-            true
-        );
-
-
-        if (hintText != null)
-        {
-            hintText.text =
-                "전원 연결 완료. START 버튼을 누르세요.";
-        }
+        ShowStartReady();
     }
 
 
@@ -541,7 +543,29 @@ public class Minigame14_PowerCircuit : MinigameBase
         }
 
 
-        // 마지막 케이블만 빠짐
+        // 마지막 케이블이 '파직' 하고 빠짐
+        CableData finalCable = cables[finalCableIndex];
+        if (finalCable != null && finalCable.cableEnd != null)
+            PlaySpark(finalCable.cableEnd.position);
+
+        // 케이블이 몇 번 깜빡이다가 빠짐
+        if (finalCable != null && finalCable.cableLine != null)
+        {
+            Graphic lineGraphic = finalCable.cableLine.GetComponent<Graphic>();
+            if (lineGraphic != null)
+            {
+                Color original = lineGraphic.color;
+                for (int i = 0; i < 4; i++)
+                {
+                    lineGraphic.color = new Color(1f, 0.95f, 0.4f, 1f);
+                    yield return new WaitForSeconds(0.04f);
+                    lineGraphic.color = new Color(original.r, original.g, original.b, 0.2f);
+                    yield return new WaitForSeconds(0.04f);
+                }
+                lineGraphic.color = original;
+            }
+        }
+
         ResetSingleCable(
             finalCableIndex
         );
@@ -674,6 +698,9 @@ public class Minigame14_PowerCircuit : MinigameBase
     private void SetStartButtonActive(
         bool active)
     {
+        if (startLabel != null)
+            startLabel.gameObject.SetActive(active);
+
         if (startButton != null)
         {
             startButton.interactable =
@@ -695,90 +722,51 @@ public class Minigame14_PowerCircuit : MinigameBase
 
     public void OnClickStartButton()
     {
-        if (!isGameActive || waitingForSeparateStart)
+        // 회로가 다 연결된 뒤에는 기존 START 장치를 눌러도 바로 클리어
+        if (!isGameActive || !waitingForSeparateStart)
             return;
 
-
-        if (startButton == null ||
-            !startButton.interactable)
-        {
-            return;
-        }
-
-
-        Debug.Log("회로 START 클릭: 별도 START 표시");
-        ShowSeparateStartStage();
+        OnClickSeparateStartButton();
     }
 
-    private void ShowSeparateStartStage()
+    // 모든 회로가 연결되면 START 장치 위치에 START 버튼이 튀어나옴 (화면 전환 없음)
+    private void ShowStartReady()
     {
         if (waitingForSeparateStart)
             return;
 
-        if (separateStartButton == null)
-        {
-            Debug.LogError("Separate Start Button이 Inspector에 연결되지 않았습니다.");
-            return;
-        }
-
         waitingForSeparateStart = true;
 
-        // 배경/게임 패널/제목/설명은 끄지 않습니다.
-        // 포트가 포함된 장치의 부모만 찾아서 숨깁니다.
-        foreach (CableData cable in cables)
-        {
-            if (cable == null)
-                continue;
-
-            if (cable.targetPorts != null)
-            {
-                foreach (CircuitPort port in cable.targetPorts)
-                {
-                    if (port == null)
-                        continue;
-
-                    // 보통 PowerDevice, InputDevice, ScreenDevice 등이 됩니다.
-                    if (port.transform.parent != null)
-                        HidePuzzleObject(port.transform.parent.gameObject);
-                    else
-                        HidePuzzleObject(port.gameObject);
-                }
-            }
-
-            if (cable.connectedPort != null)
-            {
-                Transform parent = cable.connectedPort.transform.parent;
-                HidePuzzleObject(parent != null ? parent.gameObject :
-                    cable.connectedPort.gameObject);
-            }
-
-            if (cable.cableLine != null)
-                HidePuzzleObject(cable.cableLine.gameObject);
-
-            if (cable.cableEnd != null)
-                HidePuzzleObject(cable.cableEnd.gameObject);
-        }
-
-        // 기존 START 장치는 마지막 연결 포트를 포함하므로
-        // 퍼즐이 끝난 지금에만 숨깁니다.
-        if (startButton != null)
-            HidePuzzleObject(startButton.gameObject);
-
-        HideHintLines();
-
-        // 자동 감지되지 않는 장식/케이블이 있으면 Inspector에서 추가 지정.
-        if (puzzleObjectsToHide != null)
-        {
-            foreach (GameObject obj in puzzleObjectsToHide)
-                HidePuzzleObject(obj);
-        }
+        SetStartButtonActive(true);
 
         if (hintText != null)
-            hintText.text = "회로 연결 완료! START 버튼을 눌러 다음으로 진행하세요.";
+            hintText.text = "회로 연결 완료! START 버튼을 누르세요.";
 
-        separateStartButton.gameObject.SetActive(true);
-        separateStartButton.interactable = true;
-        separateStartButton.transform.SetAsLastSibling();
+        // START 장치 안에 START 글씨가 튀어나오면서 버튼이 됨
+        if (startLabel != null)
+            StartCoroutine(PopStartButton(startLabel.rectTransform));
+    }
+
+    private IEnumerator PopStartButton(RectTransform target)
+    {
+        if (startPopBaseScale == Vector3.zero)
+            startPopBaseScale = target.localScale;
+
+        Vector3 finalScale = startPopBaseScale;
+        float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            // 살짝 크게 튀어나왔다가 제자리
+            float overshoot = 1f + Mathf.Sin(t * Mathf.PI) * 0.25f;
+            target.localScale = finalScale * t * overshoot;
+            yield return null;
+        }
+
+        target.localScale = finalScale;
     }
 
     private void HidePuzzleObject(GameObject obj)
@@ -857,6 +845,114 @@ public class Minigame14_PowerCircuit : MinigameBase
     }
 
 
+
+    // =========================================
+    // 전기 스파크 (소리 + 불꽃 파편)
+    // =========================================
+    [Header("Spark")]
+    public int sparkParticleCount = 16;
+    public float sparkDuration = 0.45f;
+
+    private void PlaySpark(Vector3 worldPosition)
+    {
+        GameSfx.Play("spark", 0.75f, 0.08f);
+        StartCoroutine(SparkRoutine(worldPosition));
+    }
+
+    private IEnumerator SparkRoutine(Vector3 worldPosition)
+    {
+        RectTransform root = transform as RectTransform;
+        if (root == null)
+            yield break;
+
+        Vector2 center = root.InverseTransformPoint(worldPosition);
+
+        List<RectTransform> bits = new List<RectTransform>();
+        List<Vector2> velocities = new List<Vector2>();
+        List<Image> images = new List<Image>();
+
+        // 번쩍이는 빛
+        Image flash = CreateSparkBit(root, center, 70f, new Color(1f, 1f, 0.85f, 0.9f));
+        images.Add(flash);
+        bits.Add(flash.rectTransform);
+        velocities.Add(Vector2.zero);
+
+        Color[] colors =
+        {
+            new Color(1f, 0.95f, 0.35f, 1f),
+            new Color(1f, 1f, 1f, 1f),
+            new Color(0.4f, 0.9f, 1f, 1f)
+        };
+
+        for (int i = 0; i < sparkParticleCount; i++)
+        {
+            float size = Random.Range(5f, 11f);
+            Image bit = CreateSparkBit(root, center, size, colors[Random.Range(0, colors.Length)]);
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float speed = Random.Range(250f, 650f);
+
+            images.Add(bit);
+            bits.Add(bit.rectTransform);
+            velocities.Add(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed);
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < sparkDuration)
+        {
+            float dt = Time.unscaledDeltaTime;
+            elapsed += dt;
+            float t = elapsed / sparkDuration;
+
+            for (int i = 0; i < bits.Count; i++)
+            {
+                if (bits[i] == null)
+                    continue;
+
+                if (i == 0)
+                {
+                    // 빛은 커지면서 사라짐
+                    bits[i].localScale = Vector3.one * (1f + t * 1.5f);
+                }
+                else
+                {
+                    velocities[i] += Vector2.down * 900f * dt;  // 살짝 떨어지게
+                    bits[i].anchoredPosition += velocities[i] * dt;
+                }
+
+                Color c = images[i].color;
+                c.a = (i == 0 ? 0.9f : 1f) * (1f - t);
+                images[i].color = c;
+            }
+
+            yield return null;
+        }
+
+        foreach (RectTransform bit in bits)
+        {
+            if (bit != null)
+                Destroy(bit.gameObject);
+        }
+    }
+
+    private Image CreateSparkBit(RectTransform parent, Vector2 position, float size, Color color)
+    {
+        GameObject go = new GameObject("Spark", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        go.transform.SetParent(parent, false);
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = position;
+        rt.sizeDelta = new Vector2(size, size);
+        rt.SetAsLastSibling();
+
+        Image image = go.GetComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
+        return image;
+    }
 
     private void UpdateCableLine(
         int cableIndex)

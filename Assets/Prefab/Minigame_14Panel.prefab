@@ -317,7 +317,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_DisabledColor: {r: 1, g: 1, b: 1, a: 1}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -790,10 +790,11 @@ MonoBehaviour:
     connectedPort: {fileID: 0}
   startButton: {fileID: 1559993271248846168}
   startButtonImage: {fileID: 6201622999932188482}
+  startLabel: {fileID: 5723447421687190426}
   separateStartButton: {fileID: 2746820439639287782}
   puzzleObjectsToHide: []
-  startDisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  startEnabledColor: {r: 0, g: 1, b: 0, a: 1}
+  startDisabledColor: {r: 1, g: 1, b: 1, a: 1}
+  startEnabledColor: {r: 1, g: 1, b: 1, a: 1}
   errorText: {fileID: 4242078292153748588}
   timerText: {fileID: 1569052293715340261}
   hintText: {fileID: 8141049905221222152}

@@ -32,6 +32,18 @@ public static class SessionProgress
 
 
 
+    // NewGame: 모든 진행도를 처음 상태로
+    public static void ResetAll()
+    {
+        chapterProgress =
+            new int[TotalChapters];
+
+        chapterCompleted =
+            new bool[TotalChapters];
+
+        openChapterSelectOnLoad = false;
+    }
+
     public static void SetProgress(
         int chapterNumber,
         int progress)

@@ -210,6 +210,9 @@ public class Minigame3_MashButton : MinigameBase
         pieceTransforms[index].position = slotTransforms[index].position;
         isPlaced[index] = true;
 
+        // 조각이 칸에 '탁' 끼워지는 소리
+        GameSfx.Play("piece_place", 0.8f);
+
         // ★ 슬롯에 안착되면 도망 모드 종료
         if (index == pieceTransforms.Length - 1)
         {

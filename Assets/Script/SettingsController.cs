@@ -377,8 +377,12 @@ public class SettingsController : MonoBehaviour
 
     public void NewGame()
     {
-        // 나중에 저장 시스템이 완성되면
-        // 여기에서 진행도 초기화를 추가하면 됨.
+        // 완전히 처음부터: 모든 챕터 진행도/완료 기록/튕김 연출 초기화
+        Time.timeScale = 1f;
+        GameSfx.StopNoise();
+
+        SessionProgress.ResetAll();
+        Chapter4Glitch.ResetCrash();
 
         SceneManager.LoadScene("MainScene");
     }
@@ -386,12 +390,19 @@ public class SettingsController : MonoBehaviour
 
     public void ContinueGame()
     {
-        // SettingsController가 UIManager에 붙어있기 때문에
-        // gameObject.SetActive(false)는 절대 하면 안 됨.
+        // 설정창만 닫고 하던 곳에서 그대로 계속 (멈췄던 시간도 다시 흐르게)
+        Time.timeScale = 1f;
 
-        if (screenController != null)
+        bool inChapter = FindAnyObjectByType<ChapterManager>() != null;
+
+        if (!inChapter && screenController != null)
         {
-            screenController.ShowMainScreen();
+            // 메인 메뉴에서 연 설정창이면 연 화면(메인 / 챕터 선택)으로 돌아감
+            screenController.CloseSettingsScreen();
+        }
+        else
+        {
+            CloseSettings();
         }
     }
 

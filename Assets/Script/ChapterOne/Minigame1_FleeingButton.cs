@@ -23,6 +23,12 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
     
     public Camera uiCamera;
 
+    [Header("버튼이 움직일 수 있는 영역 (배경 외곽선 안쪽, 화면 가운데 기준)")]
+    public float areaLeft = -800f;
+    public float areaRight = 800f;
+    public float areaTop = 320f;     // 위쪽 제목/타이머 줄 아래까지
+    public float areaBottom = -440f;
+
     private int successCount = 0;
     private int failCount = 0;
     private bool isPaused = false;
@@ -129,16 +135,12 @@ public class Minigame1_FleeingButton : MinigameBase, IPointerClickHandler
                 break;
         }
 
-        // ★ 버튼이 패널(화면 영역) 밖으로 나가지 않도록 가두기
-        RectTransform parentRect = buttonTransform.parent as RectTransform;
-        if (parentRect != null)
-        {
-            float limitX = (parentRect.rect.width - buttonTransform.rect.width) / 2f;
-            float limitY = (parentRect.rect.height - buttonTransform.rect.height) / 2f;
+        // ★ 버튼이 배경 외곽선 밖으로 나가지 않도록 가두기 (버튼 크기만큼 안쪽으로)
+        float halfW = buttonTransform.rect.width * Mathf.Abs(buttonTransform.localScale.x) * 0.5f;
+        float halfH = buttonTransform.rect.height * Mathf.Abs(buttonTransform.localScale.y) * 0.5f;
 
-            currentPos.x = Mathf.Clamp(currentPos.x, -limitX, limitX);
-            currentPos.y = Mathf.Clamp(currentPos.y, -limitY, limitY);
-        }
+        currentPos.x = Mathf.Clamp(currentPos.x, areaLeft + halfW, areaRight - halfW);
+        currentPos.y = Mathf.Clamp(currentPos.y, areaBottom + halfH, areaTop - halfH);
 
         buttonTransform.anchoredPosition = currentPos;
 
