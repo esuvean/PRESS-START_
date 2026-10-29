@@ -84,6 +84,15 @@ public class StartMenuController : MonoBehaviour
 
             SessionProgress.openChapterSelectOnLoad = false;
         }
+        // NewGame으로 다시 시작: 지지직 인트로 없이 전체 화면 시작 화면부터
+        // (이 상태에서 START를 누르면 바로 챕터 선택 화면)
+        else if (SessionProgress.skipIntroOnLoad)
+        {
+            ShowTitle();
+
+            introFinished = true;
+            SessionProgress.skipIntroOnLoad = false;
+        }
         else
         {
             ShowTitle();

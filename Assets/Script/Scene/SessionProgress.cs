@@ -15,6 +15,9 @@ public static class SessionProgress
    
     public static bool openChapterSelectOnLoad = false;
 
+    // NewGame으로 메인 씬을 다시 열 때: 모니터 화면/지지직 인트로 없이 바로 전체 화면 시작 화면
+    public static bool skipIntroOnLoad = false;
+
 
 
     // ---------------------------------------------
@@ -36,6 +39,7 @@ public static class SessionProgress
             new bool[TotalChapters];
 
         openChapterSelectOnLoad = false;
+        skipIntroOnLoad = false;
     }
 
 

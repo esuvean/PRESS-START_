@@ -68,6 +68,10 @@ public class SettingsController : MonoBehaviour
     [Header("Settings Window")]
     [SerializeField] private GameObject settingsPanel;
 
+    [Header("Pixel Tab Sprites (선택된 탭은 노란 테두리)")]
+    [SerializeField] private Sprite tabNormalSprite;
+    [SerializeField] private Sprite tabSelectedSprite;
+
     // =========================================================
     // PLAYER PREFS KEY
     // =========================================================
@@ -107,6 +111,12 @@ public class SettingsController : MonoBehaviour
         SoundSettingsRows.Build(volumeSlider, volumeValueText);
 
         LoadSettings();
+
+        // 챕터 안에서만: EXIT 탭에 "Chapter Select"(챕터 선택 화면으로 나가기) 버튼 추가
+        CreateChapterSelectButton();
+
+        // EXIT 탭 버튼 정리 (Continue는 뺌) + 간격 맞추기
+        LayoutExitButtons();
 
         // 설정창을 처음 열었을 때 DISPLAY 탭
         ShowDisplay();
@@ -184,6 +194,33 @@ public class SettingsController : MonoBehaviour
 
         if (exitDot != null)
             exitDot.SetActive(index == 3);
+
+        // 선택된 탭 테두리를 노란색으로
+        UpdateTabSprites(index);
+    }
+
+
+    private void UpdateTabSprites(int index)
+    {
+        if (tabNormalSprite == null || tabSelectedSprite == null || displayPage == null)
+            return;
+
+        Transform pages = displayPage.transform.parent;
+        Transform tabs = pages != null && pages.parent != null ? pages.parent.Find("Tabs") : null;
+
+        if (tabs == null)
+            return;
+
+        // Tabs 안 순서: DISPLAY / SOUND / INFO / EXIT
+        int tabIndex = 0;
+        foreach (Transform tab in tabs)
+        {
+            Image img = tab.GetComponent<Image>();
+            if (img == null) continue;
+
+            img.sprite = tabIndex == index ? tabSelectedSprite : tabNormalSprite;
+            tabIndex++;
+        }
     }
 
 
@@ -403,6 +440,9 @@ public class SettingsController : MonoBehaviour
         SessionProgress.ResetAll();
         Chapter4Glitch.ResetCrash();
 
+        // 모니터 화면/지지직 인트로 없이 전체 화면 시작 화면부터
+        SessionProgress.skipIntroOnLoad = true;
+
         SceneManager.LoadScene("MainScene");
     }
 
@@ -435,6 +475,114 @@ public class SettingsController : MonoBehaviour
         else
         {
             CloseSettings();
+        }
+    }
+
+
+    // =========================================================
+    // 게임 중간에 나가기 (챕터 → 챕터 선택 화면)
+    // 지금까지 깬 미니게임 수는 저장된 채로 나감
+    // =========================================================
+
+    public void ExitToChapterSelect()
+    {
+        Time.timeScale = 1f;
+        GameSfx.StopNoise();
+
+        ChapterManager chapterManager = FindAnyObjectByType<ChapterManager>();
+
+        if (chapterManager != null)
+        {
+            chapterManager.ExitToMainScene();
+        }
+        else
+        {
+            SessionProgress.openChapterSelectOnLoad = true;
+            SceneManager.LoadScene("MainScene");
+        }
+    }
+
+
+    // EXIT 탭 버튼 배치 (위에서부터)
+    //   메인 화면: NewGame / Quit
+    //   챕터 안:   NewGame / Chapter Select / Quit
+    // Chapter Select 버튼은 Quit 버튼을 복사해서 만들기 때문에 모양·글꼴이 똑같이 나옴
+    private const float ExitButtonWidth = 320f;
+    private const float ExitButtonGap = 80f;
+    // 버튼 묶음의 가운데 높이 (탭 아래 ~ 구분선 위 빈 공간의 정가운데)
+    private const float ExitButtonCenterY = -99f;
+
+    private void CreateChapterSelectButton()
+    {
+        // 메인 화면 설정창에는 필요 없음 (챕터 안에서만)
+        if (FindAnyObjectByType<ChapterManager>() == null)
+            return;
+
+        if (exitPage == null)
+            return;
+
+        Transform page = exitPage.transform;
+
+        // 이미 만들었으면 다시 만들지 않음
+        if (page.Find("ChapterSelectButton") != null)
+            return;
+
+        Transform quit = page.Find("QuitButton");
+
+        if (quit == null)
+            return;
+
+        // 1) Quit 버튼 복사
+        GameObject copy = Instantiate(quit.gameObject, page);
+        copy.name = "ChapterSelectButton";
+        copy.transform.SetSiblingIndex(quit.GetSiblingIndex());
+
+        // 2) 복사하면 "게임 종료" 연결까지 따라오므로 지우고 "챕터 선택으로" 연결
+        Button button = copy.GetComponent<Button>();
+        if (button != null)
+        {
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(ExitToChapterSelect);
+        }
+
+        // 3) 글자 바꾸기
+        TMP_Text label = copy.GetComponentInChildren<TMP_Text>(true);
+        if (label != null)
+            label.text = "Chapter Select";
+
+    }
+
+
+    private void LayoutExitButtons()
+    {
+        if (exitPage == null)
+            return;
+
+        Transform page = exitPage.transform;
+
+        // Continue 버튼은 사용 안 함 (BACK / START랑 기능이 겹쳐서 뺌)
+        Transform cont = page.Find("ContinueButton (1)");
+        if (cont != null)
+            cont.gameObject.SetActive(false);
+
+        string[] order = { "NewGameButton", "ChapterSelectButton", "QuitButton" };
+
+        // 있는 버튼만 모으기 (메인 화면 2개 / 챕터 안 3개)
+        System.Collections.Generic.List<RectTransform> buttons = new System.Collections.Generic.List<RectTransform>();
+        foreach (string name in order)
+        {
+            RectTransform rt = page.Find(name) as RectTransform;
+            if (rt != null)
+                buttons.Add(rt);
+        }
+
+        // 가운데 정렬: 버튼 개수와 상관없이 묶음 전체가 빈 공간 가운데에 오게
+        float y = ExitButtonCenterY + (buttons.Count - 1) * ExitButtonGap * 0.5f;
+        foreach (RectTransform rt in buttons)
+        {
+            rt.anchoredPosition = new Vector2(0f, y);
+            rt.sizeDelta = new Vector2(ExitButtonWidth, rt.sizeDelta.y);
+            y -= ExitButtonGap;
         }
     }
 

@@ -130,7 +130,8 @@ public class GameBgm : MonoBehaviour
         if (name == "MainScene")
         {
             // 챕터를 끝내고 돌아온 경우(인트로 없이 챕터 선택 화면) → 바로 메인 음악
-            if (SessionProgress.openChapterSelectOnLoad)
+            // NewGame으로 인트로 없이 시작할 때도 바로 메인 음악
+            if (SessionProgress.openChapterSelectOnLoad || SessionProgress.skipIntroOnLoad)
                 Play("bgm_main");
             else
                 Stop(); // 처음 켰을 때는 조용히 → 인트로 연출이 끝나면 StartMenuController가 PlayMain()을 부름

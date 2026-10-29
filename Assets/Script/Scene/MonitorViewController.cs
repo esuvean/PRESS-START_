@@ -94,7 +94,8 @@ public class MonitorViewController : MonoBehaviour
 
         // 챕터를 끝내고 돌아온 경우: 모니터 없이 바로 전체 화면
         // (StartMenuController.Start()가 이 값을 false로 바꾸기 전에 Awake에서 확인)
-        if (SessionProgress.openChapterSelectOnLoad)
+        // NewGame으로 다시 시작한 경우도 모니터 없이 바로 전체 화면
+        if (SessionProgress.openChapterSelectOnLoad || SessionProgress.skipIntroOnLoad)
         {
             ExitMonitorMode();
             return;
