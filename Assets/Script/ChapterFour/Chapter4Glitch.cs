@@ -35,16 +35,27 @@ public class Chapter4Glitch : MonoBehaviour
     private Coroutine noiseLoop;
     private bool crashing = false;
 
+    // 튕김 연출을 이미 봤는지 저장 (게임을 다시 켜도 또 튕기지 않게)
+    private const string CrashDoneKey = "Save_Chapter4CrashDone";
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetSession()
     {
         crashDone = false;
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void LoadCrashState()
+    {
+        crashDone = PlayerPrefs.GetInt(CrashDoneKey, 0) == 1;
+    }
+
     // NewGame을 누르면 튕김 연출도 다시 한 번 나오게
     public static void ResetCrash()
     {
         crashDone = false;
+        PlayerPrefs.DeleteKey(CrashDoneKey);
+        PlayerPrefs.Save();
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -139,6 +150,8 @@ public class Chapter4Glitch : MonoBehaviour
     {
         crashing = true;
         crashDone = true;
+        PlayerPrefs.SetInt(CrashDoneKey, 1);
+        PlayerPrefs.Save();
 
         if (noiseLoop != null)
             StopCoroutine(noiseLoop);

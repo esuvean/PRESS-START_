@@ -7,36 +7,36 @@ using CRTFilter;
 
 public class StartMenuController : MonoBehaviour
 {
-    [Header("±âÁ¸ ÆĞ³Î")]
+    [Header("ê¸°ì¡´ íŒ¨ë„")]
     public GameObject titlePanel;
     public GameObject chapterSelectPanel;
     public GameObject settingsPanel;
 
-    [Header("ÀÎÆ®·Î ¿¬Ãâ ÆĞ³Î")]
+    [Header("ì¸íŠ¸ë¡œ ì—°ì¶œ íŒ¨ë„")]
     public GameObject noiseBackgroundPanel;
     public GameObject systemCheckPanel;
     public GameObject rebootPanel;
 
-    [Header("ÀÎÆ®·Î ÅØ½ºÆ®")]
+    [Header("ì¸íŠ¸ë¡œ í…ìŠ¤íŠ¸")]
     public TMP_Text systemCheckTitle;
     public TMP_Text systemCheckText;
     public TMP_Text rebootText;
 
-    [Header("Å¸ÀÌÇÎ ¼Óµµ")]
+    [Header("íƒ€ì´í•‘ ì†ë„")]
     public float titleTypingSpeed = 0.08f;
     public float typingSpeed = 0.05f;
 
-    [Header("CRT ³ëÀÌÁî ½Ã°£")]
+    [Header("CRT ë…¸ì´ì¦ˆ ì‹œê°„")]
     public float firstNoiseDuration = 3f;
     public float secondNoiseBeforeText = 0.5f;
     public float finalNoiseDuration = 1.5f;
 
     public ChapterProgressUI chapterProgressUI;
 
-    [Header("¸ğ´ÏÅÍ È­¸é (ºñ¿ö µÎ¸é ±âÁ¸°ú µ¿ÀÏÇÏ°Ô µ¿ÀÛ)")]
+    [Header("ëª¨ë‹ˆí„° í™”ë©´ (ë¹„ì›Œ ë‘ë©´ ê¸°ì¡´ê³¼ ë™ì¼í•˜ê²Œ ë™ì‘)")]
     public MonitorViewController monitorView;
 
-    [Header("Ã©ÅÍ ¾À ÀÌ¸§")]
+    [Header("ì±•í„° ì”¬ ì´ë¦„")]
     public string chapter1SceneName = "Chapter1";
     public string chapter2SceneName = "Chapter2";
     public string chapter3SceneName = "Chapter3";
@@ -51,14 +51,14 @@ public class StartMenuController : MonoBehaviour
 
     private void Start()
     {
-        // CRT Renderer Feature Ã£±â
+        // CRT Renderer Feature ì°¾ê¸°
         crtFilter = Resources
             .FindObjectsOfTypeAll<CRTRendererFeature>()
             .FirstOrDefault(x => x.name == "CRT Filter");
 
         if (crtFilter == null)
         {
-            Debug.LogWarning("CRT Filter¸¦ Ã£Áö ¸øÇß½À´Ï´Ù.");
+            Debug.LogWarning("CRT Filterë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
         }
         else
         {
@@ -66,7 +66,7 @@ public class StartMenuController : MonoBehaviour
         }
 
 
-        // Ã³À½¿¡´Â ¿¬Ãâ¿ë ÆĞ³Î ÀüºÎ OFF
+        // ì²˜ìŒì—ëŠ” ì—°ì¶œìš© íŒ¨ë„ ì „ë¶€ OFF
         if (noiseBackgroundPanel != null)
             noiseBackgroundPanel.SetActive(false);
 
@@ -77,7 +77,7 @@ public class StartMenuController : MonoBehaviour
             rebootPanel.SetActive(false);
 
 
-        // Ã©ÅÍ¸¦ ³¡³»°í µ¹¾Æ¿Â °æ¿ì
+        // ì±•í„°ë¥¼ ëë‚´ê³  ëŒì•„ì˜¨ ê²½ìš°
         if (SessionProgress.openChapterSelectOnLoad)
         {
             ShowChapterSelect();
@@ -121,7 +121,7 @@ public class StartMenuController : MonoBehaviour
 
 
     // ==============================
-    // START ¹öÆ°
+    // START ë²„íŠ¼
     // ==============================
 
     public void OnClickStart()
@@ -129,15 +129,15 @@ public class StartMenuController : MonoBehaviour
         if (sequencePlaying)
             return;
 
-        // °ÔÀÓ ½ÃÀÛ ¼Ò¸®
+        // ê²Œì„ ì‹œì‘ ì†Œë¦¬
         GameSfx.PlayGameStart();
 
-        // Ã¹ START
+        // ì²« START
         if (!introFinished)
         {
             StartCoroutine(PlayIntroSequence());
         }
-        // µÎ ¹øÂ° START
+        // ë‘ ë²ˆì§¸ START
         else
         {
             ShowChapterSelect();
@@ -146,20 +146,20 @@ public class StartMenuController : MonoBehaviour
 
 
     // ==============================
-    // ÀÎÆ®·Î ¿¬Ãâ
+    // ì¸íŠ¸ë¡œ ì—°ì¶œ
     // ==============================
 
     private IEnumerator PlayIntroSequence()
     {
         sequencePlaying = true;
 
-        // ½ÃÀÛ È­¸é ¼û±â±â
+        // ì‹œì‘ í™”ë©´ ìˆ¨ê¸°ê¸°
         if (titlePanel != null)
             titlePanel.SetActive(false);
 
 
         // ==================================
-        // 1. Ã¹ ¹øÂ° ³ëÀÌÁî 3ÃÊ
+        // 1. ì²« ë²ˆì§¸ ë…¸ì´ì¦ˆ 3ì´ˆ
         // ==================================
 
         if (noiseBackgroundPanel != null)
@@ -169,7 +169,7 @@ public class StartMenuController : MonoBehaviour
 
         yield return new WaitForSeconds(2f);
 
-        // ³ëÀÌÁî ¿ÏÀüÈ÷ Á¾·á
+        // ë…¸ì´ì¦ˆ ì™„ì „íˆ ì¢…ë£Œ
         TurnNoiseOff();
 
         if (noiseBackgroundPanel != null)
@@ -180,7 +180,7 @@ public class StartMenuController : MonoBehaviour
 
         // ==================================
         // 2. SYSTEM CHECK
-        // ³ëÀÌÁî ¾øÀ½
+        // ë…¸ì´ì¦ˆ ì—†ìŒ
         // ==================================
 
         if (systemCheckPanel != null)
@@ -193,7 +193,7 @@ public class StartMenuController : MonoBehaviour
             systemCheckText.text = "";
 
 
-        // SYSTEM CHECK Å¸ÀÌÇÎ
+        // SYSTEM CHECK íƒ€ì´í•‘
         if (systemCheckTitle != null)
         {
             yield return StartCoroutine(
@@ -208,13 +208,13 @@ public class StartMenuController : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
 
-        // Ã¹ ¹øÂ° ¹®Àå
+        // ì²« ë²ˆì§¸ ë¬¸ì¥
         if (systemCheckText != null)
         {
             yield return StartCoroutine(
                 AppendText(
                     systemCheckText,
-                    "°ÔÀÓÀ» ½ÃÀÛÇÒ ¼ö ¾ø½À´Ï´Ù.",
+                    "ê²Œì„ì„ ì‹œì‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.",
                     typingSpeed
                 )
             );
@@ -223,29 +223,29 @@ public class StartMenuController : MonoBehaviour
         yield return new WaitForSeconds(0.7f);
 
 
-        // µÎ ¹øÂ° ¹®Àå
+        // ë‘ ë²ˆì§¸ ë¬¸ì¥
         if (systemCheckText != null)
         {
             yield return StartCoroutine(
                 AppendText(
                     systemCheckText,
-                    "\n\nSTART ¸í·ÉÀÌ Á¤»óÀûÀ¸·Î ÀÎ½ÄµÇÁö ¾Ê½À´Ï´Ù.",
+                    "\n\nSTART ëª…ë ¹ì´ ì •ìƒì ìœ¼ë¡œ ì¸ì‹ë˜ì§€ ì•ŠìŠµë‹ˆë‹¤.",
                     typingSpeed
                 )
             );
         }
 
-        // ÀĞÀ» ½Ã°£
+        // ì½ì„ ì‹œê°„
         yield return new WaitForSeconds(2f);
 
 
-        // SYSTEM CHECK Á¾·á
+        // SYSTEM CHECK ì¢…ë£Œ
         if (systemCheckPanel != null)
             systemCheckPanel.SetActive(false);
 
 
         // ==================================
-        // 3. µÎ ¹øÂ° ³ëÀÌÁî 1.5ÃÊ
+        // 3. ë‘ ë²ˆì§¸ ë…¸ì´ì¦ˆ 1.5ì´ˆ
         // ==================================
 
         if (noiseBackgroundPanel != null)
@@ -255,7 +255,7 @@ public class StartMenuController : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        // ³ëÀÌÁî ¿ÏÀüÈ÷ ²ô±â
+        // ë…¸ì´ì¦ˆ ì™„ì „íˆ ë„ê¸°
         TurnNoiseOff();
 
         if (noiseBackgroundPanel != null)
@@ -265,8 +265,8 @@ public class StartMenuController : MonoBehaviour
 
 
         // ==================================
-        // 4. Á¤»óÈ­ ¸Ş½ÃÁö
-        // ³ëÀÌÁî ¾øÀ½
+        // 4. ì •ìƒí™” ë©”ì‹œì§€
+        // ë…¸ì´ì¦ˆ ì—†ìŒ
         // ==================================
 
         if (rebootPanel != null)
@@ -281,7 +281,7 @@ public class StartMenuController : MonoBehaviour
             yield return StartCoroutine(
                 AppendText(
                     rebootText,
-                    "°ÔÀÓÀÌ Á¤»óÈ­µÇ¾ú½À´Ï´Ù.",
+                    "ê²Œì„ì´ ì •ìƒí™”ë˜ì—ˆìŠµë‹ˆë‹¤.",
                     0.06f
                 )
             );
@@ -295,33 +295,33 @@ public class StartMenuController : MonoBehaviour
             yield return StartCoroutine(
                 AppendText(
                     rebootText,
-                    "\n´Ù½Ã ½ÃÀÛÇÕ´Ï´Ù.",
+                    "\në‹¤ì‹œ ì‹œì‘í•©ë‹ˆë‹¤.",
                     0.06f
                 )
             );
         }
 
 
-        // ¸Ş½ÃÁö ÀĞÀ» ½Ã°£
+        // ë©”ì‹œì§€ ì½ì„ ì‹œê°„
         yield return new WaitForSeconds(1.5f);
 
 
-        // Á¤»óÈ­ ¸Ş½ÃÁö Á¾·á
+        // ì •ìƒí™” ë©”ì‹œì§€ ì¢…ë£Œ
         if (rebootPanel != null)
             rebootPanel.SetActive(false);
 
 
         // ==================================
-        // 5. PRESS START È­¸éÀ¸·Î º¹±Í
+        // 5. PRESS START í™”ë©´ìœ¼ë¡œ ë³µê·€
         // ==================================
 
         ShowTitle();
 
-        // ¸ğ´ÏÅÍ È­¸é È®´ë (¿¬°áµÇ¾î ÀÖÀ» ¶§¸¸)
+        // ëª¨ë‹ˆí„° í™”ë©´ í™•ëŒ€ (ì—°ê²°ë˜ì–´ ìˆì„ ë•Œë§Œ)
         if (monitorView != null)
             yield return StartCoroutine(monitorView.PlayZoom());
 
-        // ÀüÃ¼È­¸éÀÌ µÇ¸é ¸ŞÀÎ ¹è°æÀ½¾Ç ½ÃÀÛ
+        // ì „ì²´í™”ë©´ì´ ë˜ë©´ ë©”ì¸ ë°°ê²½ìŒì•… ì‹œì‘
         GameBgm.PlayMain();
 
         introFinished = true;
@@ -329,21 +329,22 @@ public class StartMenuController : MonoBehaviour
     }
 
     // ==============================
-    // CRT ³ëÀÌÁî ON
+    // CRT ë…¸ì´ì¦ˆ ON
     // ==============================
 
     private void TurnNoiseOn()
     {
-        // ÁöÁöÁ÷ ³ëÀÌÁî ¼Ò¸®
+        // ì§€ì§€ì§ ë…¸ì´ì¦ˆ ì†Œë¦¬
         GameSfx.StartNoise(0.55f);
 
         if (crtFilter == null)
             return;
 
-        // CRT ÇÊÅÍ ÀÚÃ¼ ON
-        crtFilter.SetActive(true);
+        // CRT í•„í„° ìì²´ ON
+        // ì„¤ì •ì˜ Screen FXê°€ OFFë©´ í™”ë©´ ë…¸ì´ì¦ˆëŠ” ë„ê³  ì†Œë¦¬ë§Œ
+        crtFilter.SetActive(SettingsController.ScreenEffectsOn);
 
-        // ³ëÀÌÁî
+        // ë…¸ì´ì¦ˆ
         crtFilter.noiseSize = 25f;
         crtFilter.noiseSpeed = 10f;
         crtFilter.noiseAlpha = 1f;
@@ -361,7 +362,7 @@ public class StartMenuController : MonoBehaviour
 
 
     // ==============================
-    // CRT ³ëÀÌÁî OFF
+    // CRT ë…¸ì´ì¦ˆ OFF
     // ==============================
 
     private void TurnNoiseOff()
@@ -371,13 +372,13 @@ public class StartMenuController : MonoBehaviour
         if (crtFilter == null)
             return;
 
-        // CRT ÇÊÅÍ ÀÚÃ¼¸¦ ¿ÏÀüÈ÷ OFF
+        // CRT í•„í„° ìì²´ë¥¼ ì™„ì „íˆ OFF
         crtFilter.SetActive(false);
     }
 
 
     // ==============================
-    // Å¸ÀÌÇÎ ÇÔ¼ö
+    // íƒ€ì´í•‘ í•¨ìˆ˜
     // ==============================
 
     private IEnumerator TypeText(
@@ -392,10 +393,10 @@ public class StartMenuController : MonoBehaviour
         {
             target.text += letter;
 
-            // Å¸ÀÌÇÎ ¼Ò¸®
+            // íƒ€ì´í•‘ ì†Œë¦¬
             GameSfx.PlayTyping(letter);
 
-            // »ç¶÷ÀÌ Ä¡´Â °ÍÃ³·³ ºü¸£±â¸¦ »ìÂ¦ µéÂß³¯ÂßÇÏ°Ô (Å¸Å¸Å¹ ´À³¦)
+            // ì‚¬ëŒì´ ì¹˜ëŠ” ê²ƒì²˜ëŸ¼ ë¹ ë¥´ê¸°ë¥¼ ì‚´ì§ ë“¤ì­‰ë‚ ì­‰í•˜ê²Œ (íƒ€íƒ€íƒ ëŠë‚Œ)
             yield return new WaitForSeconds(speed * Random.Range(0.6f, 1.4f));
         }
     }
@@ -411,22 +412,22 @@ public class StartMenuController : MonoBehaviour
         {
             target.text += letter;
 
-            // Å¸ÀÌÇÎ ¼Ò¸®
+            // íƒ€ì´í•‘ ì†Œë¦¬
             GameSfx.PlayTyping(letter);
 
-            // »ç¶÷ÀÌ Ä¡´Â °ÍÃ³·³ ºü¸£±â¸¦ »ìÂ¦ µéÂß³¯ÂßÇÏ°Ô (Å¸Å¸Å¹ ´À³¦)
+            // ì‚¬ëŒì´ ì¹˜ëŠ” ê²ƒì²˜ëŸ¼ ë¹ ë¥´ê¸°ë¥¼ ì‚´ì§ ë“¤ì­‰ë‚ ì­‰í•˜ê²Œ (íƒ€íƒ€íƒ ëŠë‚Œ)
             yield return new WaitForSeconds(speed * Random.Range(0.6f, 1.4f));
         }
     }
 
 
     // ==============================
-    // ±âÁ¸ Ã©ÅÍ ¹öÆ°
+    // ê¸°ì¡´ ì±•í„° ë²„íŠ¼
     // ==============================
 
     public void OnClickChapter1()
     {
-        Debug.Log("Chapter1 SceneÀ¸·Î ÀÌµ¿");
+        Debug.Log("Chapter1 Sceneìœ¼ë¡œ ì´ë™");
 
         SceneManager.LoadScene(chapter1SceneName);
     }
@@ -434,7 +435,7 @@ public class StartMenuController : MonoBehaviour
 
     public void OnClickChapter2()
     {
-        Debug.Log("Chapter2 SceneÀ¸·Î ÀÌµ¿");
+        Debug.Log("Chapter2 Sceneìœ¼ë¡œ ì´ë™");
 
         SceneManager.LoadScene(chapter2SceneName);
     }
@@ -442,7 +443,7 @@ public class StartMenuController : MonoBehaviour
 
     public void OnClickChapter3()
     {
-        Debug.Log("Chapter3 SceneÀ¸·Î ÀÌµ¿");
+        Debug.Log("Chapter3 Sceneìœ¼ë¡œ ì´ë™");
 
         SceneManager.LoadScene(chapter3SceneName);
     }
@@ -450,14 +451,14 @@ public class StartMenuController : MonoBehaviour
 
     public void OnClickChapter4()
     {
-        Debug.Log("Chapter4 SceneÀ¸·Î ÀÌµ¿");
+        Debug.Log("Chapter4 Sceneìœ¼ë¡œ ì´ë™");
 
         SceneManager.LoadScene(chapter4SceneName);
     }
 
 
     // ==============================
-    // ¼³Á¤
+    // ì„¤ì •
     // ==============================
 
     public void OnClickSettings()
@@ -475,11 +476,49 @@ public class StartMenuController : MonoBehaviour
 
 
     // ==============================
-    // Á¾·á
+    // ì¢…ë£Œ
     // ==============================
 
     public void OnClickQuit()
     {
+#if UNITY_EDITOR
+        // ì—ë””í„°ì—ì„œëŠ” Application.Quit()ì´ ì•„ë¬´ ë°˜ì‘ì´ ì—†ì–´ì„œ í”Œë ˆì´ ëª¨ë“œë¥¼ ë©ˆì¶¤
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
+    }
+
+
+    // ==============================
+    // ì„¤ì • > EXIT > CONTINUE (ë©”ì¸ í™”ë©´ì—ì„œ ëˆŒë €ì„ ë•Œ)
+    // ì €ì¥ëœ ì§„í–‰ë„ë¡œ ì±•í„° ì„ íƒ í™”ë©´ì„ ë°”ë¡œ ì—´ì–´ì¤Œ
+    // ==============================
+
+    public void ContinueFromSave()
+    {
+        // ì¸íŠ¸ë¡œ ì—°ì¶œì´ ì¬ìƒ ì¤‘ì´ë©´ ë¬´ì‹œ
+        if (sequencePlaying)
+            return;
+
+        ShowChapterSelect();
+
+        // ì•„ì§ START ì¸íŠ¸ë¡œë¥¼ ì•ˆ ë´¤ìœ¼ë©´(ëª¨ë‹ˆí„° í™”ë©´ ìƒíƒœ) ëª¨ë‹ˆí„° í™•ëŒ€ + ë°°ê²½ìŒì•…ê¹Œì§€ ì²˜ë¦¬
+        if (!introFinished)
+            StartCoroutine(FinishIntroWithoutSequence());
+    }
+
+
+    private IEnumerator FinishIntroWithoutSequence()
+    {
+        sequencePlaying = true;
+
+        if (monitorView != null)
+            yield return StartCoroutine(monitorView.PlayZoom());
+
+        GameBgm.PlayMain();
+
+        introFinished = true;
+        sequencePlaying = false;
     }
 }

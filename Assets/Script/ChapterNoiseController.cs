@@ -118,7 +118,8 @@ public class ChapterNoiseController : MonoBehaviour
 
         GameSfx.StartNoise(0.6f);
 
-        crtFilter.SetActive(true);
+        // 설정의 Screen FX가 OFF면 화면 노이즈는 안 보이고 소리만 남
+        crtFilter.SetActive(SettingsController.ScreenEffectsOn);
         crtFilter.noiseSize = 40f;
         crtFilter.noiseSpeed = 20f;
         crtFilter.glitchFrequency = 1f;
@@ -191,7 +192,8 @@ public class ChapterNoiseController : MonoBehaviour
         // 짧은 지지직 소리 (작게)
         GameSfx.StartNoise(0.2f);
 
-        crtFilter.SetActive(true);
+        // 설정의 Screen FX가 OFF면 화면 노이즈는 안 보이고 소리만 남
+        crtFilter.SetActive(SettingsController.ScreenEffectsOn);
 
         crtFilter.noiseSize = 25f;
         crtFilter.noiseSpeed = 10f;

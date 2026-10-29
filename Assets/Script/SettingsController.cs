@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class SettingsController : MonoBehaviour
 {
@@ -37,8 +38,13 @@ public class SettingsController : MonoBehaviour
     [SerializeField] private Slider brightnessSlider;
     [SerializeField] private TMP_Text brightnessValueText;
 
-    [SerializeField] private Toggle fullscreenToggle;
-    [SerializeField] private TMP_Text fullscreenValueText;
+    // 예전 "Fullscreen(창 모드)" 자리 → 이제 "Screen FX(화면 노이즈 효과)" ON/OFF
+    // (FormerlySerializedAs: 씬/프리팹에 연결돼 있던 토글이 그대로 이어지게 함)
+    [FormerlySerializedAs("fullscreenToggle")]
+    [SerializeField] private Toggle screenFxToggle;
+
+    [FormerlySerializedAs("fullscreenValueText")]
+    [SerializeField] private TMP_Text screenFxValueText;
 
     [SerializeField] private CanvasGroup brightnessOverlay;
 
@@ -70,7 +76,15 @@ public class SettingsController : MonoBehaviour
     // 새로운 키 이름을 사용함.
     private const string BrightnessKey = "BrightnessPercent_v2";
     private const string VolumeKey = "VolumePercent_v2";
-    private const string FullscreenKey = "Fullscreen";
+    private const string ScreenFxKey = "ScreenFx";
+
+
+    // 화면 노이즈(CRT 지지직) 효과를 보여줄지 — 다른 스크립트에서 확인용
+    // 기본값 ON. OFF면 노이즈 연출 때 화면 효과 없이 소리만 남
+    public static bool ScreenEffectsOn
+    {
+        get { return PlayerPrefs.GetInt(ScreenFxKey, 1) == 1; }
+    }
 
 
 
@@ -85,6 +99,10 @@ public class SettingsController : MonoBehaviour
 
     private void Start()
     {
+        // 인스펙터에 연결이 빠져 있어도 동작하도록 자동으로 찾아서 연결
+        if (screenController == null)
+            screenController = FindAnyObjectByType<ScreenController>();
+
         // SOUND 탭에 BGM(배경음악) / SFX(효과음) 조절 바 추가
         SoundSettingsRows.Build(volumeSlider, volumeValueText);
 
@@ -272,31 +290,36 @@ public class SettingsController : MonoBehaviour
 
 
     // =========================================================
-    // FULLSCREEN
+    // SCREEN FX (화면 노이즈 효과 ON/OFF)
+    // 원래 창 모드 자리. 게임은 항상 전체 화면이라 이 기능으로 바꿈
     // =========================================================
 
-    public void SetFullscreen(bool isFullscreen)
+    public void SetScreenEffects(bool isOn)
     {
-        ApplyFullscreen(isFullscreen);
+        ApplyScreenEffects(isOn);
 
         PlayerPrefs.SetInt(
-            FullscreenKey,
-            isFullscreen ? 1 : 0
+            ScreenFxKey,
+            isOn ? 1 : 0
         );
 
         PlayerPrefs.Save();
     }
 
 
-    private void ApplyFullscreen(bool isFullscreen)
+    // 예전 이름으로 연결된 버튼이 남아 있어도 동작하게 (Screen FX로 넘김)
+    public void SetFullscreen(bool isOn)
     {
-        Screen.fullScreen = isFullscreen;
+        SetScreenEffects(isOn);
+    }
 
 
-        if (fullscreenValueText != null)
+    private void ApplyScreenEffects(bool isOn)
+    {
+        if (screenFxValueText != null)
         {
-            fullscreenValueText.text =
-                isFullscreen ? "ON" : "OFF";
+            screenFxValueText.text =
+                isOn ? "ON" : "OFF";
         }
     }
 
@@ -350,24 +373,20 @@ public class SettingsController : MonoBehaviour
 
 
         // -----------------------------------------
-        // FULLSCREEN
+        // SCREEN FX
         // -----------------------------------------
 
-        bool fullscreen =
-            PlayerPrefs.GetInt(
-                FullscreenKey,
-                Screen.fullScreen ? 1 : 0
-            ) == 1;
+        bool screenFx = ScreenEffectsOn;
 
 
-        if (fullscreenToggle != null)
+        if (screenFxToggle != null)
         {
-            fullscreenToggle.SetIsOnWithoutNotify(
-                fullscreen
+            screenFxToggle.SetIsOnWithoutNotify(
+                screenFx
             );
         }
 
-        ApplyFullscreen(fullscreen);
+        ApplyScreenEffects(screenFx);
     }
 
 
@@ -390,15 +409,28 @@ public class SettingsController : MonoBehaviour
 
     public void ContinueGame()
     {
-        // 설정창만 닫고 하던 곳에서 그대로 계속 (멈췄던 시간도 다시 흐르게)
+        // 멈췄던 시간 다시 흐르게
         Time.timeScale = 1f;
 
         bool inChapter = FindAnyObjectByType<ChapterManager>() != null;
 
-        if (!inChapter && screenController != null)
+        if (inChapter)
         {
-            // 메인 메뉴에서 연 설정창이면 연 화면(메인 / 챕터 선택)으로 돌아감
-            screenController.CloseSettingsScreen();
+            // 챕터 안에서 연 설정창: 창만 닫고 하던 미니게임 그대로 계속
+            CloseSettings();
+            return;
+        }
+
+        // 메인 화면에서 연 설정창: 저장된 진행도로 챕터 선택 화면 열기
+        StartMenuController startMenu = FindAnyObjectByType<StartMenuController>();
+
+        if (startMenu != null)
+        {
+            startMenu.ContinueFromSave();
+        }
+        else if (screenController != null)
+        {
+            screenController.ShowCheckProgressScreen();
         }
         else
         {
@@ -411,7 +443,9 @@ public class SettingsController : MonoBehaviour
     {
 #if UNITY_EDITOR
 
+        // 에디터에서는 Application.Quit()이 아무 반응이 없어서 플레이 모드를 멈춤
         Debug.Log("게임 종료 버튼 클릭");
+        UnityEditor.EditorApplication.isPlaying = false;
 
 #else
 
