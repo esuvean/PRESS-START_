@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public static class SessionProgress
 {
@@ -21,8 +21,9 @@ public static class SessionProgress
 
 
     // ---------------------------------------------
-    // 저장 (PlayerPrefs)
-    // 게임을 껐다 켜도 챕터 진행도가 남아 있도록 저장함
+    // 저장 안 함
+    // 진행도는 게임이 켜져 있는 동안만 기억함 (챕터 중간에 나가도 이어하기 가능)
+    // 게임을 끄고 다시 켜면 처음부터 시작
     // ---------------------------------------------
     private const string ProgressKey = "Save_ChapterProgress_";   // + 챕터번호
     private const string CompletedKey = "Save_ChapterCompleted_"; // + 챕터번호
@@ -48,34 +49,34 @@ public static class SessionProgress
         RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void LoadOnBoot()
     {
-        Load();
+        // 예전에 PlayerPrefs에 저장해 둔 진행도가 남아 있으면 지움
+        bool removed = false;
+
+        for (int i = 0; i < TotalChapters; i++)
+        {
+            if (PlayerPrefs.HasKey(ProgressKey + (i + 1)) ||
+                PlayerPrefs.HasKey(CompletedKey + (i + 1)))
+            {
+                PlayerPrefs.DeleteKey(ProgressKey + (i + 1));
+                PlayerPrefs.DeleteKey(CompletedKey + (i + 1));
+                removed = true;
+            }
+        }
+
+        if (removed)
+            PlayerPrefs.Save();
     }
 
 
-    // 저장된 진행도 불러오기
+    // (저장 기능 없음) 다른 스크립트에서 불러도 문제없게 남겨 둠
     public static void Load()
     {
-        for (int i = 0; i < TotalChapters; i++)
-        {
-            chapterProgress[i] =
-                PlayerPrefs.GetInt(ProgressKey + (i + 1), 0);
-
-            chapterCompleted[i] =
-                PlayerPrefs.GetInt(CompletedKey + (i + 1), 0) == 1;
-        }
     }
 
 
-    // 지금 진행도 저장하기
+    // (저장 기능 없음) 진행도는 메모리에만 남음
     public static void Save()
     {
-        for (int i = 0; i < TotalChapters; i++)
-        {
-            PlayerPrefs.SetInt(ProgressKey + (i + 1), chapterProgress[i]);
-            PlayerPrefs.SetInt(CompletedKey + (i + 1), chapterCompleted[i] ? 1 : 0);
-        }
-
-        PlayerPrefs.Save();
     }
 
 

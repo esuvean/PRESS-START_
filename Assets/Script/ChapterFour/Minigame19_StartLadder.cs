@@ -85,6 +85,21 @@ public class Minigame19_StartLadder : MinigameBase
 
     private readonly string startLetters = "START";
 
+    // ===== 처음 하는 사람을 위한 단계 안내 =====
+    [Header("Step Guide (단계 안내)")]
+    public bool showStepGuide = true;
+    public Color guideColor = new Color(1f, 0.9f, 0.25f);
+    public float guideFontSize = 28f;
+
+    private TMP_Text guideLabel;
+    private Vector3 executeBaseScale = Vector3.one;
+    private int lastGuideStep = -1;
+
+    // 각 안내는 게임 전체에서 한 번씩만 보여 줌
+    private bool guide1Done;
+    private bool guide2Done;
+    private bool guide3Done;
+
     private void Start()
     {
         if (!isGameActive)
@@ -115,6 +130,10 @@ public class Minigame19_StartLadder : MinigameBase
         autoHelpUsed = false;
         selectedRow = -1;
 
+        guide1Done = false;
+        guide2Done = false;
+        guide3Done = false;
+
         if (titleText != null)
             titleText.text = gameName;
 
@@ -122,6 +141,9 @@ public class Minigame19_StartLadder : MinigameBase
         {
             executeButton.onClick.RemoveListener(OnExecuteClicked);
             executeButton.onClick.AddListener(OnExecuteClicked);
+
+            if (lastGuideStep < 0)
+                executeBaseScale = executeButton.transform.localScale;
         }
 
         if (clearStartButton != null)
@@ -146,6 +168,7 @@ public class Minigame19_StartLadder : MinigameBase
 
         elapsedTime += Time.deltaTime;
         UpdateTimerText();
+        UpdateStepGuide();
 
         if (!autoHelpUsed && elapsedTime >= autoHelpTime && !isAnimating)
         {
@@ -184,8 +207,25 @@ public class Minigame19_StartLadder : MinigameBase
         if (roundText != null)
             roundText.text = $"ROUND {currentRound + 1} / 2";
 
+        if (statusText != null)
+        {
+            // 두 줄이 되어도 상자 안에 들어가게 글자 크기를 자동으로 줄임
+            statusText.enableAutoSizing = true;
+            statusText.fontSizeMin = 18f;
+            statusText.fontSizeMax = 28f;
+            statusText.verticalAlignment = VerticalAlignmentOptions.Middle;
+            statusText.overflowMode = TextOverflowModes.Truncate;
+        }
+
         if (instructionText != null)
-            instructionText.text = "오른쪽 연결선 클릭 → 사다리의 점선 칸 클릭 → 경로 실행";
+        {
+            instructionText.fontSize = 20f;
+            instructionText.richText = true;
+            instructionText.textWrappingMode = TextWrappingModes.NoWrap;
+            instructionText.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        lastGuideStep = -1;
 
         if (trayLabelText != null)
             trayLabelText.text = currentRound == 0 ? "연결선 4개" : "연결선 5개";
@@ -223,8 +263,146 @@ public class Minigame19_StartLadder : MinigameBase
             CreateMovableConnector(7, 3, 4, 5);
         }
 
+        CreateGuideLabel();
+
         RefreshSelectionVisuals();
         UpdateTimerText();
+        UpdateStepGuide();
+    }
+
+    // ===== 단계 안내 =====
+    // 1단계: 오른쪽 연결선이 반짝 + "클릭!" 화살표
+    // 2단계: 고른 줄의 빈칸이 반짝 + "빈칸 클릭!" 화살표
+    // 3단계: 경로 실행 버튼이 두근두근 + "실행!" 화살표
+
+    private void CreateGuideLabel()
+    {
+        guideLabel = CreateText(
+            "StepGuide",
+            (RectTransform)transform,
+            "",
+            Vector2.zero,
+            new Vector2(320f, 50f),
+            guideFontSize,
+            guideColor
+        );
+        guideLabel.fontStyle = FontStyles.Bold;
+    }
+
+    private int GetGuideStep()
+    {
+        if (!showStepGuide || isAnimating || isClearing)
+            return 0;
+
+        if (selectedRow >= 0)
+            return guide2Done ? 0 : 2;
+
+        foreach (Connector connector in movableConnectors)
+        {
+            if (connector.gap < 0)
+                return guide1Done ? 0 : 1;
+        }
+
+        return guide3Done ? 0 : 3;
+    }
+
+    private void UpdateStepGuide()
+    {
+        int step = GetGuideStep();
+        float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f);
+        float bob = Mathf.Sin(Time.unscaledTime * 6f) * 8f;
+
+        if (step != lastGuideStep)
+        {
+            lastGuideStep = step;
+            UpdateInstructionSteps(step);
+            RefreshSelectionVisuals();
+
+            if (executeButton != null)
+                executeButton.transform.localScale = executeBaseScale;
+        }
+
+        if (guideLabel == null)
+            return;
+
+        guideLabel.gameObject.SetActive(step != 0);
+
+        if (step == 1 && connectorTray != null)
+        {
+            // 아직 안 놓은 연결선이 노랗게 반짝
+            foreach (Connector connector in movableConnectors)
+            {
+                if (connector.gap < 0 && connector.handleImage != null)
+                    connector.handleImage.color = new Color(guideColor.r, guideColor.g, guideColor.b, 0.08f + 0.3f * pulse);
+            }
+
+            guideLabel.text = "① 클릭! ▶";
+            guideLabel.alignment = TextAlignmentOptions.Right;
+            PlaceGuide(connectorTray, new Vector2(connectorTray.rect.xMin - 175f + bob, connectorTray.rect.center.y));
+        }
+        else if (step == 2)
+        {
+            // 고른 줄의 빈칸이 반짝
+            for (int gap = 0; gap < 4; gap++)
+            {
+                Image slot = ghostSlots[selectedRow, gap];
+                if (slot == null) continue;
+                float a = slotSprite != null ? 0.45f + 0.55f * pulse : 0.15f + 0.35f * pulse;
+                slot.color = new Color(selectionColor.r, selectionColor.g, selectionColor.b, a);
+            }
+
+            guideLabel.text = "② 빈칸 클릭! ▶";
+            guideLabel.alignment = TextAlignmentOptions.Right;
+            PlaceGuide(ladderArea, new Vector2(LaneX(0) - 250f + bob, RowY(selectedRow)));
+        }
+        else if (step == 3 && executeButton != null)
+        {
+            // 경로 실행 버튼이 두근두근
+            float beat = 1f + 0.06f * pulse;
+            executeButton.transform.localScale = executeBaseScale * beat;
+
+            RectTransform exec = (RectTransform)executeButton.transform;
+            guideLabel.text = "③ 실행! ▶";
+            guideLabel.alignment = TextAlignmentOptions.Right;
+            PlaceGuide(exec, new Vector2(exec.rect.xMin - 175f + bob, exec.rect.center.y));
+        }
+    }
+
+    private void PlaceGuide(RectTransform target, Vector2 localPoint)
+    {
+        // 대상(연결선 상자, 사다리, 실행 버튼) 기준 위치를 화면 위치로 바꿔서 배치
+        guideLabel.rectTransform.position = target.TransformPoint(localPoint);
+        guideLabel.rectTransform.SetAsLastSibling();
+    }
+
+    private void UpdateInstructionSteps(int step)
+    {
+        if (instructionText == null)
+            return;
+
+        string[] parts =
+        {
+            "① 선 선택",
+            "② 빈칸 클릭",
+            "③ 실행"
+        };
+
+        string result = "";
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (i > 0)
+                result += " <color=#7A8AA0>→</color> ";
+
+            bool current = step == i + 1;
+            string hex = current
+                ? "#" + ColorUtility.ToHtmlStringRGB(guideColor)
+                : (step == 0 ? "#C8D4E6" : "#9AA8BC");
+
+            result += $"<color={hex}>{parts[i]}</color>";
+        }
+
+        instructionText.text = result;
     }
 
     private float LaneX(int lane)
@@ -498,6 +676,10 @@ public class Minigame19_StartLadder : MinigameBase
             return;
 
         selectedRow = selectedRow == row ? -1 : row;
+
+        if (selectedRow >= 0)
+            guide1Done = true;
+
         RefreshSelectionVisuals();
 
         if (statusText != null)
@@ -529,6 +711,7 @@ public class Minigame19_StartLadder : MinigameBase
 
         Connector connector = connectors[selectedRow];
         PlaceConnector(connector, gap);
+        guide2Done = true;
         int installedRow = selectedRow;
         selectedRow = -1;
         RefreshSelectionVisuals();
@@ -614,6 +797,7 @@ public class Minigame19_StartLadder : MinigameBase
         if (!isGameActive || isAnimating || isClearing)
             return;
 
+        guide3Done = true;
         StartCoroutine(ExecutePathRoutine());
     }
 

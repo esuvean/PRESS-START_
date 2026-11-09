@@ -37,6 +37,30 @@ public class Minigame20_FinalCircuit : MinigameBase
     [Tooltip("아래-오른쪽으로 꺾인 파이프")]
     public Sprite anglePipeSprite;
 
+    [Header("Guide Sample (오른쪽 회전 미리보기)")]
+    [Tooltip("비워두면 MG20_GuideSampleBlock 이름으로 자동으로 찾음")]
+    public Image guideSampleImage;
+    [Tooltip("미리보기 이미지가 90도 돌아가는 데 걸리는 시간(초)")]
+    public float guideRotateDuration = 0.18f;
+
+    [Header("Guide Arrows (방향 화살표: 열린 쪽은 파랑)")]
+    public Sprite arrowUpWhite;
+    public Sprite arrowUpBlue;
+    public Sprite arrowRightWhite;
+    public Sprite arrowRightBlue;
+    public Sprite arrowDownWhite;
+    public Sprite arrowDownBlue;
+    public Sprite arrowLeftWhite;
+    public Sprite arrowLeftBlue;
+    [Tooltip("MG20_GuideBox 가운데 기준 화살표 위치 (위, 오른쪽, 아래, 왼쪽)")]
+    public Vector2[] arrowPositions =
+    {
+        new Vector2(2f, 151.5f),
+        new Vector2(106f, 53.5f),
+        new Vector2(0f, -46.5f),
+        new Vector2(-103f, 56.5f)
+    };
+
     [Header("UI")]
     public TMP_Text titleText;
     public TMP_Text instructionText;
@@ -92,6 +116,13 @@ public class Minigame20_FinalCircuit : MinigameBase
     private bool isProcessing;
     private bool powerConnected;
     private bool finalScreenVisible;
+
+    private float guideAngle;
+    private float guideTargetAngle;
+    private float guidePopTimer;
+    private CircuitTile lastGuideTile;
+    private Image[] guideArrows;
+    private int guidePendingMask = -1;
 
     private readonly int[] solutionOrder =
     {
@@ -193,6 +224,8 @@ public class Minigame20_FinalCircuit : MinigameBase
             powerLabelText.text = "POWER ▶";
         }
 
+        ResetGuideSample();
+
         GenerateSolution();
         GenerateBoard();
         RandomizeCircuit();
@@ -205,6 +238,8 @@ public class Minigame20_FinalCircuit : MinigameBase
     protected override void Update()
     {
         base.Update();
+
+        UpdateGuideSample();
 
         if (!isGameActive ||
             isProcessing ||
@@ -464,36 +499,265 @@ public class Minigame20_FinalCircuit : MinigameBase
         if (tile.pipe == null)
             return;
 
-        float angle = 0f;
+        GetPipeVisual(mask, out Sprite pipeSprite, out float angle);
 
-        if (mask == (Up | Down) || mask == (Left | Right))
-        {
-            tile.pipe.sprite = straightPipeSprite;
-            angle = mask == (Left | Right) ? 90f : 0f;
-        }
-        else
-        {
-            // 기본 이미지는 아래-오른쪽 연결. 시계 방향으로 90도씩 돌려서 맞춤
-            tile.pipe.sprite = anglePipeSprite;
-
-            int baseMask = Right | Down;
-
-            for (int k = 0; k < 4; k++)
-            {
-                if (baseMask == mask)
-                {
-                    angle = -90f * k;
-                    break;
-                }
-
-                baseMask = ((baseMask << 1) | (baseMask >> 3)) & 15;
-            }
-        }
+        tile.pipe.sprite = pipeSprite;
 
         tile.pipe.rectTransform.localRotation =
             Quaternion.Euler(0f, 0f, angle);
 
         tile.pipe.color = lineColor;
+    }
+
+    private void GetPipeVisual(
+        int mask,
+        out Sprite sprite,
+        out float angle)
+    {
+        angle = 0f;
+
+        if (mask == (Up | Down) || mask == (Left | Right))
+        {
+            sprite = straightPipeSprite;
+            angle = mask == (Left | Right) ? 90f : 0f;
+            return;
+        }
+
+        // 기본 이미지는 아래-오른쪽 연결. 시계 방향으로 90도씩 돌려서 맞춤
+        sprite = anglePipeSprite;
+
+        int baseMask = Right | Down;
+
+        for (int k = 0; k < 4; k++)
+        {
+            if (baseMask == mask)
+            {
+                angle = -90f * k;
+                break;
+            }
+
+            baseMask = ((baseMask << 1) | (baseMask >> 3)) & 15;
+        }
+    }
+
+    // ===== 오른쪽 미리보기: 파이프를 돌리면 같이 돌아감 =====
+
+    private void ResetGuideSample()
+    {
+        if (guideSampleImage == null)
+        {
+            Transform found = FindChildDeep(
+                transform,
+                "MG20_GuideSampleBlock"
+            );
+
+            if (found != null)
+            {
+                guideSampleImage = found.GetComponent<Image>();
+            }
+        }
+
+        SetupGuideArrows();
+        SetGuideArrows(Right | Down);
+        guidePendingMask = -1;
+
+        lastGuideTile = null;
+        guideAngle = 0f;
+        guideTargetAngle = 0f;
+        guidePopTimer = 0f;
+
+        if (guideSampleImage == null)
+            return;
+
+        if (anglePipeSprite != null)
+        {
+            guideSampleImage.sprite = anglePipeSprite;
+        }
+
+        guideSampleImage.rectTransform.localRotation =
+            Quaternion.identity;
+        guideSampleImage.rectTransform.localScale = Vector3.one;
+    }
+
+    private void RotateGuideSample(CircuitTile tile, int oldMask)
+    {
+        if (guideSampleImage == null)
+            return;
+
+        GetPipeVisual(oldMask, out Sprite sprite, out float oldAngle);
+
+        if (sprite != null)
+        {
+            guideSampleImage.sprite = sprite;
+        }
+
+        // 다른 블록을 누르면 그 블록의 현재 모양에서 시작
+        if (tile != lastGuideTile)
+        {
+            guideAngle = oldAngle;
+            guideTargetAngle = oldAngle;
+            lastGuideTile = tile;
+
+            SetGuideArrows(oldMask);
+        }
+
+        // 다 돌고 나면 새로 열린 방향 화살표에 불이 들어옴
+        guidePendingMask = GetCurrentMask(tile);
+
+        // 블록과 똑같이 시계 방향으로 90도
+        guideTargetAngle -= 90f;
+        guidePopTimer = guideRotateDuration;
+    }
+
+    private void UpdateGuideSample()
+    {
+        if (guideSampleImage == null)
+            return;
+
+        float speed = 90f / Mathf.Max(0.01f, guideRotateDuration);
+
+        guideAngle = Mathf.MoveTowards(
+            guideAngle,
+            guideTargetAngle,
+            speed * Time.unscaledDeltaTime
+        );
+
+        guideSampleImage.rectTransform.localRotation =
+            Quaternion.Euler(0f, 0f, guideAngle);
+
+        if (guidePendingMask >= 0 &&
+            Mathf.Approximately(guideAngle, guideTargetAngle))
+        {
+            SetGuideArrows(guidePendingMask);
+            guidePendingMask = -1;
+        }
+
+        // 살짝 커졌다가 돌아오는 느낌
+        float pop = 1f;
+
+        if (guidePopTimer > 0f)
+        {
+            guidePopTimer -= Time.unscaledDeltaTime;
+
+            float t = Mathf.Clamp01(
+                guidePopTimer / Mathf.Max(0.01f, guideRotateDuration)
+            );
+
+            pop = 1f + 0.08f * Mathf.Sin(t * Mathf.PI);
+        }
+
+        guideSampleImage.rectTransform.localScale =
+            new Vector3(pop, pop, 1f);
+    }
+
+    private void SetupGuideArrows()
+    {
+        if (guideArrows != null)
+            return;
+
+        Transform box = FindChildDeep(transform, "MG20_GuideBox");
+
+        if (box == null)
+            return;
+
+        string[] names =
+        {
+            "GuideArrow_Up",
+            "GuideArrow_Right",
+            "GuideArrow_Down",
+            "GuideArrow_Left"
+        };
+
+        guideArrows = new Image[4];
+
+        for (int i = 0; i < 4; i++)
+        {
+            Transform existing = box.Find(names[i]);
+            GameObject arrowObject;
+
+            if (existing != null)
+            {
+                arrowObject = existing.gameObject;
+            }
+            else
+            {
+                arrowObject = new GameObject(
+                    names[i],
+                    typeof(RectTransform),
+                    typeof(Image)
+                );
+                arrowObject.transform.SetParent(box, false);
+            }
+
+            RectTransform arrowRect =
+                arrowObject.GetComponent<RectTransform>();
+
+            arrowRect.anchorMin = new Vector2(0.5f, 0.5f);
+            arrowRect.anchorMax = new Vector2(0.5f, 0.5f);
+            arrowRect.pivot = new Vector2(0.5f, 0.5f);
+
+            if (arrowPositions != null && i < arrowPositions.Length)
+            {
+                arrowRect.anchoredPosition = arrowPositions[i];
+            }
+
+            Image arrowImage = arrowObject.GetComponent<Image>();
+            arrowImage.raycastTarget = false;
+
+            guideArrows[i] = arrowImage;
+        }
+    }
+
+    private void SetGuideArrows(int mask)
+    {
+        if (guideArrows == null)
+            return;
+
+        int[] dirs = { Up, Right, Down, Left };
+
+        Sprite[] white =
+        {
+            arrowUpWhite, arrowRightWhite, arrowDownWhite, arrowLeftWhite
+        };
+
+        Sprite[] blue =
+        {
+            arrowUpBlue, arrowRightBlue, arrowDownBlue, arrowLeftBlue
+        };
+
+        for (int i = 0; i < 4; i++)
+        {
+            Image arrow = guideArrows[i];
+
+            if (arrow == null)
+                continue;
+
+            Sprite sprite = (mask & dirs[i]) != 0 ? blue[i] : white[i];
+
+            arrow.enabled = sprite != null;
+
+            if (sprite != null)
+            {
+                arrow.sprite = sprite;
+                arrow.SetNativeSize();
+            }
+        }
+    }
+
+    private static Transform FindChildDeep(Transform parent, string childName)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name.Trim() == childName)
+                return child;
+
+            Transform found = FindChildDeep(child, childName);
+
+            if (found != null)
+                return found;
+        }
+
+        return null;
     }
 
     private void RandomizeCircuit()
@@ -541,7 +805,11 @@ public class Minigame20_FinalCircuit : MinigameBase
 
         CircuitTile tile = tiles[row, col];
 
+        int oldMask = GetCurrentMask(tile);
+
         tile.rotation = (tile.rotation + 1) % 4;
+
+        RotateGuideSample(tile, oldMask);
 
         RefreshCircuitVisuals();
 

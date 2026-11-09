@@ -129,12 +129,8 @@ public class Minigame17_SmallText : MinigameBase
                     "표시된 횟수보다 한 번 적게 누르세요."
                 );
 
-                SetButtonText("START", "");
-
-                if (rightButton != null)
-                {
-                    rightButton.gameObject.SetActive(false);
-                }
+                // 오른쪽에는 '두 번' 지시를 그대로 따른 함정 버튼을 둠 (누르면 오답)
+                SetButtonText("START", "START x2");
 
                 break;
         }

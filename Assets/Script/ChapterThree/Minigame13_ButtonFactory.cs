@@ -57,6 +57,25 @@ public class Minigame13_ButtonFactory : MinigameBase
     [Header("Message")]
     public float messageDuration = 2f;
 
+    [Header("Start Preview (시작 전 정답 부품 미리보기)")]
+    public bool showStartPreview = true;
+    [Tooltip("부품이 하나씩 튀어나오는 간격(초)")]
+    public float previewPopInterval = 0.1f;
+    [Tooltip("다 나온 뒤 보여주는 시간(초)")]
+    public float previewHoldTime = 1.1f;
+    [Tooltip("조립대(AssemblyArea) 가운데 기준 정답 부품 자리")]
+    public Vector2[] previewSlotPositions =
+    {
+        new Vector2(-82f, 30f),
+        new Vector2(12f, 30f),
+        new Vector2(106f, 30f),
+        new Vector2(-35f, -58f),
+        new Vector2(59f, -58f)
+    };
+    public Vector2 previewIconMaxSize = new Vector2(86f, 73f);
+    [Range(0f, 1f)]
+    public float previewGhostAlpha = 0.12f;
+
     private class SupplyCopy
     {
         public Button button;
@@ -95,6 +114,9 @@ public class Minigame13_ButtonFactory : MinigameBase
 
     private Coroutine messageCoroutine;
     private Coroutine badPreviewCoroutine;
+
+    private bool previewing = false;
+    private Image[] previewIcons;
 
 
     private void Start()
@@ -160,6 +182,249 @@ public class Minigame13_ButtonFactory : MinigameBase
         {
             hintText.text = instruction;
         }
+
+        SetupPreviewIcons();
+
+        previewing = false;
+
+        if (showStartPreview && previewIcons != null)
+        {
+            StartCoroutine(StartPreviewRoutine());
+        }
+        else
+        {
+            SetPreviewIconsGhost();
+        }
+    }
+
+
+    // ===== 시작 전 정답 부품 미리보기 =====
+    // 조립대 안에 정답 부품 5개를 하나씩 띄워 보여주고,
+    // 벨트 위 정답 부품에도 외곽선을 켰다가, 끝나면 흐린 체크리스트로 남김.
+    // 부품을 맞히면 해당 칸에 불이 들어옴.
+
+    private void SetupPreviewIcons()
+    {
+        if (goodParts == null || goodParts.Length == 0)
+            return;
+
+        Transform holder = null;
+
+        if (completedStartButton != null)
+            holder = completedStartButton.transform.parent;
+
+        if (holder == null)
+            return;
+
+        if (previewIcons == null || previewIcons.Length != goodParts.Length)
+        {
+            previewIcons = new Image[goodParts.Length];
+        }
+
+        for (int i = 0; i < goodParts.Length; i++)
+        {
+            Button part = goodParts[i];
+
+            if (part == null)
+                continue;
+
+            Image source = part.targetGraphic as Image;
+
+            if (source == null)
+                source = part.GetComponent<Image>();
+
+            if (source == null)
+                continue;
+
+            Image icon = previewIcons[i];
+
+            if (icon == null)
+            {
+                string iconName = "PreviewPart_" + i;
+                Transform existing = holder.Find(iconName);
+
+                GameObject iconObject = existing != null
+                    ? existing.gameObject
+                    : new GameObject(
+                        iconName,
+                        typeof(RectTransform),
+                        typeof(Image)
+                    );
+
+                if (existing == null)
+                {
+                    iconObject.transform.SetParent(holder, false);
+                }
+
+                icon = iconObject.GetComponent<Image>();
+                previewIcons[i] = icon;
+            }
+
+            // 완성된 START 버튼보다 뒤에 그려지도록
+            if (completedStartButton != null)
+            {
+                icon.transform.SetSiblingIndex(
+                    completedStartButton.transform.GetSiblingIndex()
+                );
+            }
+
+            icon.sprite = source.sprite;
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            // 벨트 위에서 보이는 비율 그대로 칸 안에 맞춤
+            RectTransform srcRect = source.rectTransform;
+            float w = srcRect.rect.width * Mathf.Abs(srcRect.localScale.x);
+            float h = srcRect.rect.height * Mathf.Abs(srcRect.localScale.y);
+            if (w <= 0f || h <= 0f) { w = 1f; h = 1f; }
+
+            float fit = Mathf.Min(
+                previewIconMaxSize.x / w,
+                previewIconMaxSize.y / h
+            );
+
+            RectTransform iconRect = icon.rectTransform;
+            iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.sizeDelta = new Vector2(w * fit, h * fit);
+            iconRect.localRotation = Quaternion.identity;
+
+            if (previewSlotPositions != null && i < previewSlotPositions.Length)
+            {
+                iconRect.anchoredPosition = previewSlotPositions[i];
+            }
+
+            icon.gameObject.SetActive(true);
+        }
+    }
+
+    private void SetIconLook(Image icon, Color baseColor, float alpha, float scale)
+    {
+        if (icon == null)
+            return;
+
+        Color c = baseColor;
+        c.a = alpha;
+        icon.color = c;
+        icon.rectTransform.localScale = new Vector3(scale, scale, 1f);
+    }
+
+    private Color PartColor(int index)
+    {
+        if (goodParts == null || index >= goodParts.Length || goodParts[index] == null)
+            return Color.white;
+
+        Graphic g = goodParts[index].targetGraphic;
+        Color c = g != null ? g.color : Color.white;
+        c.a = 1f;
+        return c;
+    }
+
+    private void SetPreviewIconsGhost()
+    {
+        if (previewIcons == null)
+            return;
+
+        for (int i = 0; i < previewIcons.Length; i++)
+        {
+            bool got = goodCollected != null && i < goodCollected.Length && goodCollected[i];
+            SetIconLook(previewIcons[i], PartColor(i), got ? 1f : previewGhostAlpha, got ? 1f : 0.9f);
+        }
+    }
+
+    private IEnumerator StartPreviewRoutine()
+    {
+        previewing = true;
+
+        SetAllPartInteractable(false);
+
+        for (int i = 0; i < previewIcons.Length; i++)
+            SetIconLook(previewIcons[i], PartColor(i), 0f, 0f);
+
+        if (hintText != null)
+            hintText.text = "[ CHECK ] 이 부품 5개만 골라 담으세요!";
+
+        // 벨트 위 정답 부품도 같이 반짝
+        SetGoodOutlines(true);
+
+        // 하나씩 '톡톡' 튀어나오기
+        for (int i = 0; i < previewIcons.Length; i++)
+        {
+            if (previewIcons[i] != null)
+                StartCoroutine(PopIconRoutine(previewIcons[i], PartColor(i), 0f, 1f, 0.9f, 1f));
+
+            yield return new WaitForSeconds(previewPopInterval);
+        }
+
+        GameSfx.Play("correct_ding", 0.35f, 0f);
+
+        yield return new WaitForSeconds(0.2f);
+
+        // 잠깐 보여주면서 살짝 숨쉬는 느낌
+        float hold = 0f;
+        while (hold < previewHoldTime)
+        {
+            hold += Time.deltaTime;
+            float pulse = 1f + 0.04f * Mathf.Sin(hold * Mathf.PI * 4f);
+
+            for (int i = 0; i < previewIcons.Length; i++)
+                SetIconLook(previewIcons[i], PartColor(i), 1f, pulse);
+
+            yield return null;
+        }
+
+        // 흐린 체크리스트로 바뀌면서 게임 시작
+        float t = 0f;
+        const float fade = 0.25f;
+        while (t < fade)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / fade);
+
+            for (int i = 0; i < previewIcons.Length; i++)
+                SetIconLook(previewIcons[i], PartColor(i),
+                    Mathf.Lerp(1f, previewGhostAlpha, k),
+                    Mathf.Lerp(1f, 0.9f, k));
+
+            yield return null;
+        }
+
+        SetPreviewIconsGhost();
+        SetGoodOutlines(false);
+        SetAllPartInteractable(true);
+
+        if (hintText != null)
+            hintText.text = "START!";
+
+        previewing = false;
+
+        yield return new WaitForSeconds(0.6f);
+
+        if (hintText != null && isGameActive && !assemblyCompleted && messageCoroutine == null)
+            hintText.text = instruction;
+    }
+
+    private IEnumerator PopIconRoutine(Image icon, Color color,
+        float fromAlpha, float toAlpha, float fromScale, float toScale)
+    {
+        const float duration = 0.18f;
+        float t = 0f;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / duration);
+
+            // 살짝 크게 튀었다가 제자리로
+            float overshoot = Mathf.Sin(k * Mathf.PI) * 0.18f;
+            float scale = Mathf.Lerp(fromScale, toScale, k) + overshoot;
+
+            SetIconLook(icon, color, Mathf.Lerp(fromAlpha, toAlpha, k), scale);
+            yield return null;
+        }
+
+        SetIconLook(icon, color, toAlpha, toScale);
     }
 
 
@@ -230,6 +495,14 @@ public class Minigame13_ButtonFactory : MinigameBase
 
         if (!isGameActive)
             return;
+
+        // 미리보기 동안은 시간도 멈추고 벨트도 멈춤
+        if (previewing)
+        {
+            currentTimer += Time.deltaTime;
+            UpdateTimerUI();
+            return;
+        }
 
         if (!assemblyCompleted)
         {
@@ -665,7 +938,7 @@ public class Minigame13_ButtonFactory : MinigameBase
 
     private void OnGoodPartClicked(int index, Button clickedButton)
     {
-        if (!isGameActive || assemblyCompleted || goodParts == null ||
+        if (!isGameActive || previewing || assemblyCompleted || goodParts == null ||
             goodCollected == null || index < 0 || index >= goodParts.Length ||
             goodCollected[index] || clickedButton == null ||
             !clickedButton.gameObject.activeSelf || !clickedButton.interactable)
@@ -684,6 +957,11 @@ public class Minigame13_ButtonFactory : MinigameBase
             assemblySlots[index] != null)
             assemblySlots[index].SetActive(true);
 
+        // 조립대 체크리스트 칸에 불 들어오기
+        if (previewIcons != null && index < previewIcons.Length && previewIcons[index] != null)
+            StartCoroutine(PopIconRoutine(previewIcons[index], PartColor(index),
+                previewGhostAlpha, 1f, 0.9f, 1f));
+
         UpdateUI();
         if (collectedCount >= goodParts.Length)
             CompleteAssembly();
@@ -693,7 +971,7 @@ public class Minigame13_ButtonFactory : MinigameBase
     // Bad clones must count as errors just like the original bad buttons.
     private void OnBadPartClicked(int index, Button clickedButton)
     {
-        if (!isGameActive || assemblyCompleted || badParts == null ||
+        if (!isGameActive || previewing || assemblyCompleted || badParts == null ||
             index < 0 || index >= badParts.Length ||
             !HasAvailableBad(index) || clickedButton == null ||
             !clickedButton.gameObject.activeSelf || !clickedButton.interactable)
@@ -971,6 +1249,11 @@ public class Minigame13_ButtonFactory : MinigameBase
     private void CompleteAssembly()
     {
         assemblyCompleted = true;
+
+        // 완성 버튼이 나오면 체크리스트는 숨김
+        if (previewIcons != null)
+            foreach (Image icon in previewIcons)
+                if (icon != null) icon.gameObject.SetActive(false);
 
         SetAllPartInteractable(false);
         foreach (SupplyCopy copy in supplyCopies)
