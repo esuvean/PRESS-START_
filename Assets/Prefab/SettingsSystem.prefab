@@ -2283,15 +2283,15 @@ MonoBehaviour:
   exitDot: {fileID: 2425298747361460016}
   brightnessSlider: {fileID: 486156773522176984}
   brightnessValueText: {fileID: 1674818511206776065}
-  fullscreenToggle: {fileID: 1953744910258470848}
-  fullscreenValueText: {fileID: 0}
+  screenFxToggle: {fileID: 1953744910258470848}
+  screenFxValueText: {fileID: 0}
   brightnessOverlay: {fileID: 1482074163194310685}
   volumeSlider: {fileID: 3650953212376740461}
   volumeValueText: {fileID: 8420462928942373801}
   screenController: {fileID: 0}
+  settingsPanel: {fileID: 6530493327253065618}
   tabNormalSprite: {fileID: 21300000, guid: 0712e11f31e74b62bdbcd488a36a4a0f, type: 3}
   tabSelectedSprite: {fileID: 21300000, guid: 69b40ef393ea4868b4bd870bd45acb83, type: 3}
-  settingsPanel: {fileID: 6530493327253065618}
 --- !u!114 &1370452182842453467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4490,7 +4490,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &437273662822280484
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4540,13 +4540,15 @@ MonoBehaviour:
   exitDot: {fileID: 2425298747361460016}
   brightnessSlider: {fileID: 486156773522176984}
   brightnessValueText: {fileID: 1674818511206776065}
-  fullscreenToggle: {fileID: 1953744910258470848}
-  fullscreenValueText: {fileID: 0}
+  screenFxToggle: {fileID: 1953744910258470848}
+  screenFxValueText: {fileID: 0}
   brightnessOverlay: {fileID: 1482074163194310685}
   volumeSlider: {fileID: 3650953212376740461}
   volumeValueText: {fileID: 0}
   screenController: {fileID: 0}
   settingsPanel: {fileID: 6530493327253065618}
+  tabNormalSprite: {fileID: 0}
+  tabSelectedSprite: {fileID: 0}
 --- !u!1 &7003859608011538796
 GameObject:
   m_ObjectHideFlags: 0
