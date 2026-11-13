@@ -10,36 +10,7 @@
 public class Chapter5TestKeys : MonoBehaviour
 {
 #if UNITY_EDITOR
-    private StartMenuController menu;
 
-    private void Awake()
-    {
-        menu = GetComponent<StartMenuController>();
-        Debug.Log("[Chapter5] 테스트 키 준비됨 - Game 창 클릭 후 F6: 챕터5 열기 / F7: 실패 +1");
-    }
-
-    private void Update()
-    {
-        bool f6 = Input.GetKeyDown(KeyCode.F6);
-        bool f7 = Input.GetKeyDown(KeyCode.F7);
-        if (!f6 && !f7)
-            return;
-
-        if (menu == null || menu.chapterSelectPanel == null)
-            return;
-
-        Chapter5SelectController ctrl = menu.chapterSelectPanel.GetComponent<Chapter5SelectController>();
-        if (ctrl == null)
-            ctrl = menu.chapterSelectPanel.AddComponent<Chapter5SelectController>();
-
-        bool panelOpen = menu.chapterSelectPanel.activeInHierarchy;
-
-        if (f6) ctrl.TestUnlock();
-        if (f7) ctrl.TestAddFail();
-
-        // 챕터 선택 화면이 아직 안 열려 있으면 열어 줌 (열리면서 연출 시작)
-        if (!panelOpen)
-            menu.ContinueFromSave();
-    }
+    // F6/F7 키는 이제 Chapter5Shortcut 이 처리함 (어느 씬에서도 동작, 두 번 눌리는 것 방지)
 #endif
 }

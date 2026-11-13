@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 /// 음악 파일 위치: Assets/Resources/Sounds/BGM/
 ///   bgm_main.ogg       - 메인화면 (인트로 연출이 끝나고 화면이 전체화면으로 커졌을 때부터)
 ///   bgm_chapter1~4.ogg - 챕터 1~4
+///   bgm_chapter5_select_a.ogg - 챕터5 (평소)
+///   bgm_chapter5_select_b.ogg - 챕터5 (3번 이상 실패해서 챕터5 아이콘이 악마로 바뀐 뒤)
 /// → 같은 이름의 파일로 바꿔 넣으면 음악만 쉽게 교체할 수 있음
 ///
 /// 언제 나오나
@@ -29,6 +31,23 @@ public class GameBgm : MonoBehaviour
     private const float FadeInTime  = 1.5f;  // 음악이 커지는 시간(초)
 
     private static GameBgm instance;
+
+    // ==============================
+    // 챕터5 음악: 평소 A곡 / 3번 이상 실패하면 B곡
+    // ==============================
+    public const string Chapter5NormalTrack = "bgm_chapter5_select_a";
+    public const string Chapter5DevilTrack = "bgm_chapter5_select_b";
+    public const int Chapter5DevilAfterFails = 3;
+
+    /// <summary>
+    /// true 이면 챕터 선택 화면이 챕터5 음악을 직접 틀고 있는 중 → 메인 음악(bgm_main)을 틀라는 요청은 무시
+    /// (F6 등으로 들어왔을 때 메인 음악과 챕터5 음악이 같이 나오는 것 방지)
+    /// </summary>
+    public static bool chapter5SelectMusicOwns = false;
+
+    /// <summary>지금 챕터5에서 나와야 할 곡 이름 (실패 횟수로 결정)</summary>
+    public static string Chapter5TrackName =>
+        SessionProgress.chapter5FailCount >= Chapter5DevilAfterFails ? Chapter5DevilTrack : Chapter5NormalTrack;
 
     // ==============================
     // 배경음악 볼륨 (설정 화면의 BGM 바) — 0 ~ 1
@@ -120,6 +139,13 @@ public class GameBgm : MonoBehaviour
         duckTarget = 1f;
 
 
+        // Chapter5: 평소 A곡 / 3번 이상 실패했으면 B곡
+        if (name == "Chapter5")
+        {
+            Play(Chapter5TrackName);
+            return;
+        }
+
         // Chapter1 ~ Chapter4
         if (name.StartsWith("Chapter") && name.Length == 8 && char.IsDigit(name[7]))
         {
@@ -160,10 +186,48 @@ public class GameBgm : MonoBehaviour
         if (instance != null) instance.Stop();
     }
 
+    /// <summary>지금 배경음악이 나와야 할 크기 (설정의 BGM 볼륨 + 잠깐 줄이기까지 반영) — 다른 음악 스크립트가 맞춰 쓰는 용도</summary>
+    public static float CurrentVolume => TargetVolume;
+
+    /// <summary>테이프가 멈추듯 음이 쭉 내려가면서 음악이 꺼짐 (챕터5 등장 연출)</summary>
+    public static void TapeStop(float duration)
+    {
+        if (instance == null) return;
+        instance.currentName = null;
+        if (instance.fadeRoutine != null) instance.StopCoroutine(instance.fadeRoutine);
+        instance.fadeRoutine = instance.StartCoroutine(instance.TapeStopRoutine(duration));
+    }
+
+    private IEnumerator TapeStopRoutine(float duration)
+    {
+        if (source.isPlaying)
+        {
+            float startVol = source.volume;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = t / duration;
+                source.pitch = Mathf.Lerp(1f, 0.2f, k * k);
+                source.volume = Mathf.Lerp(startVol, 0f, k);
+                yield return null;
+            }
+            source.Stop();
+        }
+        source.pitch = 1f;
+        source.volume = 0f;
+        fadeRoutine = null;
+    }
+
     // ==============================
 
     private void Play(string fileName)
     {
+        // 챕터5 화면이 자기 음악을 트는 중이면 메인 음악은 틀지 않고, 혹시 나오던 음악도 끔
+        if (fileName == "bgm_main" && chapter5SelectMusicOwns)
+        {
+            if (source.isPlaying && currentName != null) Stop();
+            return;
+        }
+
         // 이미 같은 음악이 나오고 있으면 그대로 둠 (처음부터 다시 시작하지 않게)
         if (currentName == fileName && source.isPlaying) return;
 
@@ -204,6 +268,7 @@ public class GameBgm : MonoBehaviour
         if (next == null) yield break;
 
         // 2) 새 음악 서서히 키우기
+        source.pitch = 1f;
         source.clip = next;
         source.Play();
         for (float t = 0f; t < FadeInTime; t += Time.unscaledDeltaTime)

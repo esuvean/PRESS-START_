@@ -1,4 +1,4 @@
-
+ï»¿
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -82,12 +82,12 @@ public class Minigame23_WildStart : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "Á¦¸Ú´ë·Î START";
+        gameName = "ì œë©‹ëŒ€ë¡œ START";
 
         instruction =
-            "¿òÁ÷ÀÌ´Â ±ÛÀÚ¸¦ S-T-A-R-T ¼ø¼­·Î ÀâÀ¸¼¼¿ä.";
+            "ì›€ì§ì´ëŠ” ê¸€ìë¥¼ S-T-A-R-T ìˆœì„œë¡œ ì¡ìœ¼ì„¸ìš”.";
 
-        // Á¦ÇÑ½Ã°£ ¾øÀ½
+        // ì œí•œì‹œê°„ ì—†ìŒ
         timeLimit = 999999f;
 
         base.StartMinigame();
@@ -99,8 +99,8 @@ public class Minigame23_WildStart : MinigameBase
         if (!referencesReady)
         {
             Debug.LogError(
-                "MG23: UI ¿¬°áÀÌ ºÎÁ·ÇÕ´Ï´Ù. " +
-                "Hierarchy ÀÌ¸§À» È®ÀÎÇÏ¼¼¿ä.",
+                "MG23: UI ì—°ê²°ì´ ë¶€ì¡±í•©ë‹ˆë‹¤. " +
+                "Hierarchy ì´ë¦„ì„ í™•ì¸í•˜ì„¸ìš”.",
                 this
             );
 
@@ -111,11 +111,11 @@ public class Minigame23_WildStart : MinigameBase
         SetupButtons();
         ResetWholeGame();
 
-        Debug.Log("MG23: °ÔÀÓ ½ÃÀÛ");
+        Debug.Log("MG23: ê²Œì„ ì‹œì‘");
     }
 
     // =========================================
-    // UI ÀÚµ¿ ¿¬°á
+    // UI ìë™ ì—°ê²°
     // =========================================
 
     private bool FindReferences()
@@ -266,7 +266,7 @@ public class Minigame23_WildStart : MinigameBase
         if (found == null)
         {
             Debug.LogWarning(
-                "MG23: ¹öÆ°À» Ã£Áö ¸øÇß½À´Ï´Ù - " +
+                "MG23: ë²„íŠ¼ì„ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤ - " +
                 objectName,
                 this
             );
@@ -278,7 +278,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ¹öÆ° ÀÌº¥Æ® ¿¬°á
+    // ë²„íŠ¼ ì´ë²¤íŠ¸ ì—°ê²°
     // =========================================
 
     private void SetupButtons()
@@ -331,7 +331,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // °ÔÀÓ ÃÊ±âÈ­
+    // ê²Œì„ ì´ˆê¸°í™”
     // =========================================
 
     private void ResetWholeGame()
@@ -369,7 +369,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ¸Å ÇÁ·¹ÀÓ ½ÇÇà
+    // ë§¤ í”„ë ˆì„ ì‹¤í–‰
     // =========================================
 
     protected override void Update()
@@ -400,7 +400,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ¸¶¿ì½º À§Ä¡
+    // ë§ˆìš°ìŠ¤ ìœ„ì¹˜
     // =========================================
 
     private bool TryGetMousePosition(
@@ -426,7 +426,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // START Á¢±Ù °¨Áö
+    // START ì ‘ê·¼ ê°ì§€
     // =========================================
 
     private void DetectMouseNearStart()
@@ -474,7 +474,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // START ºĞ¸®
+    // START ë¶„ë¦¬
     // =========================================
 
     private void SplitStart()
@@ -498,13 +498,13 @@ public class Minigame23_WildStart : MinigameBase
             letterButtons[i].gameObject.SetActive(true);
         }
 
-        Debug.Log("MG23: START ±ÛÀÚ ºĞ¸®");
+        Debug.Log("MG23: START ê¸€ì ë¶„ë¦¬");
 
         UpdateCurrentTargetText();
     }
 
     // =========================================
-    // ÀÌµ¿ ¹üÀ§ °è»ê
+    // ì´ë™ ë²”ìœ„ ê³„ì‚°
     // =========================================
 
     private float GetMaxX(RectTransform rect)
@@ -526,7 +526,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // S - ºü¸£°Ô ÁÂ¿ì ÀÌµ¿
+    // S - ë¹ ë¥´ê²Œ ì¢Œìš° ì´ë™
     // =========================================
 
     private void MoveS()
@@ -558,7 +558,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // Ã¹ ¹øÂ° T - À§ÂÊ ÀÌµ¿
+    // ì²« ë²ˆì§¸ T - ìœ„ìª½ ì´ë™
     // =========================================
 
     private void MoveFirstT()
@@ -583,15 +583,15 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // A - ±ôºıÀÓ
-    // ¡Ú ¼öÁ¤: A¸¦ È¹µæÇÏ¸é ´Ù½Ã ³ªÅ¸³ªÁö ¾ÊÀ½
+    // A - ê¹œë¹¡ì„
+    // â˜… ìˆ˜ì •: Aë¥¼ íšë“í•˜ë©´ ë‹¤ì‹œ ë‚˜íƒ€ë‚˜ì§€ ì•ŠìŒ
     // =========================================
 
     private void MoveA()
     {
-        // A´Â ¼¼ ¹øÂ° ±ÛÀÚ(index 2).
-        // ´ÙÀ½ ¸ñÇ¥°¡ R(index 3)ÀÌ µÇ¾ú´Ù¸é
-        // ÀÌ¹Ì A¸¦ È¹µæÇßÀ¸¹Ç·Î ¿ÏÀüÈ÷ ¼û±ä´Ù.
+        // AëŠ” ì„¸ ë²ˆì§¸ ê¸€ì(index 2).
+        // ë‹¤ìŒ ëª©í‘œê°€ R(index 3)ì´ ë˜ì—ˆë‹¤ë©´
+        // ì´ë¯¸ Aë¥¼ íšë“í–ˆìœ¼ë¯€ë¡œ ì™„ì „íˆ ìˆ¨ê¸´ë‹¤.
         if (currentTargetIndex > 2)
         {
             if (letterA.gameObject.activeSelf)
@@ -624,7 +624,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // R - ´ë°¢¼± ÀÌµ¿ ¹× ¹İ»ç
+    // R - ëŒ€ê°ì„  ì´ë™ ë° ë°˜ì‚¬
     // =========================================
 
     private void MoveR()
@@ -671,7 +671,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ¸¶Áö¸· T - ¼ø°£ÀÌµ¿
+    // ë§ˆì§€ë§‰ T - ìˆœê°„ì´ë™
     // =========================================
 
     private void MoveLastT()
@@ -701,7 +701,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ±ÛÀÚ Å¬¸¯ ÆÇÁ¤
+    // ê¸€ì í´ë¦­ íŒì •
     // =========================================
 
     private void OnLetterClicked(int clickedIndex)
@@ -723,10 +723,10 @@ public class Minigame23_WildStart : MinigameBase
         char foundLetter = answer[clickedIndex];
 
         Debug.Log(
-            "MG23: ±ÛÀÚ È¹µæ - " + foundLetter
+            "MG23: ê¸€ì íšë“ - " + foundLetter
         );
 
-        // È¹µæÇÑ ±ÛÀÚ´Â Áï½Ã ¼û±â±â
+        // íšë“í•œ ê¸€ìëŠ” ì¦‰ì‹œ ìˆ¨ê¸°ê¸°
         letterButtons[clickedIndex]
             .gameObject.SetActive(false);
 
@@ -742,13 +742,13 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // Àß¸ø Å¬¸¯ÇÏ¸é ÃÊ±âÈ­
+    // ì˜ëª» í´ë¦­í•˜ë©´ ì´ˆê¸°í™”
     // =========================================
 
     private void ResetAfterWrongClick()
     {
         Debug.Log(
-            "MG23: Àß¸øµÈ ±ÛÀÚ Å¬¸¯! Ã³À½ºÎÅÍ ½ÃÀÛ"
+            "MG23: ì˜ëª»ëœ ê¸€ì í´ë¦­! ì²˜ìŒë¶€í„° ì‹œì‘"
         );
 
         currentTargetIndex = 0;
@@ -776,7 +776,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ÇöÀç ¸ñÇ¥ Ç¥½Ã
+    // í˜„ì¬ ëª©í‘œ í‘œì‹œ
     // =========================================
 
     private void UpdateCurrentTargetText()
@@ -807,7 +807,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ÁøÇà »óÈ² Ç¥½Ã
+    // ì§„í–‰ ìƒí™© í‘œì‹œ
     // =========================================
 
     private void UpdateProgressText()
@@ -836,7 +836,7 @@ public class Minigame23_WildStart : MinigameBase
     }
 
     // =========================================
-    // ´Ù¼¸ ±ÛÀÚ Áß¾ÓÀ¸·Î ¸ğÀ¸±â
+    // ë‹¤ì„¯ ê¸€ì ì¤‘ì•™ìœ¼ë¡œ ëª¨ìœ¼ê¸°
     // =========================================
 
     private IEnumerator ReassembleStart()
@@ -905,11 +905,11 @@ public class Minigame23_WildStart : MinigameBase
 
         UpdateCurrentTargetText();
 
-        Debug.Log("MG23: START ¿Ï¼º!");
+        Debug.Log("MG23: START ì™„ì„±!");
     }
 
     // =========================================
-    // ÃÖÁ¾ START Å¬¸¯
+    // ìµœì¢… START í´ë¦­
     // =========================================
 
     private void OnFinalStartClicked()
@@ -919,7 +919,7 @@ public class Minigame23_WildStart : MinigameBase
 
         finalStartButton.interactable = false;
 
-        Debug.Log("MG23: °Ë»ç ¿Ï·á!");
+        Debug.Log("MG23: ê²€ì‚¬ ì™„ë£Œ!");
 
         Success();
     }
@@ -930,7 +930,7 @@ public class Minigame23_WildStart : MinigameBase
 
     protected override void GiveHint()
     {
-        // ±âÈ¹¼­¿¡ º°µµ ÈùÆ® ¾øÀ½
+        // ê¸°íšì„œì— ë³„ë„ íŒíŠ¸ ì—†ìŒ
     }
 
     protected override void RestartGame()

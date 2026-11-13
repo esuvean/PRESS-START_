@@ -1,4 +1,4 @@
-
+ï»¿
 using System;
 using TMPro;
 using UnityEngine;
@@ -104,15 +104,15 @@ public class Minigame22_ScatteredStart : MinigameBase
     private bool ready;
 
     // =====================================
-    // ÃÊ±âÈ­
+    // ì´ˆê¸°í™”
     // =====================================
 
     private void Awake()
     {
         originalAudioVolume = AudioListener.volume;
 
-        // º¹»çµÈ SETTINGSÀÇ ±âÁ¸ ÄÁÆ®·Ñ·¯°¡
-        // ÆäÀÌÁö¸¦ Áßº¹À¸·Î Á¶ÀÛÇÏÁö ¾Êµµ·Ï ÇÔ
+        // ë³µì‚¬ëœ SETTINGSì˜ ê¸°ì¡´ ì»¨íŠ¸ë¡¤ëŸ¬ê°€
+        // í˜ì´ì§€ë¥¼ ì¤‘ë³µìœ¼ë¡œ ì¡°ì‘í•˜ì§€ ì•Šë„ë¡ í•¨
         foreach (MonoBehaviour behaviour in
             GetComponentsInChildren<MonoBehaviour>(true))
         {
@@ -135,12 +135,12 @@ public class Minigame22_ScatteredStart : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "Èğ¾îÁø START";
+        gameName = "í©ì–´ì§„ START";
 
         instruction =
-            "SETTINGS È­¸é¿¡ Èğ¾îÁø ±ÛÀÚ¸¦ Ã£À¸½Ê½Ã¿À.";
+            "SETTINGS í™”ë©´ì— í©ì–´ì§„ ê¸€ìë¥¼ ì°¾ìœ¼ì‹­ì‹œì˜¤.";
 
-        // MG22¿¡´Â ½Ã°£Á¦ÇÑ ¾øÀ½
+        // MG22ì—ëŠ” ì‹œê°„ì œí•œ ì—†ìŒ
         timeLimit = 999999f;
 
         base.StartMinigame();
@@ -152,11 +152,11 @@ public class Minigame22_ScatteredStart : MinigameBase
 
         ready = true;
 
-        Debug.Log("MG22 : °ÔÀÓ ½ÃÀÛ");
+        Debug.Log("MG22 : ê²Œì„ ì‹œì‘");
     }
 
     // =====================================
-    // UI ÀÚµ¿ °Ë»ö
+    // UI ìë™ ê²€ìƒ‰
     // =====================================
 
     private Transform FindChild(
@@ -206,7 +206,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (reference == null)
         {
             Debug.LogWarning(
-                "MG22 : Ã£À» ¼ö ¾ø´Â ¿ÀºêÁ§Æ® - " +
+                "MG22 : ì°¾ì„ ìˆ˜ ì—†ëŠ” ì˜¤ë¸Œì íŠ¸ - " +
                 name,
                 this
             );
@@ -334,8 +334,8 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (rootCanvas != null)
             rootCanvas = rootCanvas.rootCanvas;
 
-        // ¾ø´Â UI¸¦ ¾Ë·ÁÁÖµÇ °ÔÀÓ ÃÊ±âÈ­¸¦
-        // Áß´ÜÇÏÁö´Â ¾Ê´Â´Ù.
+        // ì—†ëŠ” UIë¥¼ ì•Œë ¤ì£¼ë˜ ê²Œì„ ì´ˆê¸°í™”ë¥¼
+        // ì¤‘ë‹¨í•˜ì§€ëŠ” ì•ŠëŠ”ë‹¤.
         WarnIfMissing(displayPage, "DisplayPage");
         WarnIfMissing(soundPage, "SoundPage");
         WarnIfMissing(infoPage, "InfoPage");
@@ -358,7 +358,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // ±âÁ¸ ¹öÆ° ÀÌº¥Æ® ±³Ã¼
+    // ê¸°ì¡´ ë²„íŠ¼ ì´ë²¤íŠ¸ êµì²´
     // =====================================
 
     private void ResetButton(
@@ -368,8 +368,8 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (button == null)
             return;
 
-        // º¹»çÇØ ¿Â SETTINGSÀÇ ±âÁ¸
-        // OnClick ÀÌº¥Æ®¸¦ ½ÇÇà Áß ±³Ã¼ÇÑ´Ù.
+        // ë³µì‚¬í•´ ì˜¨ SETTINGSì˜ ê¸°ì¡´
+        // OnClick ì´ë²¤íŠ¸ë¥¼ ì‹¤í–‰ ì¤‘ êµì²´í•œë‹¤.
         button.onClick =
             new Button.ButtonClickedEvent();
 
@@ -428,7 +428,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // A / ¸¶Áö¸· T / µå·¡±× ¼³Á¤
+    // A / ë§ˆì§€ë§‰ T / ë“œë˜ê·¸ ì„¤ì •
     // =====================================
 
     private void SetupDragAndLinks()
@@ -440,7 +440,7 @@ public class Minigame22_ScatteredStart : MinigameBase
             "hidden_last_t"
         );
 
-        // EXIT ÆË¾÷ µå·¡±×
+        // EXIT íŒì—… ë“œë˜ê·¸
         if (exitPopup != null)
         {
             MG22PopupDrag drag =
@@ -469,7 +469,7 @@ public class Minigame22_ScatteredStart : MinigameBase
             }
         }
 
-        // ´Ù¼¸ °³ÀÇ ±ÛÀÚ ºí·Ï / ½½·Ô
+        // ë‹¤ì„¯ ê°œì˜ ê¸€ì ë¸”ë¡ / ìŠ¬ë¡¯
         for (int i = 0; i < 5; i++)
         {
             GameObject blockGO =
@@ -481,7 +481,7 @@ public class Minigame22_ScatteredStart : MinigameBase
             if (blockGO == null || slotGO == null)
             {
                 Debug.LogWarning(
-                    "MG22 : ±ÛÀÚ ºí·Ï ¶Ç´Â ½½·Ô ¾øÀ½ - " +
+                    "MG22 : ê¸€ì ë¸”ë¡ ë˜ëŠ” ìŠ¬ë¡¯ ì—†ìŒ - " +
                     blockNames[i],
                     this
                 );
@@ -572,14 +572,14 @@ public class Minigame22_ScatteredStart : MinigameBase
         {
             Debug.LogWarning(
                 "MG22 : " + text.name +
-                "¿¡ link ÅÂ±×°¡ ¾ø½À´Ï´Ù.",
+                "ì— link íƒœê·¸ê°€ ì—†ìŠµë‹ˆë‹¤.",
                 text
             );
         }
     }
 
     // =====================================
-    // ÆÛÁñ ¸®¼Â
+    // í¼ì¦ ë¦¬ì…‹
     // =====================================
 
     private void ResetPuzzle()
@@ -638,7 +638,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (assemblyHint != null)
         {
             assemblyHint.text =
-                "È¹µæÇÑ ±ÛÀÚ¸¦ ¿Ã¹Ù¸¥ ¼ø¼­·Î ¹èÄ¡ÇÏ½Ê½Ã¿À.";
+                "íšë“í•œ ê¸€ìë¥¼ ì˜¬ë°”ë¥¸ ìˆœì„œë¡œ ë°°ì¹˜í•˜ì‹­ì‹œì˜¤.";
         }
 
         ShowDisplay();
@@ -649,8 +649,8 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // SETTINGS ÆäÀÌÁö ÀüÈ¯
-    // ±âÁ¸ SettingsController ¹æ½Ä
+    // SETTINGS í˜ì´ì§€ ì „í™˜
+    // ê¸°ì¡´ SettingsController ë°©ì‹
     // =====================================
 
     private void OpenPage(int index)
@@ -667,7 +667,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (exitPage != null)
             exitPage.SetActive(index == 3);
 
-        // ¼±ÅÃµÈ ÅÇ Ç¥½Ã
+        // ì„ íƒëœ íƒ­ í‘œì‹œ
         if (displayDot != null)
             displayDot.SetActive(index == 0);
 
@@ -680,7 +680,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (exitDot != null)
             exitDot.SetActive(index == 3);
 
-        // ¼±ÅÃµÈ ÅÇ ÀÌ¹ÌÁö
+        // ì„ íƒëœ íƒ­ ì´ë¯¸ì§€
         Button[] tabs =
         {
             displayTabButton,
@@ -730,12 +730,12 @@ public class Minigame22_ScatteredStart : MinigameBase
     {
         OpenPage(3);
 
-        // EXIT¸¦ ´­·¯µµ ½ÇÁ¦·Î Á¾·áµÇÁö ¾ÊÀ½
+        // EXITë¥¼ ëˆŒëŸ¬ë„ ì‹¤ì œë¡œ ì¢…ë£Œë˜ì§€ ì•ŠìŒ
         ShowFakeExit();
     }
 
     // =====================================
-    // ¿øº» ¼³Á¤ ½ºÅ©¸³Æ® ±â¹İ
+    // ì›ë³¸ ì„¤ì • ìŠ¤í¬ë¦½íŠ¸ ê¸°ë°˜
     // Brightness / Volume / Screen FX
     // =====================================
 
@@ -803,7 +803,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // DISPLAY - ¼û°ÜÁø S
+    // DISPLAY - ìˆ¨ê²¨ì§„ S
     // =====================================
 
     private void OnBrightnessChanged(float value)
@@ -831,7 +831,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // SOUND - Ã¹ ¹øÂ° T
+    // SOUND - ì²« ë²ˆì§¸ T
     // =====================================
 
     private void OnVolumeChanged(float value)
@@ -859,7 +859,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // EXIT - °¡Â¥ Á¾·áÃ¢°ú R
+    // EXIT - ê°€ì§œ ì¢…ë£Œì°½ê³¼ R
     // =====================================
 
     private void ShowFakeExit()
@@ -887,7 +887,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // ½Ã°£ / INFO Å½»ö
+    // ì‹œê°„ / INFO íƒìƒ‰
     // =====================================
 
     protected override void Update()
@@ -901,15 +901,15 @@ public class Minigame22_ScatteredStart : MinigameBase
 
         UpdateClock();
 
-        // ¾ÕÀÇ ³× ±ÛÀÚ¸¦ È¹µæÇÏ°í
-        // 5ÃÊ Áö³ª¸é ¸¶Áö¸· T ¹ß°ß °¡´É
+        // ì•ì˜ ë„¤ ê¸€ìë¥¼ íšë“í•˜ê³ 
+        // 5ì´ˆ ì§€ë‚˜ë©´ ë§ˆì§€ë§‰ T ë°œê²¬ ê°€ëŠ¥
         if (!lastTEnabled &&
             lastTReadyAt >= 0f &&
             Time.unscaledTime >= lastTReadyAt)
         {
             lastTEnabled = true;
 
-            Debug.Log("MG22 : ¸¶Áö¸· T È°¼ºÈ­");
+            Debug.Log("MG22 : ë§ˆì§€ë§‰ T í™œì„±í™”");
         }
 
         if (assemblyShowing)
@@ -1029,7 +1029,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // ±ÛÀÚ Èçµé¸² / ¸¶Áö¸· T Á¡¸ê
+    // ê¸€ì í”ë“¤ë¦¼ / ë§ˆì§€ë§‰ T ì ë©¸
     // =====================================
 
     private void AnimateLink(
@@ -1103,7 +1103,7 @@ public class Minigame22_ScatteredStart : MinigameBase
                         );
                 }
 
-                // 0.4ÃÊ °£°İÀ¸·Î Á¡¸ê
+                // 0.4ì´ˆ ê°„ê²©ìœ¼ë¡œ ì ë©¸
                 if (flicker &&
                     Mathf.FloorToInt(
                         Time.unscaledTime / 0.4f
@@ -1138,7 +1138,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // INFO ¹®ÀÚ Å¬¸¯
+    // INFO ë¬¸ì í´ë¦­
     // =====================================
 
     public void OnLinkClicked(string id)
@@ -1165,7 +1165,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // ±ÛÀÚ È¹µæ
+    // ê¸€ì íšë“
     // 0 S
     // 1 T
     // 2 A
@@ -1202,7 +1202,7 @@ public class Minigame22_ScatteredStart : MinigameBase
 
         UpdateProgress();
 
-        // S, T, A, R ¸ğµÎ È¹µæ
+        // S, T, A, R ëª¨ë‘ íšë“
         if (found[0] &&
             found[1] &&
             found[2] &&
@@ -1214,7 +1214,7 @@ public class Minigame22_ScatteredStart : MinigameBase
                 Mathf.Max(0f, finalTDelay);
 
             Debug.Log(
-                "MG22 : 5ÃÊ ÈÄ ¸¶Áö¸· T È°¼ºÈ­"
+                "MG22 : 5ì´ˆ í›„ ë§ˆì§€ë§‰ T í™œì„±í™”"
             );
         }
 
@@ -1232,13 +1232,13 @@ public class Minigame22_ScatteredStart : MinigameBase
         }
 
         Debug.Log(
-            "MG22 : ±ÛÀÚ È¹µæ - " +
+            "MG22 : ê¸€ì íšë“ - " +
             answer[index]
         );
     }
 
     // =====================================
-    // ¼öÁı ÇöÈ²
+    // ìˆ˜ì§‘ í˜„í™©
     // =====================================
 
     private void UpdateProgress()
@@ -1290,7 +1290,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // Á¶ÇÕÃ¢ ¿­±â
+    // ì¡°í•©ì°½ ì—´ê¸°
     // =====================================
 
     private void OpenAssembly()
@@ -1324,7 +1324,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (assemblyHint != null)
         {
             assemblyHint.text =
-                "±ÛÀÚ ºí·ÏÀ» ºóÄ­À¸·Î µå·¡±×ÇÏ¼¼¿ä.";
+                "ê¸€ì ë¸”ë¡ì„ ë¹ˆì¹¸ìœ¼ë¡œ ë“œë˜ê·¸í•˜ì„¸ìš”.";
         }
     }
 
@@ -1341,7 +1341,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // ±ÛÀÚ¸¦ ½½·Ô¿¡ ¹èÄ¡
+    // ê¸€ìë¥¼ ìŠ¬ë¡¯ì— ë°°ì¹˜
     // =====================================
 
     public void DropOnSlot(
@@ -1362,7 +1362,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         MG22LetterDrag occupant =
             placed[index];
 
-        // ´Ù¸¥ ±ÛÀÚ°¡ ÀÖÀ¸¸é ÀÚ¸® ±³È¯
+        // ë‹¤ë¥¸ ê¸€ìê°€ ìˆìœ¼ë©´ ìë¦¬ êµí™˜
         if (occupant != null &&
             occupant != block)
         {
@@ -1421,7 +1421,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     }
 
     // =====================================
-    // START ¼ø¼­ È®ÀÎ
+    // START ìˆœì„œ í™•ì¸
     // =====================================
 
     private void CheckAnswer()
@@ -1457,22 +1457,22 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (correct)
         {
             assemblyHint.text =
-                "START º¹±¸ ¿Ï·á! ¹öÆ°À» ´©¸£¼¼¿ä.";
+                "START ë³µêµ¬ ì™„ë£Œ! ë²„íŠ¼ì„ ëˆ„ë¥´ì„¸ìš”.";
         }
         else if (complete)
         {
             assemblyHint.text =
-                "¼ø¼­°¡ Æ²·È½À´Ï´Ù. ´Ù½Ã ¹èÄ¡ÇÏ¼¼¿ä.";
+                "ìˆœì„œê°€ í‹€ë ¸ìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë°°ì¹˜í•˜ì„¸ìš”.";
         }
         else
         {
             assemblyHint.text =
-                "È¹µæÇÑ ±ÛÀÚ¸¦ ¿Ã¹Ù¸¥ ¼ø¼­·Î ¹èÄ¡ÇÏ¼¼¿ä.";
+                "íšë“í•œ ê¸€ìë¥¼ ì˜¬ë°”ë¥¸ ìˆœì„œë¡œ ë°°ì¹˜í•˜ì„¸ìš”.";
         }
     }
 
     // =====================================
-    // ÃÖÁ¾ Å¬¸®¾î
+    // ìµœì¢… í´ë¦¬ì–´
     // =====================================
 
     private void FinishPuzzle()
@@ -1492,7 +1492,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         if (finalButton != null)
             finalButton.interactable = false;
 
-        Debug.Log("MG22 : START º¹±¸ ¼º°ø!");
+        Debug.Log("MG22 : START ë³µêµ¬ ì„±ê³µ!");
 
         Success();
     }
@@ -1500,7 +1500,7 @@ public class Minigame22_ScatteredStart : MinigameBase
     protected override void GiveHint()
     {
         Debug.Log(
-            "MG22 ÈùÆ® : SETTINGSÀÇ ¸ğµç ÅÇÀ» Å½»öÇÏ¼¼¿ä."
+            "MG22 íŒíŠ¸ : SETTINGSì˜ ëª¨ë“  íƒ­ì„ íƒìƒ‰í•˜ì„¸ìš”."
         );
     }
 
@@ -1517,7 +1517,7 @@ public class Minigame22_ScatteredStart : MinigameBase
 }
 
 // =====================================
-// TextMeshPro ¸µÅ© Å¬¸¯ Ã³¸®
+// TextMeshPro ë§í¬ í´ë¦­ ì²˜ë¦¬
 // =====================================
 
 public class MG22TextLinkClick :
@@ -1568,7 +1568,7 @@ public class MG22TextLinkClick :
 }
 
 // =====================================
-// EXIT ÆË¾÷ µå·¡±×
+// EXIT íŒì—… ë“œë˜ê·¸
 // =====================================
 
 public class MG22PopupDrag :
@@ -1619,7 +1619,7 @@ public class MG22PopupDrag :
 }
 
 // =====================================
-// START ±ÛÀÚ µå·¡±×
+// START ê¸€ì ë“œë˜ê·¸
 // =====================================
 
 public class MG22LetterDrag :
@@ -1831,7 +1831,7 @@ public class MG22LetterDrag :
 }
 
 // =====================================
-// START ½½·Ô µå·Ó Ã³¸®
+// START ìŠ¬ë¡¯ ë“œë¡­ ì²˜ë¦¬
 // =====================================
 
 public class MG22DropSlot :

@@ -13,6 +13,8 @@ using System.Reflection;
 ///  2) 챕터5가 열린 뒤에는 챕터 선택 화면 전체가 계속 지지직 (UI 흔들림 / 글자 깨짐 / 가끔 화면 노이즈)
 ///  3) 챕터5 카드: 미니게임 수는 ?/? 로 표시, 아이콘은 ? 그림
 ///     챕터5에서 3번 이상 실패하고 돌아오면 ? 아이콘이 지지직거리다가 악마 아이콘으로 바뀜
+///  4) 음악: 평소에는 A곡(bgm_chapter5_select_a) / 악마 아이콘으로 바뀌는 순간부터 B곡(bgm_chapter5_select_b)
+///     → 챕터5 안에서 게임할 때도 같은 규칙 (GameBgm.Chapter5TrackName)
 /// 챕터5 카드는 Chapter04 카드를 복사해서 실행할 때 자동으로 만든다 (Hierarchy에서 따로 만들 필요 없음).
 ///
 /// [에디터 테스트 키 - 메인 씬 어디서나 (Game 창 클릭 후)]
@@ -28,6 +30,13 @@ public class Chapter5SelectController : MonoBehaviour
     [Header("챕터5 화면 배경")]
     [Tooltip("챕터5만 남았을 때 챕터 선택 화면 배경 (설정배경2.png)")]
     public Sprite chapter5Background;
+
+    [Header("데모 빌드")]
+    [Tooltip("켜져 있으면 챕터5 카드를 눌러도 챕터5에 들어가지 않고 '데모 버전' 안내창이 뜸. 정식 버전 때 끄기")]
+    public bool demoBuild = false;
+    public string demoTitle = "DEMO VERSION";
+    [TextArea] public string demoMessage = "현재는 데모 버전입니다.\nCHAPTER 5는 추후 제작 예정입니다.";
+    public string demoHint = "- 클릭하면 닫힙니다 -";
 
     [Header("챕터5 카드 문구")]
     public string titleText = "> CHAPTER 5 <";
@@ -46,7 +55,15 @@ public class Chapter5SelectController : MonoBehaviour
     [Tooltip("노이즈가 시작되기 전 평범한 화면을 보여 주는 시간")]
     public float revealDelay = 0.6f;
     [Tooltip("챕터4 고장 연출과 같은 강한 노이즈 시간")]
-    public float revealNoiseDuration = 1.2f;
+    public float revealNoiseDuration = 3f;
+
+    [Header("챕터5 배경음악 (Resources/Sounds/BGM)")]
+    [Tooltip("평소 챕터5 음악 (A)")]
+    public string normalTrack = GameBgm.Chapter5NormalTrack;
+    [Tooltip("3번 이상 실패해서 악마 아이콘이 된 뒤의 음악 (B)")]
+    public string devilTrack = GameBgm.Chapter5DevilTrack;
+    [Tooltip("챕터5 음악 크기 (메인 음악 크기 기준 배율)")]
+    [Range(0f, 2f)] public float chapter5MusicGain = 1f;
 
     [Header("평소 지지직 (화면 노이즈 간격)")]
     public float burstIntervalMin = 3f;
@@ -397,8 +414,12 @@ public class Chapter5SelectController : MonoBehaviour
 
     private void OnDisable()
     {
+        HideDemoPopup();
         StopAllCoroutines();
         CleanUp();
+
+        // 챕터 선택 화면을 벗어나면 챕터5 음악 끄고 메인 음악으로
+        StopChapter5Music(true);
     }
 
 
@@ -420,11 +441,16 @@ public class Chapter5SelectController : MonoBehaviour
         if (!SessionProgress.IsChapter5Unlocked())
         {
             active = false;
+            GameBgm.chapter5SelectMusicOwns = false;
             ApplyLayout(false);
+            StopChapter5Music(true);
             return;
         }
 
         active = true;
+
+        // 이제부터 이 화면이 음악 담당 → 메인 음악이 끼어들지 못하게
+        GameBgm.chapter5SelectMusicOwns = true;
 
         if (!SessionProgress.chapter5Revealed)
         {
@@ -433,6 +459,8 @@ public class Chapter5SelectController : MonoBehaviour
         else
         {
             ApplyLayout(true);
+            GameBgm.StopMusic();
+            StartChapter5Music(true);
             StartLoops();
         }
     }
@@ -455,6 +483,8 @@ public class Chapter5SelectController : MonoBehaviour
 
         intensity = 0f;
         chapter5Boost = 0f;
+        musicGlitch = 0f;
+        musicBasePitch = 1f;
         revealing = false;
         iconTransforming = false;
 
@@ -543,6 +573,9 @@ public class Chapter5SelectController : MonoBehaviour
             StartCoroutine(noise.PlayHeavyNoise(revealNoiseDuration));
         }
 
+        // 원래 음악은 테이프가 멈추듯 음이 쭉 내려가면서 꺼짐
+        GameBgm.TapeStop(1.4f);
+
         float t = 0f;
         bool swapped = false;
         while (t < revealNoiseDuration)
@@ -556,7 +589,14 @@ public class Chapter5SelectController : MonoBehaviour
                 swapped = true;
                 ApplyLayout(true);
                 if (card5Icon != null) card5Icon.sprite = questionIcon;
+
+                // 챕터5가 나타나는 순간 챕터5 음악이 지지직 끊기며 들어옴
+                StartChapter5Music(false);
             }
+
+            // 음악 지지직: 처음엔 심하게 끊기다가 노이즈가 끝날수록 덜 끊김
+            if (swapped)
+                musicGlitch = Mathf.Lerp(1f, 0.5f, (k - 0.6f) / 0.4f);
 
             yield return null;
         }
@@ -572,6 +612,7 @@ public class Chapter5SelectController : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / settle);
             intensity = Mathf.Lerp(1.5f, 0f, k);
+            musicGlitch = Mathf.Lerp(0.5f, 0f, k);
 
             if (c5 != null && c5.group != null)
                 c5.group.alpha = Random.value < Mathf.Lerp(0.6f, 1f, k) ? 1f : Random.Range(0.3f, 0.7f);
@@ -625,6 +666,8 @@ public class Chapter5SelectController : MonoBehaviour
             float k = Mathf.Clamp01(t / transformDuration);
             chapter5Boost = Mathf.Lerp(1f, 3f, k);
             intensity = Mathf.Lerp(0.4f, 1f, k);
+            musicGlitch = Mathf.Lerp(0.3f, 1f, k);
+            musicBasePitch = Mathf.Lerp(1f, 0.85f, k); // 음이 점점 내려감
 
             if (t >= nextNoise && !lightNoiseOn)
             {
@@ -658,8 +701,13 @@ public class Chapter5SelectController : MonoBehaviour
         card5Icon.rectTransform.anchoredPosition = iconRest;
         card5Icon.rectTransform.localScale = Vector3.one;
 
+        // 악마로 바뀌는 순간 음악도 B곡으로 (지지직 끊기며 바뀜)
+        SwitchChapter5Music(devilTrack);
+
         chapter5Boost = 0f;
         intensity = 0f;
+        musicGlitch = 0f;
+        musicBasePitch = 1f;
         iconTransforming = false;
         devilShown = true;
     }
@@ -697,6 +745,7 @@ public class Chapter5SelectController : MonoBehaviour
                 continue;
 
             intensity = 1f;
+            musicGlitch = 0.7f;
 
             // 악마가 된 뒤에는 노이즈 순간에 잠깐 ?로 돌아갔다가 다시 악마
             bool flashQuestion = devilShown && Random.value < 0.4f;
@@ -714,6 +763,7 @@ public class Chapter5SelectController : MonoBehaviour
             if (flashQuestion) SetIcon(devilIcon);
 
             intensity = 0f;
+            musicGlitch = 0f;
         }
     }
 
@@ -725,6 +775,8 @@ public class Chapter5SelectController : MonoBehaviour
     private void LateUpdate()
     {
         float dt = Time.unscaledDeltaTime;
+
+        MusicTick(dt);
 
         if (!active || card5 == null)
             return;
@@ -937,10 +989,102 @@ public class Chapter5SelectController : MonoBehaviour
     }
 
 
+    // ==============================
+    // 데모 안내창
+    // ==============================
+
+    private GameObject demoPopup;
+
+    private void ShowDemoPopup()
+    {
+        if (demoPopup == null)
+            BuildDemoPopup();
+
+        demoPopup.transform.SetAsLastSibling();
+        demoPopup.SetActive(true);
+    }
+
+
+    private void HideDemoPopup()
+    {
+        if (demoPopup != null)
+            demoPopup.SetActive(false);
+    }
+
+
+    private void BuildDemoPopup()
+    {
+        // 화면 전체를 어둡게 덮는 판 (아무 데나 누르면 닫힘)
+        demoPopup = new GameObject("C5_DemoPopup", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        demoPopup.layer = gameObject.layer;
+        demoPopup.transform.SetParent(transform, false);
+        RectTransform rt = (RectTransform)demoPopup.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        Image dim = demoPopup.GetComponent<Image>();
+        dim.color = new Color(0f, 0f, 0f, 0.75f);
+
+        Button close = demoPopup.GetComponent<Button>();
+        close.transition = Selectable.Transition.None;
+        close.onClick.AddListener(HideDemoPopup);
+
+        // 가운데 상자 (검정 + 하늘색 테두리)
+        GameObject box = new GameObject("Box", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Outline));
+        box.layer = gameObject.layer;
+        box.transform.SetParent(demoPopup.transform, false);
+        RectTransform boxRT = (RectTransform)box.transform;
+        boxRT.anchorMin = boxRT.anchorMax = boxRT.pivot = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(980f, 420f);
+        boxRT.anchoredPosition = new Vector2(0f, -20f);
+        Image boxImg = box.GetComponent<Image>();
+        boxImg.color = Color.black;
+        boxImg.raycastTarget = false;
+        Outline ol = box.GetComponent<Outline>();
+        ol.effectColor = new Color32(25, 200, 240, 255);
+        ol.effectDistance = new Vector2(4f, -4f);
+
+        AddPopupText(box.transform, demoTitle, new Vector2(0f, 120f), 64, new Color32(254, 230, 35, 255));
+        AddPopupText(box.transform, demoMessage, new Vector2(0f, 0f), 38, Color.white);
+        AddPopupText(box.transform, demoHint, new Vector2(0f, -150f), 26, new Color(0.7f, 0.7f, 0.7f, 1f));
+
+        demoPopup.SetActive(false);
+    }
+
+
+    private void AddPopupText(Transform parent, string text, Vector2 pos, float size, Color color)
+    {
+        GameObject go = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        go.layer = gameObject.layer;
+        go.transform.SetParent(parent, false);
+        RectTransform rt = (RectTransform)go.transform;
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(920f, size * 2.6f);
+        rt.anchoredPosition = pos;
+
+        TextMeshProUGUI t = go.GetComponent<TextMeshProUGUI>();
+        if (card5Title != null)
+            t.font = card5Title.font; // 다른 글자와 같은 폰트
+        t.text = text;
+        t.fontSize = size;
+        t.color = color;
+        t.alignment = TextAlignmentOptions.Center;
+        t.raycastTarget = false;
+    }
+
+
     private void OnClickChapter5()
     {
         if (revealing)
             return;
+
+        // (데모 안내창은 이제 쓰지 않음 - 챕터5 바로 플레이)
+
+        // 챕터5로 들어갈 때는 메인 음악으로 돌리지 않음 (챕터5 씬에서 GameBgm이 A/B곡을 이어서 틀어 줌)
+        leavingToChapter5 = true;
+        StopChapter5Music(false);
 
         if (startMenu != null)
             startMenu.OnClickChapter5();
@@ -952,6 +1096,128 @@ public class Chapter5SelectController : MonoBehaviour
     // ==============================
     // CRT 화면 노이즈 / 소리
     // ==============================
+
+    // ------------------------------------------------------------
+    // 챕터5 배경음악
+    //  - 평소: A곡 반복 / 3번 이상 실패해서 악마 아이콘이 되면: B곡 반복
+    //  - 노이즈가 날 때 음악도 끊기고(지지직) 음이 흔들림
+    // ------------------------------------------------------------
+
+    private AudioSource music;
+    private bool musicOn = false;
+    private bool leavingToChapter5 = false;
+    private float musicFade = 0f;        // 0~1 서서히 커지기
+    private float musicFadeSpeed = 1f;
+    private float musicGlitch = 0f;      // 0 = 깨끗 / 1 = 심하게 끊김
+    private float musicBasePitch = 1f;
+    private float musicStutterTimer = 0f;
+    private bool musicGateOpen = true;
+    private float musicGlitchPitch = 1f;
+
+    // 화면이 열릴 때 시작하는 곡: 늘 A곡 (3번 이상 실패했으면 아이콘이 악마로 바뀌는 순간 B곡으로 넘어감)
+    private void StartChapter5Music(bool fadeIn)
+    {
+        leavingToChapter5 = false;
+
+        if (music == null)
+        {
+            music = gameObject.AddComponent<AudioSource>();
+            music.playOnAwake = false;
+            music.loop = true;
+            music.spatialBlend = 0f;
+            music.ignoreListenerPause = true;
+        }
+
+        if (musicOn && music.isPlaying)
+            return;
+
+        PlayTrack(normalTrack);
+
+        musicOn = true;
+        musicFade = fadeIn ? 0f : 1f;
+        musicFadeSpeed = 1f / 1.5f;
+    }
+
+    // 다른 곡으로 바꾸기 (악마 아이콘이 될 때 A → B)
+    private void SwitchChapter5Music(string trackName)
+    {
+        if (!musicOn || music == null)
+            return;
+
+        if (music.clip != null && music.clip.name == trackName && music.isPlaying)
+            return;
+
+        PlayTrack(trackName);
+        musicFade = 0.35f;              // 살짝 작게 시작해서 다시 커짐
+        musicFadeSpeed = 1f / 1.2f;
+    }
+
+    private void PlayTrack(string trackName)
+    {
+        AudioClip clip = Resources.Load<AudioClip>("Sounds/BGM/" + trackName);
+        if (clip == null)
+        {
+            Debug.LogWarning("[Chapter5] 음악 파일을 찾지 못했습니다: Resources/Sounds/BGM/" + trackName);
+            return;
+        }
+
+        music.clip = clip;
+        music.loop = true;
+        music.time = 0f;
+        music.Play();
+    }
+
+    // backToMain = true 면 메인 음악을 다시 틀어 줌
+    private void StopChapter5Music(bool backToMain)
+    {
+        // 화면을 떠나면 메인 음악을 다시 틀 수 있게
+        GameBgm.chapter5SelectMusicOwns = false;
+
+        if (!musicOn)
+            return;
+
+        musicOn = false;
+        if (music != null)
+            music.Stop();
+
+        if (backToMain && !leavingToChapter5 && gameObject.scene.isLoaded)
+            GameBgm.PlayMain();
+    }
+
+    private void MusicTick(float dt)
+    {
+        if (!musicOn || music == null)
+            return;
+
+        musicFade = Mathf.MoveTowards(musicFade, 1f, musicFadeSpeed * dt);
+
+        // 지지직: 짧게 끊기고, 음이 살짝 흔들리고, 가끔 조금 뒤로 튐
+        if (musicGlitch > 0.01f)
+        {
+            musicStutterTimer -= dt;
+            if (musicStutterTimer <= 0f)
+            {
+                musicStutterTimer = Random.Range(0.04f, 0.1f);
+                musicGateOpen = Random.value > musicGlitch * 0.55f;
+                musicGlitchPitch = 1f + Random.Range(-0.12f, 0.06f) * musicGlitch;
+
+                if (musicGlitch > 0.5f && Random.value < 0.15f && music.time > 0.5f)
+                    music.time = Mathf.Max(0f, music.time - Random.Range(0.08f, 0.2f));
+            }
+        }
+        else
+        {
+            musicGateOpen = true;
+            musicGlitchPitch = 1f;
+        }
+
+        music.pitch = musicBasePitch * musicGlitchPitch;
+
+        float popupDuck = (demoPopup != null && demoPopup.activeSelf) ? 0.5f : 1f;
+        float gate = musicGateOpen ? 1f : 0.12f;
+        music.volume = GameBgm.CurrentVolume * chapter5MusicGain * musicFade * gate * popupDuck;
+    }
+
 
     // ------------------------------------------------------------
     // 챕터3·4와 똑같은 노이즈 (ChapterNoiseController 그대로 사용)

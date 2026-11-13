@@ -1,4 +1,4 @@
-
+ï»¿
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -46,10 +46,10 @@ public class Minigame21_HiddenTerms : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "¾à°ü ¼Ó¿¡ ¼ûÀº ½ÃÀÛ";
-        instruction = "¾à°üÀ» È®ÀÎÇÏ½Ê½Ã¿À. ½ÃÀÛÀ» Ã£À¸½Ê½Ã¿À.";
+        gameName = "ì•½ê´€ ì†ì— ìˆ¨ì€ ì‹œì‘";
+        instruction = "ì•½ê´€ì„ í™•ì¸í•˜ì‹­ì‹œì˜¤. ì‹œì‘ì„ ì°¾ìœ¼ì‹­ì‹œì˜¤.";
 
-        // MG21Àº ½Ã°£Á¦ÇÑ ¾øÀÌ ÁøÇà
+        // MG21ì€ ì‹œê°„ì œí•œ ì—†ì´ ì§„í–‰
         timeLimit = 999999f;
 
         base.StartMinigame();
@@ -66,7 +66,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             revealedStartButton == null)
         {
             Debug.LogError(
-                "MG21: Inspector UI ¿¬°áÀ» È®ÀÎÇÏ¼¼¿ä.",
+                "MG21: Inspector UI ì—°ê²°ì„ í™•ì¸í•˜ì„¸ìš”.",
                 this
             );
 
@@ -74,7 +74,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             return;
         }
 
-        // ÃÖÃÊ ¾à°ü ³»¿ë ÀúÀå
+        // ìµœì´ˆ ì•½ê´€ ë‚´ìš© ì €ì¥
         if (!originalTextSaved)
         {
             originalTermsText = termsText.text;
@@ -82,14 +82,14 @@ public class Minigame21_HiddenTerms : MinigameBase
         }
         else
         {
-            // Àç½ÃÀÛÇÒ ¶§ ¿ø·¡ ¾à°üÀ¸·Î º¹±¸
+            // ì¬ì‹œì‘í•  ë•Œ ì›ë˜ ì•½ê´€ìœ¼ë¡œ ë³µêµ¬
             termsText.text = originalTermsText;
         }
 
         if (!termsText.text.Contains(HiddenMarkup))
         {
             Debug.LogWarning(
-                "MG21: ¾à°ü¿¡ ¼û°ÜÁø START ÅÂ±×°¡ ¾ø½À´Ï´Ù.",
+                "MG21: ì•½ê´€ì— ìˆ¨ê²¨ì§„ START íƒœê·¸ê°€ ì—†ìŠµë‹ˆë‹¤.",
                 this
             );
         }
@@ -104,7 +104,7 @@ public class Minigame21_HiddenTerms : MinigameBase
         termsScrollRect.horizontal = false;
         termsScrollRect.StopMovement();
 
-        // ¹öÆ° Å¬¸¯ ÀÌº¥Æ® ¿¬°á
+        // ë²„íŠ¼ í´ë¦­ ì´ë²¤íŠ¸ ì—°ê²°
         revealedStartButton.onClick.RemoveListener(
             OnRevealedStartClicked
         );
@@ -113,7 +113,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             OnRevealedStartClicked
         );
 
-        // Ã³À½¿¡´Â START ¹öÆ° ¼û±â±â
+        // ì²˜ìŒì—ëŠ” START ë²„íŠ¼ ìˆ¨ê¸°ê¸°
         revealedStartButton.gameObject.SetActive(false);
         revealedStartButton.interactable = true;
 
@@ -155,7 +155,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             return;
         }
 
-        // ÇÃ·¹ÀÌ ½Ã°£ Áõ°¡
+        // í”Œë ˆì´ ì‹œê°„ ì¦ê°€
         elapsedTime += Time.deltaTime;
 
         UpdateTimeText();
@@ -165,7 +165,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             return;
         }
 
-        // 40ÃÊ ÈùÆ®
+        // 40ì´ˆ íŒíŠ¸
         if (!firstHintShown &&
             elapsedTime >= firstHintTime)
         {
@@ -174,11 +174,11 @@ public class Minigame21_HiddenTerms : MinigameBase
             if (hintText != null)
             {
                 hintText.text =
-                    "ÈùÆ®: ³¡ÀÌ Á¤´äÀÌ¶ó´Â º¸ÀåÀº ¾ø½À´Ï´Ù.";
+                    "íŒíŠ¸: ëì´ ì •ë‹µì´ë¼ëŠ” ë³´ì¥ì€ ì—†ìŠµë‹ˆë‹¤.";
             }
         }
 
-        // 60ÃÊ ÈùÆ®
+        // 60ì´ˆ íŒíŠ¸
         if (!secondHintShown &&
             elapsedTime >= secondHintTime)
         {
@@ -187,7 +187,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             if (hintText != null)
             {
                 hintText.text =
-                    "ÈùÆ®: ¾à°ü Áß°£ÀÇ µ¥ÀÌÅÍ¸¦ »ìÆìº¸¼¼¿ä.";
+                    "íŒíŠ¸: ì•½ê´€ ì¤‘ê°„ì˜ ë°ì´í„°ë¥¼ ì‚´í´ë³´ì„¸ìš”.";
             }
 
             if (statusText != null)
@@ -197,12 +197,12 @@ public class Minigame21_HiddenTerms : MinigameBase
             }
         }
 
-        // ¾à°ü ¼Ó START À§Ä¡ È®ÀÎ
+        // ì•½ê´€ ì† START ìœ„ì¹˜ í™•ì¸
         int hoveredLinkIndex = FindHoveredHiddenLink();
 
         bool hovering = hoveredLinkIndex >= 0;
 
-        // 60ÃÊ ÀÌÈÄ START ºÎºĞÀÌ ÁÖ±âÀûÀ¸·Î Èçµé¸²
+        // 60ì´ˆ ì´í›„ START ë¶€ë¶„ì´ ì£¼ê¸°ì ìœ¼ë¡œ í”ë“¤ë¦¼
         bool noiseFlash =
             secondHintShown &&
             Mathf.Repeat(
@@ -212,7 +212,7 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         AnimateHiddenStart(hovering, noiseFlash);
 
-        // ¼û°ÜÁø START Å¬¸¯
+        // ìˆ¨ê²¨ì§„ START í´ë¦­
         if (hovering && Input.GetMouseButtonDown(0))
         {
             RevealStartButton();
@@ -231,7 +231,7 @@ public class Minigame21_HiddenTerms : MinigameBase
         int minutes = seconds / 60;
         int remainder = seconds % 60;
 
-        // ¿¹: TIME 00:42
+        // ì˜ˆ: TIME 00:42
         timeText.text =
             $"TIME {minutes:00}:{remainder:00}";
     }
@@ -257,7 +257,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             eventCamera = uiCanvas.worldCamera;
         }
 
-        // ¸¶¿ì½º°¡ ¾à°ü Ã¢ ¹Û¿¡ ÀÖÀ¸¸é ¹«½Ã
+        // ë§ˆìš°ìŠ¤ê°€ ì•½ê´€ ì°½ ë°–ì— ìˆìœ¼ë©´ ë¬´ì‹œ
         if (!RectTransformUtility.RectangleContainsScreenPoint(
             viewport,
             Input.mousePosition,
@@ -301,7 +301,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             return;
         }
 
-        // ¿ø·¡ ±ÛÀÚ ¸Ş½Ã¸¦ ¸Å¹ø ´Ù½Ã ±¸¼º
+        // ì›ë˜ ê¸€ì ë©”ì‹œë¥¼ ë§¤ë²ˆ ë‹¤ì‹œ êµ¬ì„±
         termsText.ForceMeshUpdate();
 
         if (!hovering && !noiseFlash)
@@ -352,12 +352,12 @@ public class Minigame21_HiddenTerms : MinigameBase
                 TMP_MeshInfo mesh =
                     info.meshInfo[meshIndex];
 
-                // ¸¶¿ì½º¸¦ ¿Ã¸®¸é ¹ÎÆ®»öÀ¸·Î º¯°æ
+                // ë§ˆìš°ìŠ¤ë¥¼ ì˜¬ë¦¬ë©´ ë¯¼íŠ¸ìƒ‰ìœ¼ë¡œ ë³€ê²½
                 Color32 color = hovering
                     ? new Color32(145, 255, 204, 255)
                     : new Color32(220, 240, 255, 255);
 
-                // ±ÛÀÚ°¡ »ìÂ¦ Èçµé¸®´Â È¿°ú
+                // ê¸€ìê°€ ì‚´ì§ í”ë“¤ë¦¬ëŠ” íš¨ê³¼
                 float shake = hovering
                     ? Mathf.Sin(
                         Time.unscaledTime * 19f +
@@ -395,20 +395,20 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         startRevealed = true;
 
-        // ½ºÅ©·Ñ Á¤Áö
+        // ìŠ¤í¬ë¡¤ ì •ì§€
         termsScrollRect.StopMovement();
         termsScrollRect.enabled = false;
 
-        // ¾à°ü ¼Ó START ¹®±¸ º¯°æ
+        // ì•½ê´€ ì† START ë¬¸êµ¬ ë³€ê²½
         termsText.text = termsText.text.Replace(
             HiddenMarkup,
-            "[µ¥ÀÌÅÍ ÃßÃâ ¿Ï·á]"
+            "[ë°ì´í„° ì¶”ì¶œ ì™„ë£Œ]"
         );
 
         if (hintText != null)
         {
             hintText.text =
-                "START µ¥ÀÌÅÍ¸¦ ¹ß°ßÇß½À´Ï´Ù. ¹öÆ°À» ´©¸£¼¼¿ä.";
+                "START ë°ì´í„°ë¥¼ ë°œê²¬í–ˆìŠµë‹ˆë‹¤. ë²„íŠ¼ì„ ëˆ„ë¥´ì„¸ìš”.";
         }
 
         if (statusText != null)
@@ -416,7 +416,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             statusText.text = "START DATA : FOUND";
         }
 
-        // ¼û°Ü ³õÀº ÃÖÁ¾ START ¹öÆ° Ç¥½Ã
+        // ìˆ¨ê²¨ ë†“ì€ ìµœì¢… START ë²„íŠ¼ í‘œì‹œ
         revealedStartButton.gameObject.SetActive(true);
 
         revealedStartButton.interactable = true;
@@ -433,13 +433,13 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         revealedStartButton.interactable = false;
 
-        // ChapterManagerÀÇ ¼º°ø Ã³¸®·Î ¿¬°á
+        // ChapterManagerì˜ ì„±ê³µ ì²˜ë¦¬ë¡œ ì—°ê²°
         Success();
     }
 
     protected override void GiveHint()
     {
-        // MG21Àº 40ÃÊ, 60ÃÊ¿¡ Á÷Á¢ ÈùÆ® Ç¥½Ã
+        // MG21ì€ 40ì´ˆ, 60ì´ˆì— ì§ì ‘ íŒíŠ¸ í‘œì‹œ
     }
 
     protected override void RestartGame()

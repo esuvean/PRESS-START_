@@ -1,4 +1,4 @@
-
+ï»¿
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,10 +32,10 @@ public class Minigame25_PopupMaze : MinigameBase
         new Color32(105, 174, 219, 255);
 
     [Header("Wall Collision")]
-    [Tooltip("START°¡ º®¿¡ °¡±î¿öÁ³À» ¶§ Ãæµ¹·Î ÆÇÁ¤ÇÒ ¿©À¯ °Å¸®")]
+    [Tooltip("STARTê°€ ë²½ì— ê°€ê¹Œì›Œì¡Œì„ ë•Œ ì¶©ëŒë¡œ íŒì •í•  ì—¬ìœ  ê±°ë¦¬")]
     public float wallCollisionPadding = 1f;
 
-    [Tooltip("ÀÛÀ»¼ö·Ï ºü¸¥ µå·¡±×¿¡¼­ º®À» Á¤È®È÷ °Ë»çÇÕ´Ï´Ù.")]
+    [Tooltip("ì‘ì„ìˆ˜ë¡ ë¹ ë¥¸ ë“œë˜ê·¸ì—ì„œ ë²½ì„ ì •í™•íˆ ê²€ì‚¬í•©ë‹ˆë‹¤.")]
     public float collisionStep = 3f;
 
     [Header("Popup Settings")]
@@ -58,7 +58,7 @@ public class Minigame25_PopupMaze : MinigameBase
     private readonly List<GameObject> generatedWalls =
         new List<GameObject>();
 
-    // ½ÇÁ¦ º®ÀÇ »ç°¢Çü Ãæµ¹ ¿µ¿ª
+    // ì‹¤ì œ ë²½ì˜ ì‚¬ê°í˜• ì¶©ëŒ ì˜ì—­
     private readonly List<Rect> wallColliders =
         new List<Rect>();
 
@@ -88,10 +88,10 @@ public class Minigame25_PopupMaze : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "ÆË¾÷ ¹Ì·Î";
+        gameName = "íŒì—… ë¯¸ë¡œ";
 
         instruction =
-            "ÆË¾÷À» Ä¡¿ì°í START¸¦ GOAL±îÁö ¿Å±â½Ê½Ã¿À.";
+            "íŒì—…ì„ ì¹˜ìš°ê³  STARTë¥¼ GOALê¹Œì§€ ì˜®ê¸°ì‹­ì‹œì˜¤.";
 
         timeLimit = 999999f;
 
@@ -103,7 +103,7 @@ public class Minigame25_PopupMaze : MinigameBase
         if (!FindReferences())
         {
             Debug.LogError(
-                "MG25: UI ¿¬°áÀ» È®ÀÎÇÏ¼¼¿ä.",
+                "MG25: UI ì—°ê²°ì„ í™•ì¸í•˜ì„¸ìš”.",
                 this
             );
 
@@ -121,11 +121,11 @@ public class Minigame25_PopupMaze : MinigameBase
 
         ready = true;
 
-        Debug.Log("MG25: ÆË¾÷ ¹Ì·Î ½ÃÀÛ");
+        Debug.Log("MG25: íŒì—… ë¯¸ë¡œ ì‹œì‘");
     }
 
     // =====================================
-    // UI ÀÚµ¿ °Ë»ö
+    // UI ìë™ ê²€ìƒ‰
     // =====================================
 
     private Transform FindDeep(
@@ -221,7 +221,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÀÌÀü °ÔÀÓ ¿ÀºêÁ§Æ® Á¤¸®
+    // ì´ì „ ê²Œì„ ì˜¤ë¸Œì íŠ¸ ì •ë¦¬
     // =====================================
 
     private void RemovePreviouslyGenerated()
@@ -256,7 +256,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ¹Ì·Î ¼¿ À§Ä¡
+    // ë¯¸ë¡œ ì…€ ìœ„ì¹˜
     // =====================================
 
     private Vector2 CellCenter(int col, int row)
@@ -271,7 +271,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ¹Ì·Î ÀÚµ¿ »ı¼º (DFS)
+    // ë¯¸ë¡œ ìë™ ìƒì„± (DFS)
     // =====================================
 
     private void GenerateMaze()
@@ -337,7 +337,7 @@ public class Minigame25_PopupMaze : MinigameBase
             Vector2Int destination =
                 cell + Directions[direction];
 
-            // ¾çÂÊ ¼¿ÀÇ Åë·Î¸¦ ¿¬°á
+            // ì–‘ìª½ ì…€ì˜ í†µë¡œë¥¼ ì—°ê²°
             paths[
                 cell.x,
                 cell.y,
@@ -364,7 +364,7 @@ public class Minigame25_PopupMaze : MinigameBase
         float thick =
             Mathf.Max(3f, wallThickness);
 
-        // ³»ºÎ º® »ı¼º
+        // ë‚´ë¶€ ë²½ ìƒì„±
         for (int x = 0; x < columns; x++)
         {
             for (int y = 0; y < rows; y++)
@@ -405,7 +405,7 @@ public class Minigame25_PopupMaze : MinigameBase
             }
         }
 
-        // ¹Ù±ùÂÊ °æ°è º®
+        // ë°”ê¹¥ìª½ ê²½ê³„ ë²½
         CreateWall(
             "Border_Left",
             new Vector2(-width * 0.5f, 0f),
@@ -444,7 +444,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // º® »ı¼º + »ç°¢Çü Ãæµ¹ ¿µ¿ª ÀúÀå
+    // ë²½ ìƒì„± + ì‚¬ê°í˜• ì¶©ëŒ ì˜ì—­ ì €ì¥
     // =====================================
 
     private void CreateWall(
@@ -485,9 +485,9 @@ public class Minigame25_PopupMaze : MinigameBase
 
         generatedWalls.Add(go);
 
-        // ¡Ú ¼öÁ¤ ÇÙ½É:
-        // È­¸é¿¡ ±×·ÁÁö´Â º® ÀüÃ¼¸¦
-        // Ãæµ¹ ¿µ¿ªÀ¸·Î µî·ÏÇÑ´Ù.
+        // â˜… ìˆ˜ì • í•µì‹¬:
+        // í™”ë©´ì— ê·¸ë ¤ì§€ëŠ” ë²½ ì „ì²´ë¥¼
+        // ì¶©ëŒ ì˜ì—­ìœ¼ë¡œ ë“±ë¡í•œë‹¤.
         Rect collisionRect = new Rect(
             position.x - size.x * 0.5f,
             position.y - size.y * 0.5f,
@@ -499,7 +499,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // START ¹öÆ° µå·¡±× ÁØºñ
+    // START ë²„íŠ¼ ë“œë˜ê·¸ ì¤€ë¹„
     // =====================================
 
     private void PrepareStartButton()
@@ -540,7 +540,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÆË¾÷ 12~15°³ »ı¼º
+    // íŒì—… 12~15ê°œ ìƒì„±
     // =====================================
 
     private void SpawnInitialPopups()
@@ -612,7 +612,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÆË¾÷ »ı¼º
+    // íŒì—… ìƒì„±
     // =====================================
 
     private MG25PopupWindow SpawnPopup(
@@ -676,7 +676,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÆË¾÷ ÀÌµ¿ ¹üÀ§
+    // íŒì—… ì´ë™ ë²”ìœ„
     // =====================================
 
     public Vector2 ClampPopup(
@@ -708,7 +708,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÆË¾÷ X Å¬¸¯
+    // íŒì—… X í´ë¦­
     // =====================================
 
     public void ClosePopup(MG25PopupWindow popup)
@@ -758,14 +758,14 @@ public class Minigame25_PopupMaze : MinigameBase
             }
 
             Debug.Log(
-                "MG25: ÇÔÁ¤ ÆË¾÷! " +
-                count + "°³ Ãß°¡"
+                "MG25: í•¨ì • íŒì—…! " +
+                count + "ê°œ ì¶”ê°€"
             );
         }
     }
 
     // =====================================
-    // START ÀÌµ¿ »óÅÂ
+    // START ì´ë™ ìƒíƒœ
     // =====================================
 
     public bool CanDragStart()
@@ -789,7 +789,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ÁÂÇ¥¸¦ ¹Ì·Î ¼¿·Î º¯È¯
+    // ì¢Œí‘œë¥¼ ë¯¸ë¡œ ì…€ë¡œ ë³€í™˜
     // =====================================
 
     private Vector2Int CellOf(Vector2 position)
@@ -820,7 +820,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // Åë·Î ¿¬°á È®ÀÎ
+    // í†µë¡œ ì—°ê²° í™•ì¸
     // =====================================
 
     private bool IsPassable(
@@ -852,7 +852,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ¡Ú START ½ÇÁ¦ »ç°¢Çü Å©±â °è»ê
+    // â˜… START ì‹¤ì œ ì‚¬ê°í˜• í¬ê¸° ê³„ì‚°
     // =====================================
 
     private void GetStartBoundsOffsets(
@@ -887,8 +887,8 @@ public class Minigame25_PopupMaze : MinigameBase
         Vector2 currentCenter =
             startRect.anchoredPosition;
 
-        // STARTÀÇ ÇöÀç ÁÂÇ¥¿¡ ´ëÇÑ
-        // »ç°¢Çü ³× ¹æÇâÀÇ »ó´ë À§Ä¡
+        // STARTì˜ í˜„ì¬ ì¢Œí‘œì— ëŒ€í•œ
+        // ì‚¬ê°í˜• ë„¤ ë°©í–¥ì˜ ìƒëŒ€ ìœ„ì¹˜
         minOffset = new Vector2(
             minX - currentCenter.x,
             minY - currentCenter.y
@@ -901,7 +901,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ¡Ú START ÀüÃ¼ »ç°¢Çü°ú º® Ãæµ¹ °Ë»ç
+    // â˜… START ì „ì²´ ì‚¬ê°í˜•ê³¼ ë²½ ì¶©ëŒ ê²€ì‚¬
     // =====================================
 
     private bool TouchesAnyWall(
@@ -932,7 +932,7 @@ public class Minigame25_PopupMaze : MinigameBase
         {
             Rect wall = wallColliders[i];
 
-            // ÇÑ º¯ÀÌ¶óµµ ¸Â´êÀ¸¸é Ãæµ¹ Ã³¸®
+            // í•œ ë³€ì´ë¼ë„ ë§ë‹¿ìœ¼ë©´ ì¶©ëŒ ì²˜ë¦¬
             bool overlaps =
                 left <= wall.xMax &&
                 right >= wall.xMin &&
@@ -949,7 +949,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // ¡Ú START ÀÌµ¿ / °³¼±µÈ Ãæµ¹ ÆÇÁ¤
+    // â˜… START ì´ë™ / ê°œì„ ëœ ì¶©ëŒ íŒì •
     // =====================================
 
     public bool TryMoveStart(Vector2 desired)
@@ -963,7 +963,7 @@ public class Minigame25_PopupMaze : MinigameBase
         Vector2 from =
             startRect.anchoredPosition;
 
-        // ½ÇÁ¦ START Å©±â¸¦ ¹İ¿µ
+        // ì‹¤ì œ START í¬ê¸°ë¥¼ ë°˜ì˜
         Vector2 minOffset;
         Vector2 maxOffset;
 
@@ -1000,9 +1000,9 @@ public class Minigame25_PopupMaze : MinigameBase
             limitTop
         );
 
-        // ÀÌµ¿ °Å¸®¸¦ ÀÛ°Ô ³ª´©¾î °Ë»ç
-        // ¸¶¿ì½º°¡ ºü¸£°Ô ¿òÁ÷¿©µµ
-        // º®À» °Ç³Ê¶ÙÁö ¾Êµµ·Ï ÇÑ´Ù.
+        // ì´ë™ ê±°ë¦¬ë¥¼ ì‘ê²Œ ë‚˜ëˆ„ì–´ ê²€ì‚¬
+        // ë§ˆìš°ìŠ¤ê°€ ë¹ ë¥´ê²Œ ì›€ì§ì—¬ë„
+        // ë²½ì„ ê±´ë„ˆë›°ì§€ ì•Šë„ë¡ í•œë‹¤.
         float stepSize = Mathf.Clamp(
             collisionStep,
             1f,
@@ -1027,11 +1027,11 @@ public class Minigame25_PopupMaze : MinigameBase
                 i / (float)steps
             );
 
-            // 1. ¹Ì·Î Åë·Î ¿¬°á È®ÀÎ
+            // 1. ë¯¸ë¡œ í†µë¡œ ì—°ê²° í™•ì¸
             bool passageAllowed =
                 IsPassable(previous, next);
 
-            // 2. START ¹öÆ° »ç°¢Çü ÀüÃ¼ È®ÀÎ
+            // 2. START ë²„íŠ¼ ì‚¬ê°í˜• ì „ì²´ í™•ì¸
             bool wallCollision =
                 TouchesAnyWall(
                     next,
@@ -1044,8 +1044,8 @@ public class Minigame25_PopupMaze : MinigameBase
                 ResetStartPosition();
 
                 Debug.Log(
-                    "MG25: START°¡ º®¿¡ ´ê¾Ò½À´Ï´Ù! " +
-                    "Ãâ¹ß À§Ä¡·Î º¹±Í"
+                    "MG25: STARTê°€ ë²½ì— ë‹¿ì•˜ìŠµë‹ˆë‹¤! " +
+                    "ì¶œë°œ ìœ„ì¹˜ë¡œ ë³µê·€"
                 );
 
                 return false;
@@ -1054,7 +1054,7 @@ public class Minigame25_PopupMaze : MinigameBase
             previous = next;
         }
 
-        // Ãæµ¹ÀÌ ¾øÀ» ¶§¸¸ ½ÇÁ¦·Î ÀÌµ¿
+        // ì¶©ëŒì´ ì—†ì„ ë•Œë§Œ ì‹¤ì œë¡œ ì´ë™
         startRect.anchoredPosition = desired;
 
         Vector2Int goalCell =
@@ -1063,7 +1063,7 @@ public class Minigame25_PopupMaze : MinigameBase
                 rows / 2
             );
 
-        // GOAL µµÂø ÆÇÁ¤
+        // GOAL ë„ì°© íŒì •
         if (CellOf(desired) == goalCell &&
             Vector2.Distance(
                 desired,
@@ -1077,7 +1077,7 @@ public class Minigame25_PopupMaze : MinigameBase
             cleared = true;
 
             Debug.Log(
-                "MG25: GOAL µµÂø! °Ë»ç ¿Ï·á"
+                "MG25: GOAL ë„ì°©! ê²€ì‚¬ ì™„ë£Œ"
             );
 
             Success();
@@ -1087,7 +1087,7 @@ public class Minigame25_PopupMaze : MinigameBase
     }
 
     // =====================================
-    // START Ãâ¹ß À§Ä¡ º¹±Í
+    // START ì¶œë°œ ìœ„ì¹˜ ë³µê·€
     // =====================================
 
     public void ResetStartPosition()
@@ -1102,7 +1102,7 @@ public class Minigame25_PopupMaze : MinigameBase
 
     protected override void GiveHint()
     {
-        // ±âÈ¹¼­¿¡ º°µµ ÈùÆ® ¾øÀ½
+        // ê¸°íšì„œì— ë³„ë„ íŒíŠ¸ ì—†ìŒ
     }
 
     protected override void RestartGame()
@@ -1112,7 +1112,7 @@ public class Minigame25_PopupMaze : MinigameBase
 }
 
 // =========================================
-// ÆË¾÷ Á¾·ù
+// íŒì—… ì¢…ë¥˜
 // =========================================
 
 public enum MG25PopupKind
@@ -1123,7 +1123,7 @@ public enum MG25PopupKind
 }
 
 // =========================================
-// ÆË¾÷ µ¿ÀÛ
+// íŒì—… ë™ì‘
 // =========================================
 
 public class MG25PopupWindow : MonoBehaviour
@@ -1158,7 +1158,7 @@ public class MG25PopupWindow : MonoBehaviour
         if (title == null)
         {
             Debug.LogWarning(
-                "MG25: TitleBar ¾øÀ½ - " + name,
+                "MG25: TitleBar ì—†ìŒ - " + name,
                 this
             );
 
@@ -1206,7 +1206,7 @@ public class MG25PopupWindow : MonoBehaviour
         if (close == null)
         {
             Debug.LogWarning(
-                "MG25: CloseButton ¾øÀ½ - " + name,
+                "MG25: CloseButton ì—†ìŒ - " + name,
                 this
             );
 
@@ -1234,7 +1234,7 @@ public class MG25PopupWindow : MonoBehaviour
 }
 
 // =========================================
-// ÆË¾÷ Á¦¸ñ Ç¥½ÃÁÙ µå·¡±×
+// íŒì—… ì œëª© í‘œì‹œì¤„ ë“œë˜ê·¸
 // =========================================
 
 public class MG25PopupTitleDrag :
@@ -1316,7 +1316,7 @@ public class MG25PopupTitleDrag :
 }
 
 // =========================================
-// START ¹öÆ° µå·¡±×
+// START ë²„íŠ¼ ë“œë˜ê·¸
 // =========================================
 
 public class MG25StartDrag :
@@ -1383,8 +1383,8 @@ public class MG25StartDrag :
         {
             if (!owner.TryMoveStart(local + offset))
             {
-                // º®¿¡ ´êÀ¸¸é ¸¶¿ì½º¸¦ ´Ù½Ã ³õ°í
-                // STARTºÎÅÍ Àç½ÃµµÇØ¾ß ÇÔ
+                // ë²½ì— ë‹¿ìœ¼ë©´ ë§ˆìš°ìŠ¤ë¥¼ ë‹¤ì‹œ ë†“ê³ 
+                // STARTë¶€í„° ì¬ì‹œë„í•´ì•¼ í•¨
                 blocked = true;
             }
         }

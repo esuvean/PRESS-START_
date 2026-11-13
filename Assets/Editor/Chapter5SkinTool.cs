@@ -10,8 +10,43 @@ using UnityEngine.UI;
 //  - 스크립트가 이름으로 찾는 오브젝트는 이름을 바꾸거나 지우지 않는다 (위치/색/그림만 바꿈)
 //  - 처음 실행할 때 원래 프리팹을 Assets/Prefab/_Ch5Backup 폴더에 복사해 둔다
 //  - 여러 번 눌러도 결과는 같다 (C5_ 로 시작하는 꾸밈 오브젝트를 지우고 다시 만듦)
+//  - 자동 적용: 유니티가 이 스크립트를 처음 읽을 때(컴파일 끝난 뒤) 한 번 자동으로 실행됨
+//    (Assets/Editor/Chapter5SkinTool_applied.txt 에 적용 버전을 적어 두고, 같은 버전이면 다시 안 함)
+[InitializeOnLoad]
 public static class Chapter5SkinTool
 {
+    // 디자인을 고칠 때마다 숫자를 올리면 → 다음에 유니티를 열 때 자동으로 다시 적용됨
+    const string SkinVersion = "2026-11-13-v2";
+    const string MarkerPath = "Assets/Editor/Chapter5SkinTool_applied.txt";
+
+    static Chapter5SkinTool()
+    {
+        EditorApplication.delayCall += AutoApply;
+    }
+
+    static void AutoApply()
+    {
+        if (Application.isBatchMode)
+            return;
+
+        // 컴파일/임포트/플레이 중이면 잠시 뒤에 다시
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
+            EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            EditorApplication.delayCall += AutoApply;
+            return;
+        }
+
+        string done = System.IO.File.Exists(MarkerPath) ? System.IO.File.ReadAllText(MarkerPath).Trim() : "";
+        if (done == SkinVersion)
+            return;
+
+        Debug.Log("[Chapter5] 챕터5 미니게임 UI 자동 적용 시작 (" + SkinVersion + ")");
+        Apply();
+        System.IO.File.WriteAllText(MarkerPath, SkinVersion);
+        AssetDatabase.ImportAsset(MarkerPath);
+    }
+
     const string PrefabDir = "Assets/Prefab/";
     const string BackupDir = "Assets/Prefab/_Ch5Backup";
     const string Prefix = "C5_";
@@ -20,6 +55,13 @@ public static class Chapter5SkinTool
     const string ArtBg = "Assets/1. Team Folder/Subin/NEW ART/설정배경2.png";
     const string ArtFrame = "Assets/1. Team Folder/Dawon/no11_outline.png";
     const string ArtButton = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/24_button.png";
+    // 현민님 챕터5 새 아트
+    const string ArtTargetBox = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/23_button.png";      // ▶ ◀ 화살표 상자
+    const string ArtGridFrame = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/23_line_back.png";   // 점 무늬 네온 판
+    const string ArtSmallButton = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/25_button.png";    // 작은 버튼
+    const string ArtWinBlue = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/25_window_blue.png";
+    const string ArtWinPink = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/25_window_pink.png";
+    const string ArtWinYellow = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/25_window_yellow.png";
     const string ArtBarFrame = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/24_loading_bar_white.png";
     const string ArtBarFill = "Assets/1. Team Folder/Hyunmin/Art/Chapter5/24_loading_prograss__nottrim.png";
     const string ArtWindow = "Assets/1. Team Folder/Hyunmin/Art/06_window.png";
@@ -227,20 +269,21 @@ public static class Chapter5SkinTool
             "움직이는 글자를 S-T-A-R-T 순서로 잡으세요.",
             null);
 
-        AddFrame(root, new Vector2(0f, -25f), new Vector2(1640f, 690f));
+        AddFrame(root, new Vector2(0f, -25f), new Vector2(1592f, 705f), ArtGridFrame);
 
         RectTransform play = Find(root, "PlayArea");
-        if (play != null) Place(play, new Vector2(0f, -30f), new Vector2(1540f, 520f));
+        if (play != null) Place(play, new Vector2(0f, -30f), new Vector2(1500f, 520f));
 
         // CURRENT TARGET 상자
         TMP_Text target = Text(root, "CurrentTargetText");
         if (target != null)
         {
-            Image box = NewImage(root, Prefix + "TargetBox", Load(ArtButton), White,
-                new Vector2(0f, 262f), new Vector2(620f, 76f));
+            // 현민님 ▶ ◀ 화살표 상자 (글자는 화살표 사이에)
+            Image box = NewImage(root, Prefix + "TargetBox", Load(ArtTargetBox), White,
+                new Vector2(0f, 250f), new Vector2(600f, 104f));
             box.transform.SetAsLastSibling();
-            Place(target.rectTransform, new Vector2(0f, 262f), new Vector2(580f, 60f));
-            StyleText(target, fontBold, 32f, White, TextAlignmentOptions.Center);
+            Place(target.rectTransform, new Vector2(0f, 250f), new Vector2(460f, 60f));
+            StyleText(target, fontBold, 28f, White, TextAlignmentOptions.Center);
             target.transform.SetAsLastSibling();
         }
 
@@ -404,7 +447,7 @@ public static class Chapter5SkinTool
         RectTransform goal = Find(root, "GoalZone");
         if (goal != null)
         {
-            SetImage(goal, Load(ArtButton), White);
+            SetImage(goal, Load(ArtSmallButton), White);
             TMP_Text goalText = Text(goal, "GoalText");
             if (goalText != null)
             {
@@ -413,21 +456,27 @@ public static class Chapter5SkinTool
             }
         }
 
-        foreach (string popupName in new[] { "NormalPopup", "MovePopup", "TrapPopup" })
+        // 팝업 종류마다 현민님 색깔 창: 일반 = 파랑 / 움직이는 팝업 = 노랑 / 함정 = 분홍
+        string[] popupNames = { "NormalPopup", "MovePopup", "TrapPopup" };
+        string[] popupArts = { ArtWinBlue, ArtWinYellow, ArtWinPink };
+        for (int p = 0; p < popupNames.Length; p++)
         {
-            RectTransform popup = Find(root, popupName);
+            RectTransform popup = Find(root, popupNames[p]);
             if (popup == null) continue;
 
-            SetImage(popup, Load(ArtWindow), White);
+            Sprite win = Load(popupArts[p]);
+            SetImage(popup, win != null ? win : Load(ArtWindow), White);
 
+            // 창 그림 맨 위 띠(제목줄)에 맞춰 드래그 영역을 둠. 색은 투명(클릭은 그대로 받음)
             RectTransform titleBar = Find(popup, "TitleBar");
             if (titleBar != null)
             {
+                float barH = Mathf.Max(36f, popup.sizeDelta.y * 0.14f);
                 titleBar.anchorMin = titleBar.anchorMax = new Vector2(0f, 1f);
                 titleBar.pivot = new Vector2(0.5f, 0.5f);
-                titleBar.anchoredPosition = new Vector2(popup.sizeDelta.x * 0.5f, -28f);
-                titleBar.sizeDelta = new Vector2(popup.sizeDelta.x - 14f, 44f);
-                SetImage(titleBar, null, new Color32(8, 18, 40, 255));
+                titleBar.anchoredPosition = new Vector2(popup.sizeDelta.x * 0.5f, -barH * 0.5f - 2f);
+                titleBar.sizeDelta = new Vector2(popup.sizeDelta.x - 10f, barH);
+                SetImage(titleBar, null, Clear);
             }
 
             TMP_Text title = Text(popup, "PopupTitle");
@@ -496,9 +545,9 @@ public static class Chapter5SkinTool
     }
 
     // 프레임 안쪽 네온 패널 (배경 바로 위에 깔림)
-    static void AddFrame(Transform root, Vector2 pos, Vector2 size)
+    static void AddFrame(Transform root, Vector2 pos, Vector2 size, string art = ArtFrame)
     {
-        Image frame = NewImage(root, Prefix + "Frame", Load(ArtFrame), White, pos, size);
+        Image frame = NewImage(root, Prefix + "Frame", Load(art), White, pos, size);
         frame.raycastTarget = false;
         RectTransform bg = FindBackground(root);
         frame.transform.SetSiblingIndex(bg != null ? bg.GetSiblingIndex() + 1 : 0);

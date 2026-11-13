@@ -1,4 +1,4 @@
-
+ï»¿
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -68,12 +68,12 @@ public class Minigame24_WaitAt99 : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "99%¿¡¼­ ±â´Ù¸®½Ê½Ã¿À";
+        gameName = "99%ì—ì„œ ê¸°ë‹¤ë¦¬ì‹­ì‹œì˜¤";
 
         instruction =
-            "·ÎµùÀÌ ¿Ï·áµÉ ¶§±îÁö ±â´Ù¸®½Ê½Ã¿À.";
+            "ë¡œë”©ì´ ì™„ë£Œë  ë•Œê¹Œì§€ ê¸°ë‹¤ë¦¬ì‹­ì‹œì˜¤.";
 
-        // MG24¿¡´Â ½Ã°£ Á¦ÇÑÀÌ ¾øÀ½
+        // MG24ì—ëŠ” ì‹œê°„ ì œí•œì´ ì—†ìŒ
         timeLimit = 999999f;
 
         base.StartMinigame();
@@ -85,7 +85,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (!referencesReady)
         {
             Debug.LogError(
-                "MG24: ÇÊ¼ö UI ¿¬°áÀÌ ´©¶ôµÇ¾ú½À´Ï´Ù.",
+                "MG24: í•„ìˆ˜ UI ì—°ê²°ì´ ëˆ„ë½ë˜ì—ˆìŠµë‹ˆë‹¤.",
                 this
             );
 
@@ -101,11 +101,11 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         BeginLoading();
 
-        Debug.Log("MG24: ·Îµù °Ë»ç ½ÃÀÛ");
+        Debug.Log("MG24: ë¡œë”© ê²€ì‚¬ ì‹œì‘");
     }
 
     // =========================================
-    // UI ÀÚµ¿ ¿¬°á
+    // UI ìë™ ì—°ê²°
     // =========================================
 
     private Transform FindDeep(
@@ -192,13 +192,13 @@ public class Minigame24_WaitAt99 : MinigameBase
                 FindUI<TMP_Text>("ErrorText");
         }
 
-        // ÇÊ¼ö UI °Ë»ç
+        // í•„ìˆ˜ UI ê²€ì‚¬
         bool valid = true;
 
         if (loadingBarFill == null)
         {
             Debug.LogError(
-                "MG24: LoadingBarFill ¾øÀ½",
+                "MG24: LoadingBarFill ì—†ìŒ",
                 this
             );
 
@@ -208,7 +208,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (percentText == null)
         {
             Debug.LogError(
-                "MG24: PercentText ¾øÀ½",
+                "MG24: PercentText ì—†ìŒ",
                 this
             );
 
@@ -218,7 +218,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (completeButton == null)
         {
             Debug.LogError(
-                "MG24: CompleteButton ¾øÀ½",
+                "MG24: CompleteButton ì—†ìŒ",
                 this
             );
 
@@ -228,7 +228,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (realStartButton == null)
         {
             Debug.LogError(
-                "MG24: RealStartButton ¾øÀ½",
+                "MG24: RealStartButton ì—†ìŒ",
                 this
             );
 
@@ -237,8 +237,8 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         if (loadingBarFill != null)
         {
-            // Inspector¿¡¼­ ¼³Á¤ÀÌ ºüÁ³´õ¶óµµ
-            // ¿ŞÂÊºÎÅÍ Ã¤¿öÁö°Ô ÀÚµ¿ ¼³Á¤
+            // Inspectorì—ì„œ ì„¤ì •ì´ ë¹ ì¡Œë”ë¼ë„
+            // ì™¼ìª½ë¶€í„° ì±„ì›Œì§€ê²Œ ìë™ ì„¤ì •
             loadingBarFill.type =
                 Image.Type.Filled;
 
@@ -250,8 +250,8 @@ public class Minigame24_WaitAt99 : MinigameBase
             if (loadingBarFill.sprite == null)
             {
                 Debug.LogWarning(
-                    "MG24: LoadingBarFillÀÇ " +
-                    "Source Image¿¡ UI Sprite¸¦ ³Ö¾îÁÖ¼¼¿ä.",
+                    "MG24: LoadingBarFillì˜ " +
+                    "Source Imageì— UI Spriteë¥¼ ë„£ì–´ì£¼ì„¸ìš”.",
                     this
                 );
             }
@@ -270,7 +270,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ¹öÆ° ÀÌº¥Æ® ¿¬°á
+    // ë²„íŠ¼ ì´ë²¤íŠ¸ ì—°ê²°
     // =========================================
 
     private void SetupButtons()
@@ -296,7 +296,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // Ã³À½ »óÅÂ·Î UI ¼³Á¤
+    // ì²˜ìŒ ìƒíƒœë¡œ UI ì„¤ì •
     // =========================================
 
     private void ResetLoadingUI()
@@ -325,7 +325,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (fakeInstructionText != null)
         {
             fakeInstructionText.text =
-                "¸¶Áö¸· 1%¸¦ Á÷Á¢ ¿Ï·áÇÏ½Ê½Ã¿À.";
+                "ë§ˆì§€ë§‰ 1%ë¥¼ ì§ì ‘ ì™„ë£Œí•˜ì‹­ì‹œì˜¤.";
 
             fakeInstructionText.gameObject.SetActive(
                 false
@@ -346,7 +346,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ·Îµù ½ÃÀÛ
+    // ë¡œë”© ì‹œì‘
     // =========================================
 
     private void BeginLoading()
@@ -360,7 +360,7 @@ public class Minigame24_WaitAt99 : MinigameBase
 
     private IEnumerator LoadingRoutine()
     {
-        Debug.Log("MG24: ·Îµù 0% ½ÃÀÛ");
+        Debug.Log("MG24: ë¡œë”© 0% ì‹œì‘");
 
         // 0% -> 35%
         yield return AnimateLoading(
@@ -399,7 +399,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ·Îµù¹Ù ¾Ö´Ï¸ŞÀÌ¼Ç
+    // ë¡œë”©ë°” ì• ë‹ˆë©”ì´ì…˜
     // =========================================
 
     private IEnumerator AnimateLoading(
@@ -446,7 +446,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ½ÇÁ¦ ·Îµù ÆÛ¼¾Æ® Àû¿ë
+    // ì‹¤ì œ ë¡œë”© í¼ì„¼íŠ¸ ì ìš©
     // =========================================
 
     private void SetLoadingPercent(float percent)
@@ -471,7 +471,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // 99% Á¤Áö
+    // 99% ì •ì§€
     // =========================================
 
     private void Enter99Percent()
@@ -480,9 +480,9 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         SetLoadingPercent(99f);
 
-        Debug.Log("MG24: ·Îµù 99%¿¡¼­ Á¤Áö");
+        Debug.Log("MG24: ë¡œë”© 99%ì—ì„œ ì •ì§€");
 
-        // ÇÔÁ¤ ¹öÆ° µîÀå
+        // í•¨ì • ë²„íŠ¼ ë“±ì¥
         completeButton.gameObject.SetActive(true);
         completeButton.interactable = true;
 
@@ -500,19 +500,19 @@ public class Minigame24_WaitAt99 : MinigameBase
             UpdateHintText();
         }
 
-        // ½ÇÆĞ 2~3È¸¶ó¸é ¾È³»¹®ÀÌ Àá½Ã ¹à¾ÆÁü
+        // ì‹¤íŒ¨ 2~3íšŒë¼ë©´ ì•ˆë‚´ë¬¸ì´ ì ì‹œ ë°ì•„ì§
         if (failureCount >= 2 &&
             failureCount < 4)
         {
             StartCoroutine(HintFlashRoutine());
         }
 
-        // 5ÃÊ µ¿¾È ±â´Ù¸®±â
+        // 5ì´ˆ ë™ì•ˆ ê¸°ë‹¤ë¦¬ê¸°
         StartCoroutine(WaitAt99Routine());
     }
 
     // =========================================
-    // ¾Æ¹«°Íµµ ´©¸£Áö ¾Ê°í ±â´Ù¸®±â
+    // ì•„ë¬´ê²ƒë„ ëˆ„ë¥´ì§€ ì•Šê³  ê¸°ë‹¤ë¦¬ê¸°
     // =========================================
 
     private IEnumerator WaitAt99Routine()
@@ -541,17 +541,17 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ÁøÂ¥ START µîÀå
+    // ì§„ì§œ START ë“±ì¥
     // =========================================
 
     private void ShowRealStartButton()
     {
         currentState = LoadingState.StartReady;
 
-        // ÇÔÁ¤ ¹öÆ° ¼û±â±â
+        // í•¨ì • ë²„íŠ¼ ìˆ¨ê¸°ê¸°
         completeButton.gameObject.SetActive(false);
 
-        // ÁøÂ¥ START ¹öÆ° µîÀå
+        // ì§„ì§œ START ë²„íŠ¼ ë“±ì¥
         realStartButton.gameObject.SetActive(true);
         realStartButton.interactable = true;
 
@@ -561,12 +561,12 @@ public class Minigame24_WaitAt99 : MinigameBase
         }
 
         Debug.Log(
-            "MG24: 5ÃÊ ´ë±â ¼º°ø! START µîÀå"
+            "MG24: 5ì´ˆ ëŒ€ê¸° ì„±ê³µ! START ë“±ì¥"
         );
     }
 
     // =========================================
-    // COMPLETE Å¬¸¯ = ½ÇÆĞ
+    // COMPLETE í´ë¦­ = ì‹¤íŒ¨
     // =========================================
 
     private void OnCompleteClicked()
@@ -582,11 +582,11 @@ public class Minigame24_WaitAt99 : MinigameBase
         failureCount++;
 
         Debug.Log(
-            "MG24: COMPLETE Å¬¸¯! ½ÇÆĞ " +
-            failureCount + "È¸"
+            "MG24: COMPLETE í´ë¦­! ì‹¤íŒ¨ " +
+            failureCount + "íšŒ"
         );
 
-        // ±â´Ù¸² / ÈùÆ® ¾Ö´Ï¸ŞÀÌ¼Ç Áß´Ü
+        // ê¸°ë‹¤ë¦¼ / íŒíŠ¸ ì• ë‹ˆë©”ì´ì…˜ ì¤‘ë‹¨
         StopAllCoroutines();
 
         completeButton.gameObject.SetActive(false);
@@ -602,7 +602,7 @@ public class Minigame24_WaitAt99 : MinigameBase
             smallHintText.gameObject.SetActive(false);
         }
 
-        // ¿À·ù¿Í µ¿½Ã¿¡ 0% ÃÊ±âÈ­
+        // ì˜¤ë¥˜ì™€ ë™ì‹œì— 0% ì´ˆê¸°í™”
         SetLoadingPercent(0f);
 
         if (errorText != null)
@@ -610,7 +610,7 @@ public class Minigame24_WaitAt99 : MinigameBase
             errorText.text =
                 "ERROR\n" +
                 "USER INTERRUPTED PROCESS\n" +
-                "·ÎµùÀÌ ´Ù½Ã 0%ºÎÅÍ ½ÃÀÛÇÕ´Ï´Ù.";
+                "ë¡œë”©ì´ ë‹¤ì‹œ 0%ë¶€í„° ì‹œì‘í•©ë‹ˆë‹¤.";
 
             errorText.gameObject.SetActive(true);
         }
@@ -619,7 +619,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ¿À·ù Ç¥½Ã ÈÄ ·Îµù Àç½ÃÀÛ
+    // ì˜¤ë¥˜ í‘œì‹œ í›„ ë¡œë”© ì¬ì‹œì‘
     // =========================================
 
     private IEnumerator ErrorRoutine()
@@ -642,7 +642,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ÈùÆ® º¯°æ
+    // íŒíŠ¸ ë³€ê²½
     // =========================================
 
     private void UpdateHintText()
@@ -656,9 +656,9 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         if (failureCount >= 4)
         {
-            // ½ÇÆĞ 4È¸ ÀÌ»ó
+            // ì‹¤íŒ¨ 4íšŒ ì´ìƒ
             smallHintText.text =
-                "ÀÔ·ÂÀÌ Ç×»ó ÇÊ¿äÇÑ °ÍÀº ¾Æ´Õ´Ï´Ù.";
+                "ì…ë ¥ì´ í•­ìƒ í•„ìš”í•œ ê²ƒì€ ì•„ë‹™ë‹ˆë‹¤.";
 
             color.a = 1f;
 
@@ -667,7 +667,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         else
         {
             smallHintText.text =
-                "¡Ø ÀÔ·ÂÇÏÁö ¾Ê°í ±â´Ù¸®½Ê½Ã¿À.";
+                "â€» ì…ë ¥í•˜ì§€ ì•Šê³  ê¸°ë‹¤ë¦¬ì‹­ì‹œì˜¤.";
 
             color.a = 0.45f;
 
@@ -678,7 +678,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // 2È¸ ½ÇÆĞ ÈÄ ¾È³»¹® ¹à¾ÆÁö´Â È¿°ú
+    // 2íšŒ ì‹¤íŒ¨ í›„ ì•ˆë‚´ë¬¸ ë°ì•„ì§€ëŠ” íš¨ê³¼
     // =========================================
 
     private IEnumerator HintFlashRoutine()
@@ -725,7 +725,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // ÁøÂ¥ START Å¬¸¯
+    // ì§„ì§œ START í´ë¦­
     // =========================================
 
     private void OnRealStartClicked()
@@ -740,7 +740,7 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         realStartButton.interactable = false;
 
-        // µåµğ¾î ·Îµù 100%
+        // ë“œë””ì–´ ë¡œë”© 100%
         SetLoadingPercent(100f);
 
         if (loadingText != null)
@@ -750,14 +750,14 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         if (smallHintText != null)
         {
-            smallHintText.text = "°Ë»ç ¿Ï·á.";
+            smallHintText.text = "ê²€ì‚¬ ì™„ë£Œ.";
 
             Color color = smallHintText.color;
             color.a = 1f;
             smallHintText.color = color;
         }
 
-        Debug.Log("MG24: ·Îµù 100% ¿Ï·á");
+        Debug.Log("MG24: ë¡œë”© 100% ì™„ë£Œ");
 
         StopAllCoroutines();
 
@@ -765,7 +765,7 @@ public class Minigame24_WaitAt99 : MinigameBase
     }
 
     // =========================================
-    // Å¬¸®¾î ¿¬Ãâ ÈÄ Success()
+    // í´ë¦¬ì–´ ì—°ì¶œ í›„ Success()
     // =========================================
 
     private IEnumerator FinishRoutine()
@@ -781,7 +781,7 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         currentState = LoadingState.Completed;
 
-        Debug.Log("MG24: °Ë»ç ¿Ï·á!");
+        Debug.Log("MG24: ê²€ì‚¬ ì™„ë£Œ!");
 
         Success();
     }
@@ -792,8 +792,8 @@ public class Minigame24_WaitAt99 : MinigameBase
 
     protected override void GiveHint()
     {
-        // ±âÈ¹¼­ÀÇ ½ÇÆĞ È½¼ö ÈùÆ®´Â
-        // UpdateHintText¿¡¼­ Á÷Á¢ Ã³¸®
+        // ê¸°íšì„œì˜ ì‹¤íŒ¨ íšŸìˆ˜ íŒíŠ¸ëŠ”
+        // UpdateHintTextì—ì„œ ì§ì ‘ ì²˜ë¦¬
     }
 
     protected override void RestartGame()
