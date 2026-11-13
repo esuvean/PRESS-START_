@@ -14,4 +14,13 @@ public class ChapterFxResources : ScriptableObject
 
     [Tooltip("게임오버(TIME OVER) 화면 글꼴")]
     public TMP_FontAsset failFont;
+
+    [Tooltip("챕터5 선택 카드 아이콘 (?) - CT5.png")]
+    public Sprite chapter5QuestionIcon;
+
+    [Tooltip("챕터5 선택 카드 아이콘 (악마) - CT5 bug.png")]
+    public Sprite chapter5DevilIcon;
+
+    [Tooltip("챕터5만 남았을 때 챕터 선택 화면 배경 - 설정배경2.png")]
+    public Sprite chapter5Background;
 }

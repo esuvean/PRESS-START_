@@ -31,6 +31,18 @@ public class ShotgunController : MonoBehaviour
     public RectTransform monitorHole;         // 모니터 화면 영역
     public List<Sprite> shotgunFrames = new List<Sprite>();
 
+    [Header("두 번 내려치기 (실패가 많이 쌓이면)")]
+    [Tooltip("이번 플레이에서 실패가 이 횟수 이상 쌓이면, 그 다음 샷건부터 두 번 내려치는 애니메이션")]
+    public int twiceAfterFailures = 15;
+    [Tooltip("비워 두면 Resources/ShotgunTwice 폴더의 그림(shotgun_twice_00~17)을 자동 사용")]
+    public List<Sprite> shotgunTwiceFrames = new List<Sprite>();
+    [Tooltip("두 번 치기 그림에서 주먹이 키보드에 닿는 프레임 번호들 (0부터)")]
+    public int[] twiceImpactFrames = { 8, 13 };
+
+    // 이번 플레이 전체에서 쌓인 실패 횟수 (챕터가 바뀌어도 이어서 셈, 게임을 껐다 켜면 0)
+    private static int totalFailures = 0;
+    public static int TotalFailures => totalFailures;
+
     [Header("연출 시간")]
     public float zoomOutDuration = 0.8f;
     public float holdBeforeSlam = 0.3f;
@@ -84,6 +96,14 @@ public class ShotgunController : MonoBehaviour
         if (whooshSound == null) whooshSound = Resources.Load<AudioClip>("Sounds/shotgun_whoosh");
         if (keycapsSound == null) keycapsSound = Resources.Load<AudioClip>("Sounds/shotgun_keycaps");
 
+        // 두 번 치기 그림 (Inspector에서 안 넣었으면 Resources/ShotgunTwice 에서 이름 순서대로)
+        if (shotgunTwiceFrames == null || shotgunTwiceFrames.Count == 0)
+        {
+            Sprite[] loaded = Resources.LoadAll<Sprite>("ShotgunTwice");
+            System.Array.Sort(loaded, (a, b) => string.CompareOrdinal(a.name, b.name));
+            shotgunTwiceFrames = new List<Sprite>(loaded);
+        }
+
         if (monitorFrame != null)
         {
             frameImage = monitorFrame.GetComponent<Image>();
@@ -121,6 +141,7 @@ public class ShotgunController : MonoBehaviour
         if (!shotgunOnTimeOut && failPanel == null) return;
         // 자체 시간 규칙이 있는 미니게임(예: 안 누르고 기다리기, 사다리, 마지막 회로)은 제외
         if (ChapterFxBootstrap.UsesOwnTimeRule(FindAnyObjectByType<MinigameBase>())) return;
+        totalFailures++; // 시간 초과도 실패 1번
         StartCoroutine(TimeOutRoutine());
     }
 
@@ -155,6 +176,7 @@ public class ShotgunController : MonoBehaviour
         if (playing) return;
 
         mistakeCount++;
+        totalFailures++;
         int need = timesTriggered == 0 ? firstThreshold : repeatThreshold;
 
         if (mistakeCount >= need)
@@ -178,6 +200,12 @@ public class ShotgunController : MonoBehaviour
     {
         // 에디터 테스트용: F9 키로 바로 샷건
         if (Input.GetKeyDown(KeyCode.F9)) TestShotgun();
+        // 에디터 테스트용: F11 키로 두 번 치기 샷건 바로 보기
+        if (Input.GetKeyDown(KeyCode.F11) && !playing)
+        {
+            totalFailures = Mathf.Max(totalFailures, twiceAfterFailures);
+            StartCoroutine(PlayShotgun());
+        }
         // 에디터 테스트용: F10 키로 시간 초과 흉내
         if (Input.GetKeyDown(KeyCode.F10) && !playing && (failPanel == null || !failPanel.IsShowing))
             StartCoroutine(TimeOutRoutine());
@@ -216,8 +244,14 @@ public class ShotgunController : MonoBehaviour
             saved.Add(new Saved { rect = rt, pos = rt.localPosition, scale = rt.localScale });
         }
 
-        if (frameImage != null && shotgunFrames.Count > 0)
-            frameImage.sprite = shotgunFrames[0];
+        // 실패가 많이 쌓였으면 두 번 내려치기 그림 사용
+        bool twice = totalFailures >= twiceAfterFailures &&
+                     shotgunTwiceFrames != null && shotgunTwiceFrames.Count > 0;
+        List<Sprite> frames = twice ? shotgunTwiceFrames : shotgunFrames;
+        int[] impacts = twice ? twiceImpactFrames : new[] { impactFrame };
+
+        if (frameImage != null && frames.Count > 0)
+            frameImage.sprite = frames[0];
 
         shakeOffset = Vector2.zero;
         ApplyFrame(1f);
@@ -230,24 +264,27 @@ public class ShotgunController : MonoBehaviour
 
         // 샷건 애니메이션
         float frameTime = 1f / Mathf.Max(1f, framesPerSecond);
-        for (int i = 0; i < shotgunFrames.Count; i++)
+        for (int i = 0; i < frames.Count; i++)
         {
-            if (frameImage != null) frameImage.sprite = shotgunFrames[i];
+            if (frameImage != null) frameImage.sprite = frames[i];
 
-            // 주먹을 내려치기 직전: '휙'
-            if (i == Mathf.Max(0, impactFrame - 3))
-                PlaySfx(whooshSound, 0.7f);
-
-            // 키보드에 닿는 순간: '쾅!'
-            if (i == impactFrame)
+            foreach (int hit in impacts)
             {
-                PlaySfx(slamSound, 1f);
-                StartCoroutine(Shake());
-            }
+                // 주먹을 내려치기 직전: '휙'
+                if (i == Mathf.Max(0, hit - 3))
+                    PlaySfx(whooshSound, 0.7f);
 
-            // 키캡이 튀어서 떨어짐: '타닥 탁 탁'
-            if (i == impactFrame + 1)
-                PlaySfx(keycapsSound, 0.6f);
+                // 키보드에 닿는 순간: '쾅!'
+                if (i == hit)
+                {
+                    PlaySfx(slamSound, 1f);
+                    StartCoroutine(Shake());
+                }
+
+                // 키캡이 튀어서 떨어짐: '타닥 탁 탁'
+                if (i == hit + 1)
+                    PlaySfx(keycapsSound, 0.6f);
+            }
 
             float t = 0f;
             while (t < frameTime)
@@ -260,8 +297,8 @@ public class ShotgunController : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(holdAfterSlam);
 
-        if (frameImage != null && shotgunFrames.Count > 0)
-            frameImage.sprite = shotgunFrames[0];
+        if (frameImage != null && frames.Count > 0)
+            frameImage.sprite = frames[0];
 
         // 다시 줌인
         yield return Zoom(0f, 1f, zoomInDuration);

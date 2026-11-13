@@ -8945,6 +8945,7 @@ GameObject:
   - component: {fileID: 1472379134}
   - component: {fileID: 1472379133}
   - component: {fileID: 1472379135}
+  - component: {fileID: 1472379140}
   m_Layer: 5
   m_Name: CheckProgressPanel
   m_TagString: Untagged
@@ -8952,6 +8953,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
+--- !u!114 &1472379140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472379131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48454765076944a4a8b9ee73a3221c60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Chapter5SelectController
+  questionIcon: {fileID: 21300000, guid: c12cfb878c7c29f4fad9951e93c1c7f0, type: 3}
+  devilIcon: {fileID: 21300000, guid: 7b2345c036d32e1408e2ad4f83898900, type: 3}
 --- !u!224 &1472379132
 RectTransform:
   m_ObjectHideFlags: 0

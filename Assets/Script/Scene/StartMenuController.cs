@@ -41,6 +41,7 @@ public class StartMenuController : MonoBehaviour
     public string chapter2SceneName = "Chapter2";
     public string chapter3SceneName = "Chapter3";
     public string chapter4SceneName = "Chapter4";
+    public string chapter5SceneName = "Chapter5";
 
     private bool introFinished = false;
     private bool sequencePlaying = false;
@@ -463,6 +464,15 @@ public class StartMenuController : MonoBehaviour
         Debug.Log("Chapter4 Scene으로 이동");
 
         SceneManager.LoadScene(chapter4SceneName);
+    }
+
+
+    // 챕터5 카드는 Chapter5SelectController가 실행 중에 만들고 이 함수에 연결함
+    public void OnClickChapter5()
+    {
+        Debug.Log("Chapter5 Scene으로 이동");
+
+        SceneManager.LoadScene(chapter5SceneName);
     }
 
 

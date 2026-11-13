@@ -2,7 +2,14 @@
 
 public static class SessionProgress
 {
-    public const int TotalChapters = 4;
+    // 챕터5까지 (챕터5는 1~4를 다 깨야 나타남)
+    public const int TotalChapters = 5;
+
+    // 챕터5 전용 기록 (게임이 켜져 있는 동안만 기억)
+    // - 챕터5에서 실패한 횟수 (3번 이상이면 챕터 선택 화면의 ? 아이콘이 악마 아이콘으로 바뀜)
+    public static int chapter5FailCount = 0;
+    // - 챕터5가 처음 나타나는 '강한 노이즈' 연출을 이미 봤는지
+    public static bool chapter5Revealed = false;
 
     // 챕터별 진행도
     public static int[] chapterProgress =
@@ -41,6 +48,9 @@ public static class SessionProgress
 
         openChapterSelectOnLoad = false;
         skipIntroOnLoad = false;
+
+        chapter5FailCount = 0;
+        chapter5Revealed = false;
     }
 
 
@@ -105,7 +115,44 @@ public static class SessionProgress
 
         openChapterSelectOnLoad = false;
 
+        chapter5FailCount = 0;
+        chapter5Revealed = false;
+
         Save();
+    }
+
+
+    // 챕터1~4를 모두 깼는지 (= 챕터5가 열렸는지)
+    public static bool IsChapter5Unlocked()
+    {
+        for (int i = 1; i <= 4; i++)
+        {
+            if (!IsChapterCompleted(i))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    // 챕터5 실패: 실패 횟수 +1, 챕터5 진행도는 처음(0)으로
+    public static void RegisterChapter5Failure()
+    {
+        chapter5FailCount++;
+        ResetChapterProgress(5);
+    }
+
+
+    // 한 챕터의 진행도를 처음으로 되돌림 (SetProgress는 줄어들지 않으므로 따로 만듦)
+    public static void ResetChapterProgress(int chapterNumber)
+    {
+        int index = chapterNumber - 1;
+
+        if (index < 0 || index >= chapterProgress.Length)
+            return;
+
+        chapterProgress[index] = 0;
+        chapterCompleted[index] = false;
     }
 
     public static void SetProgress(

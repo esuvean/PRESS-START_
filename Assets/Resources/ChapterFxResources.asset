@@ -30,3 +30,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 247d159bfc636014b95649582c717a38, type: 3}
   - {fileID: 21300000, guid: f9dd8856e0231924e81d4d08a1540d88, type: 3}
   failFont: {fileID: 11400000, guid: f9d6dc60d8976594480694d64f44dbbc, type: 2}
+  chapter5QuestionIcon: {fileID: 21300000, guid: c12cfb878c7c29f4fad9951e93c1c7f0, type: 3}
+  chapter5DevilIcon: {fileID: 21300000, guid: 7b2345c036d32e1408e2ad4f83898900, type: 3}
+  chapter5Background: {fileID: 21300000, guid: e2e24da9b01966d4ba6873370ac82637, type: 3}

@@ -11,6 +11,10 @@ public class ChapterNoiseController : MonoBehaviour
     [Header("메인 카메라")]
     [SerializeField] private Camera mainCamera;
 
+    [Header("사용할 CRT 필터 이름 (카메라가 쓰는 렌더러에 들어 있는 것)")]
+    [Tooltip("챕터 씬: CRTRendererFeature / 메인 씬(카메라가 ExampleCRTFilter2DRenderer 사용): CRT Filter")]
+    [SerializeField] private string crtFeatureName = "CRTRendererFeature";
+
     private CRTRendererFeature crtFilter;
     private Coroutine randomNoiseCoroutine;
 
@@ -21,11 +25,18 @@ public class ChapterNoiseController : MonoBehaviour
         mainCamera = camera;
     }
 
+    // 다른 렌더러의 CRT 필터를 써야 할 때 (메인 씬 챕터 선택 화면에서 사용)
+    public void Setup(Canvas canvas, Camera camera, string featureName)
+    {
+        Setup(canvas, camera);
+        crtFeatureName = featureName;
+    }
+
     private void Start()
     {
         crtFilter = Resources
             .FindObjectsOfTypeAll<CRTRendererFeature>()
-            .FirstOrDefault(x => x.name == "CRTRendererFeature");
+            .FirstOrDefault(x => x.name == crtFeatureName);
 
         if (crtFilter == null)
         {

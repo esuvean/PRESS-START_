@@ -334,6 +334,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 826001290}
+  - component: {fileID: 826001291}
   m_Layer: 0
   m_Name: ChapterManager
   m_TagString: Untagged
@@ -341,6 +342,33 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &826001291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826001288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69cce77a3447ccc4fab99dcfa9b20cb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChapterManager
+  canvasTransform: {fileID: 1465805724}
+  loadingPanel: {fileID: 0}
+  loadingBar: {fileID: 0}
+  loadingPercentText: {fileID: 0}
+  loadingDuration: 0.8
+  chapters:
+  - chapterName: Chapter 5
+    minigamePrefabs:
+    - {fileID: 5840068138700234467, guid: c9e1182826f397d4a84d46623fb407a1, type: 3}
+    - {fileID: 8310566193137932950, guid: 62e788c33682258478dddb08d91dc92a, type: 3}
+    - {fileID: 4130192434599934097, guid: 2253dc63092a17643a1c7829f495d6e0, type: 3}
+    - {fileID: 4305160833336126052, guid: 9c1b308af88d3a146bc48c0e85bcd7dd, type: 3}
+    - {fileID: 6181519752976966408, guid: 3fa56a9241996124887ab150ce3eb39b, type: 3}
+  chapterNumber: 5
+  mainSceneName: MainScene
 --- !u!4 &826001290
 Transform:
   m_ObjectHideFlags: 0
@@ -496,12 +524,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
