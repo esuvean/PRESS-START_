@@ -425,6 +425,10 @@ public class Chapter5SelectController : MonoBehaviour
         StopAllCoroutines();
         CleanUp();
 
+        // 설정창을 열려고 잠깐 꺼진 거면 챕터5 음악은 그대로 계속
+        if (ScreenController.OpeningSettingsFromChapterSelect && musicOn)
+            return;
+
         // 챕터 선택 화면을 벗어나면 챕터5 음악 끄고 메인 음악으로
         StopChapter5Music(true);
     }
@@ -1128,11 +1132,18 @@ public class Chapter5SelectController : MonoBehaviour
 
         if (music == null)
         {
-            music = gameObject.AddComponent<AudioSource>();
+            // 음악은 챕터 선택 화면 밖(씬 맨 위)의 따로 된 오브젝트에서 재생
+            // → 설정창을 열어 챕터 선택 화면이 잠깐 꺼져도 챕터5 음악이 계속 나옴
+            GameObject holder = new GameObject("[Chapter5Music]");
+            music = holder.AddComponent<AudioSource>();
             music.playOnAwake = false;
             music.loop = true;
             music.spatialBlend = 0f;
             music.ignoreListenerPause = true;
+
+            Chapter5MusicHolder keeper = holder.AddComponent<Chapter5MusicHolder>();
+            keeper.owner = this;
+            keeper.source = music;
         }
 
         if (musicOn && music.isPlaying)
@@ -1222,7 +1233,9 @@ public class Chapter5SelectController : MonoBehaviour
 
         float popupDuck = (demoPopup != null && demoPopup.activeSelf) ? 0.5f : 1f;
         float gate = musicGateOpen ? 1f : 0.12f;
-        music.volume = GameBgm.CurrentVolume * chapter5MusicGain * musicFade * gate * popupDuck;
+        // 곡마다 녹음 크기가 달라서 GameBgm 의 곡별 보정값을 똑같이 적용 (챕터1~4 음악과 같은 크기로 들림)
+        float trackGain = music.clip != null ? GameBgm.TrackGain(music.clip.name) : 1f;
+        music.volume = GameBgm.BaseVolume * trackGain * chapter5MusicGain * musicFade * gate * popupDuck;
     }
 
 
@@ -1370,5 +1383,34 @@ public class Chapter5SelectController : MonoBehaviour
         Debug.Log($"[테스트] 챕터5 실패 횟수: {SessionProgress.chapter5FailCount}");
 
         if (isActiveAndEnabled) { Init(); Refresh(); }
+    }
+}
+
+
+// 챕터5 음악 재생기 (챕터 선택 화면이 꺼져 있을 때 = 설정창이 열려 있을 때도 음악 크기를 맞춰 줌)
+public class Chapter5MusicHolder : MonoBehaviour
+{
+    public Chapter5SelectController owner;
+    public AudioSource source;
+
+    private void Update()
+    {
+        if (source == null || !source.isPlaying)
+            return;
+
+        // 챕터 선택 화면이 켜져 있으면 그쪽에서 크기/지지직을 조절함
+        if (owner != null && owner.isActiveAndEnabled)
+            return;
+
+        float gain = source.clip != null ? GameBgm.TrackGain(source.clip.name) : 1f;
+        float extra = owner != null ? owner.chapter5MusicGain : 1f;
+        source.pitch = 1f;
+        source.volume = GameBgm.BaseVolume * gain * extra;
+    }
+
+    private void OnDestroy()
+    {
+        // 씬이 바뀌어 사라지면 메인 음악을 다시 틀 수 있게
+        GameBgm.chapter5SelectMusicOwns = false;
     }
 }

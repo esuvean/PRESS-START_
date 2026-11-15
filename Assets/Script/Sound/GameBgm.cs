@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -63,7 +63,29 @@ public class GameBgm : MonoBehaviour
             instance.source.volume = TargetVolume;
     }
 
-    private static float TargetVolume => BgmVolume * musicScale * duckCurrent;
+    private static float TargetVolume => BaseVolume * TrackGain(instance != null ? instance.currentName : null);
+
+    /// <summary>곡 보정 없이 설정 볼륨 + 잠깐 줄이기만 반영한 크기</summary>
+    public static float BaseVolume => BgmVolume * musicScale * duckCurrent;
+
+    // ==============================
+    // 곡마다 원래 녹음 크기가 달라서 똑같이 들리도록 맞추는 값
+    // (모든 곡을 약 -15.5 LUFS 크기로 맞춤. 1 = 그대로, 1.22 = 약 1.7dB 크게)
+    // ==============================
+    public static float TrackGain(string trackName)
+    {
+        switch (trackName)
+        {
+            case "bgm_main": return 0.97f;               // -15.2 LUFS
+            case "bgm_chapter1": return 1.00f;           // -15.5
+            case "bgm_chapter2": return 1.00f;
+            case "bgm_chapter3": return 1.00f;
+            case "bgm_chapter4": return 1.04f;           // -15.8
+            case Chapter5NormalTrack: return 1.45f;      // -17.2 (챕터5 A곡이 제일 작음 → 조금 더 크게)
+            case Chapter5DevilTrack: return 1.25f;       // -15.9 (챕터5는 조금 더 크게)
+            default: return 1f;
+        }
+    }
 
     // ==============================
     // 잠깐 음악 줄이기 (샷건처럼 큰 효과음이 잘 들리게)

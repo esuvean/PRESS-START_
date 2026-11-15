@@ -38,12 +38,18 @@ public class ScreenController : MonoBehaviour
     private bool openedFromCheckProgress = false;
 
     // SETTINGS 버튼 (메인 화면 / 챕터 선택 화면 톱니바퀴 둘 다)
+    // 챕터 선택 화면에서 설정창을 여는 중인지 (챕터5 음악이 이때는 꺼지지 않게)
+    public static bool OpeningSettingsFromChapterSelect { get; private set; }
+
     public void ShowSettingsScreen()
     {
         openedFromCheckProgress = checkProgressPanel.activeSelf;
 
+        OpeningSettingsFromChapterSelect = openedFromCheckProgress;
         mainPanel.SetActive(false);
         checkProgressPanel.SetActive(false);
+        OpeningSettingsFromChapterSelect = false;
+
         settingsPanel.SetActive(true);
     }
 
