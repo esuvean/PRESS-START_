@@ -16,9 +16,21 @@ public class Minigame21_HiddenTerms : MinigameBase
     public TMP_Text statusText;
     public TMP_Text timeText;
 
-    [Header("Hint Timing")]
-    public float firstHintTime = 40f;
-    public float secondHintTime = 60f;
+    [Header("Hint Timing (초)")]
+    [Tooltip("1단계: 끝까지 내려도 없다는 힌트")]
+    public float firstHintTime = 15f;
+    [Tooltip("2단계: 약관 중간을 보라는 힌트 + 숨은 단어가 가끔 깜빡임")]
+    public float secondHintTime = 30f;
+    [Tooltip("3단계: 몇 조인지 알려 줌 + 더 자주 깜빡임")]
+    public float thirdHintTime = 40f;
+    [Tooltip("마지막: 숨은 단어가 노랗게 계속 빛남")]
+    public float finalHintTime = 50f;
+
+    [Header("Hint Texts")]
+    public string firstHint = "힌트: 끝까지 내린다고 정답이 나오지는 않습니다.";
+    public string secondHint = "힌트: 약관 중간의 조항을 천천히 다시 읽어 보세요.";
+    public string thirdHint = "힌트: 제12조 (실행 조건) 안에서 깜빡이는 단어를 찾으세요.";
+    public string finalHint = "힌트: 노랗게 빛나는 단어를 클릭하세요!";
 
     private const string HiddenLinkId = "hidden_start";
 
@@ -27,8 +39,14 @@ public class Minigame21_HiddenTerms : MinigameBase
 
     private float elapsedTime;
 
+    // 약관 클릭 판정 (스크롤하려고 끈 건 제외, 제자리 클릭만)
+    private bool pressInsideTerms;
+    private Vector2 pressPosition;
+
     private bool firstHintShown;
     private bool secondHintShown;
+    private bool thirdHintShown;
+    private bool finalHintShown;
     private bool startRevealed;
     private bool originalTextSaved;
 
@@ -49,8 +67,7 @@ public class Minigame21_HiddenTerms : MinigameBase
         gameName = "약관 속에 숨은 시작";
         instruction = "약관을 확인하십시오. 시작을 찾으십시오.";
 
-        // MG21은 시간제한 없이 진행
-        timeLimit = 999999f;
+        // 제한 시간은 프리팹 Inspector의 Time Limit 값 사용 (챕터5 도구가 60초로 맞춤)
 
         base.StartMinigame();
 
@@ -59,6 +76,8 @@ public class Minigame21_HiddenTerms : MinigameBase
         elapsedTime = 0f;
         firstHintShown = false;
         secondHintShown = false;
+        thirdHintShown = false;
+        finalHintShown = false;
         startRevealed = false;
 
         if (termsScrollRect == null ||
@@ -124,7 +143,7 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         if (statusText != null)
         {
-            statusText.text = "START DATA : SEARCHING";
+            statusText.text = "숨은 데이터 검색 중...";
         }
 
         UpdateTimeText();
@@ -138,12 +157,33 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         Canvas.ForceUpdateCanvases();
 
+        // 약관이 길어도 끝까지 스크롤되도록 글 길이에 맞춰 높이 조절
+        FitTermsHeight();
+
         if (termsScrollRect != null && isGameActive)
         {
             termsScrollRect.StopMovement();
 
             termsScrollRect.verticalNormalizedPosition = 1f;
         }
+    }
+
+    private void FitTermsHeight()
+    {
+        if (termsText == null || termsScrollRect == null || termsScrollRect.content == null)
+            return;
+
+        termsText.ForceMeshUpdate();
+        float textHeight = termsText.preferredHeight + 40f;
+
+        RectTransform textRect = termsText.rectTransform;
+        textRect.sizeDelta = new Vector2(textRect.sizeDelta.x, textHeight);
+
+        RectTransform content = termsScrollRect.content;
+        float top = Mathf.Abs(textRect.anchoredPosition.y);
+        content.sizeDelta = new Vector2(content.sizeDelta.x, textHeight + top + 40f);
+
+        Canvas.ForceUpdateCanvases();
     }
 
     protected override void Update()
@@ -165,7 +205,7 @@ public class Minigame21_HiddenTerms : MinigameBase
             return;
         }
 
-        // 40초 힌트
+        // 1단계 힌트
         if (!firstHintShown &&
             elapsedTime >= firstHintTime)
         {
@@ -173,12 +213,11 @@ public class Minigame21_HiddenTerms : MinigameBase
 
             if (hintText != null)
             {
-                hintText.text =
-                    "힌트: 끝이 정답이라는 보장은 없습니다.";
+                hintText.text = firstHint;
             }
         }
 
-        // 60초 힌트
+        // 2단계 힌트
         if (!secondHintShown &&
             elapsedTime >= secondHintTime)
         {
@@ -186,14 +225,43 @@ public class Minigame21_HiddenTerms : MinigameBase
 
             if (hintText != null)
             {
-                hintText.text =
-                    "힌트: 약관 중간의 데이터를 살펴보세요.";
+                hintText.text = secondHint;
             }
 
             if (statusText != null)
             {
                 statusText.text =
-                    "START DATA : SIGNAL DETECTED";
+                    "숨은 데이터 신호 감지";
+            }
+        }
+
+        // 3단계 힌트
+        if (!thirdHintShown &&
+            elapsedTime >= thirdHintTime)
+        {
+            thirdHintShown = true;
+
+            if (hintText != null)
+            {
+                hintText.text = thirdHint;
+            }
+
+            if (statusText != null)
+            {
+                statusText.text =
+                    "숨은 데이터 신호 강함 (제12조)";
+            }
+        }
+
+        // 마지막 힌트
+        if (!finalHintShown &&
+            elapsedTime >= finalHintTime)
+        {
+            finalHintShown = true;
+
+            if (hintText != null)
+            {
+                hintText.text = finalHint;
             }
         }
 
@@ -202,20 +270,40 @@ public class Minigame21_HiddenTerms : MinigameBase
 
         bool hovering = hoveredLinkIndex >= 0;
 
-        // 60초 이후 START 부분이 주기적으로 흔들림
+        // 2단계부터 START 부분이 주기적으로 흔들림 (3단계부터는 더 자주)
         bool noiseFlash =
             secondHintShown &&
             Mathf.Repeat(
                 elapsedTime - secondHintTime,
-                3.5f
-            ) < 0.18f;
+                thirdHintShown ? 1.4f : 3.5f
+            ) < (thirdHintShown ? 0.35f : 0.18f);
 
-        AnimateHiddenStart(hovering, noiseFlash);
+        AnimateHiddenStart(hovering, noiseFlash, finalHintShown);
 
         // 숨겨진 START 클릭
         if (hovering && Input.GetMouseButtonDown(0))
         {
             RevealStartButton();
+            return;
+        }
+
+        // 약관의 다른 곳을 '클릭'하면 틀린 것 (챕터5 틀린 횟수 +1)
+        if (Input.GetMouseButtonDown(0))
+        {
+            pressInsideTerms = IsMouseInsideTerms();
+            pressPosition = Input.mousePosition;
+        }
+
+        if (Input.GetMouseButtonUp(0) && pressInsideTerms)
+        {
+            pressInsideTerms = false;
+            bool wasClick = ((Vector2)Input.mousePosition - pressPosition).sqrMagnitude < 12f * 12f;
+            if (wasClick && FindHoveredHiddenLink() < 0)
+            {
+                ReportMistake();
+                if (statusText != null)
+                    statusText.text = "잘못된 데이터입니다.";
+            }
         }
     }
 
@@ -234,6 +322,25 @@ public class Minigame21_HiddenTerms : MinigameBase
         // 예: TIME 00:42
         timeText.text =
             $"TIME {minutes:00}:{remainder:00}";
+    }
+
+    private bool IsMouseInsideTerms()
+    {
+        if (termsScrollRect == null)
+            return false;
+
+        RectTransform viewport =
+            termsScrollRect.viewport != null
+                ? termsScrollRect.viewport
+                : termsScrollRect.GetComponent<RectTransform>();
+
+        Camera eventCamera =
+            uiCanvas != null && uiCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? uiCanvas.worldCamera
+                : null;
+
+        return RectTransformUtility.RectangleContainsScreenPoint(
+            viewport, Input.mousePosition, eventCamera);
     }
 
     private int FindHoveredHiddenLink()
@@ -294,7 +401,8 @@ public class Minigame21_HiddenTerms : MinigameBase
 
     private void AnimateHiddenStart(
         bool hovering,
-        bool noiseFlash)
+        bool noiseFlash,
+        bool glow)
     {
         if (termsText == null)
         {
@@ -304,7 +412,7 @@ public class Minigame21_HiddenTerms : MinigameBase
         // 원래 글자 메시를 매번 다시 구성
         termsText.ForceMeshUpdate();
 
-        if (!hovering && !noiseFlash)
+        if (!hovering && !noiseFlash && !glow)
         {
             return;
         }
@@ -352,10 +460,12 @@ public class Minigame21_HiddenTerms : MinigameBase
                 TMP_MeshInfo mesh =
                     info.meshInfo[meshIndex];
 
-                // 마우스를 올리면 민트색으로 변경
+                // 마우스를 올리면 민트색 / 마지막 힌트에서는 노란색으로 계속 빛남
                 Color32 color = hovering
                     ? new Color32(145, 255, 204, 255)
-                    : new Color32(220, 240, 255, 255);
+                    : glow
+                        ? new Color32(255, 232, 26, 255)
+                        : new Color32(220, 240, 255, 255);
 
                 // 글자가 살짝 흔들리는 효과
                 float shake = hovering
@@ -363,7 +473,9 @@ public class Minigame21_HiddenTerms : MinigameBase
                         Time.unscaledTime * 19f +
                         i * 1.6f
                     ) * 1.2f
-                    : (Random.value - 0.5f) * 2.2f;
+                    : glow
+                        ? Mathf.Sin(Time.unscaledTime * 6f) * 1.5f
+                        : (Random.value - 0.5f) * 2.2f;
 
                 for (int v = 0; v < 4; v++)
                 {
@@ -408,12 +520,12 @@ public class Minigame21_HiddenTerms : MinigameBase
         if (hintText != null)
         {
             hintText.text =
-                "START 데이터를 발견했습니다. 버튼을 누르세요.";
+                "숨은 데이터를 찾았습니다! 나타난 버튼을 누르세요.";
         }
 
         if (statusText != null)
         {
-            statusText.text = "START DATA : FOUND";
+            statusText.text = "숨은 데이터 발견";
         }
 
         // 숨겨 놓은 최종 START 버튼 표시
@@ -439,7 +551,7 @@ public class Minigame21_HiddenTerms : MinigameBase
 
     protected override void GiveHint()
     {
-        // MG21은 40초, 60초에 직접 힌트 표시
+        // MG21은 15초/30초/40초/50초에 직접 힌트 표시
     }
 
     protected override void RestartGame()

@@ -38,6 +38,15 @@ public class Minigame22_ScatteredStart : MinigameBase
 
     public float finalTDelay = 5f;
 
+    [Header("MG22 Hint")]
+    [Tooltip("이 시간(초)이 지나면 아래 안내 문구에 '아직 못 찾은 글자' 힌트가 나옴")]
+    public float hintStartTime = 15f;
+    [Tooltip("아래 안내 문구 (비워 두면 InstructionText 를 자동으로 찾음)")]
+    public TMP_Text hintText;
+
+    private string defaultHint;
+    private string lastHint;
+
     private GameObject displayPage;
     private GameObject soundPage;
     private GameObject infoPage;
@@ -140,8 +149,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         instruction =
             "SETTINGS 화면에 흩어진 글자를 찾으십시오.";
 
-        // MG22에는 시간제한 없음
-        timeLimit = 999999f;
+        // 제한 시간은 프리팹 Inspector의 Time Limit 값 사용 (챕터5 도구가 60초/90초로 맞춤)
 
         base.StartMinigame();
 
@@ -587,6 +595,9 @@ public class Minigame22_ScatteredStart : MinigameBase
         ready = false;
 
         elapsed = 0f;
+        lastHint = null;
+        if (hintText != null && defaultHint != null)
+            hintText.text = defaultHint;
         lastTReadyAt = -1f;
         lastTEnabled = false;
         assemblyShowing = false;
@@ -900,6 +911,7 @@ public class Minigame22_ScatteredStart : MinigameBase
         elapsed += Time.unscaledDeltaTime;
 
         UpdateClock();
+        UpdateHint();
 
         // 앞의 네 글자를 획득하고
         // 5초 지나면 마지막 T 발견 가능
@@ -945,6 +957,44 @@ public class Minigame22_ScatteredStart : MinigameBase
             lastTEnabled && !found[4],
             found[4]
         );
+    }
+
+    // 아래 안내 문구: 처음엔 기본 문구 → hintStartTime 이후 아직 못 찾은 글자 위치를 알려 줌
+    private void UpdateHint()
+    {
+        if (hintText == null)
+        {
+            hintText = FindUI<TMP_Text>("InstructionText");
+            if (hintText == null)
+                return;
+        }
+
+        if (defaultHint == null)
+            defaultHint = hintText.text;
+
+        string hint = defaultHint;
+
+        if (elapsed >= hintStartTime)
+        {
+            if (!found[0])
+                hint = "힌트: DISPLAY 탭의 밝기(Brightness) 바를 움직여 보세요.";
+            else if (!found[1])
+                hint = "힌트: SOUND 탭의 볼륨(Volume) 바를 움직여 보세요.";
+            else if (!found[2])
+                hint = "힌트: INFO 탭 'FIND THE REAL START' 속 글자를 하나씩 눌러 보세요.";
+            else if (!found[3])
+                hint = "힌트: EXIT 탭의 팝업창을 닫거나 옆으로 밀어 보세요.";
+            else if (!found[4])
+                hint = lastTEnabled
+                    ? "힌트: INFO 탭 'SYSTEM' 속에서 깜빡이는 T를 누르세요!"
+                    : "힌트: 마지막 T가 곧 INFO 탭 어딘가에 나타납니다...";
+        }
+
+        if (hint != lastHint)
+        {
+            lastHint = hint;
+            hintText.text = hint;
+        }
     }
 
     private void UpdateClock()
@@ -1141,6 +1191,15 @@ public class Minigame22_ScatteredStart : MinigameBase
     // INFO 문자 클릭
     // =====================================
 
+    // 틀린 클릭 (가짜 '예' 버튼 / INFO 글자 중 숨은 글자가 아닌 곳) → 챕터5 틀린 횟수 +1
+    public void ReportWrongClick()
+    {
+        if (!isGameActive || assemblyShowing)
+            return;
+
+        ReportMistake();
+    }
+
     public void OnLinkClicked(string id)
     {
         if (!isGameActive || assemblyShowing)
@@ -1226,9 +1285,10 @@ public class Minigame22_ScatteredStart : MinigameBase
                 all = false;
         }
 
+        // 다섯 글자를 다 찾으면 순서 맞추기 없이 바로 클리어
         if (all)
         {
-            OpenAssembly();
+            Success();
         }
 
         Debug.Log(
@@ -1243,16 +1303,25 @@ public class Minigame22_ScatteredStart : MinigameBase
 
     private void UpdateProgress()
     {
+        // 화면 아래 글자 칸: 찾은 글자 그림(현민님 노란 알파벳)만 보이게
+        for (int i = 0; i < 5; i++)
+        {
+            GameObject letter = FindObject("C5_FoundLetter_" + i);
+            if (letter != null)
+                letter.SetActive(found[i]);
+        }
+
+        // 예: S  T  _  R  _   (찾은 글자는 노란색, 못 찾은 칸은 회색 _)
         string progress = "";
 
         for (int i = 0; i < 5; i++)
         {
             if (i != 0)
-                progress += " - ";
+                progress += "   ";
 
             progress += found[i]
-                ? answer[i].ToString()
-                : "_";
+                ? "<color=#FFE81A>" + answer[i] + "</color>"
+                : "<color=#8A96B0>_</color>";
         }
 
         string[] names =
@@ -1556,6 +1625,8 @@ public class MG22TextLinkClick :
         if (index < 0 ||
             index >= text.textInfo.linkCount)
         {
+            // 숨은 글자가 아닌 곳을 누름
+            manager.ReportWrongClick();
             return;
         }
 

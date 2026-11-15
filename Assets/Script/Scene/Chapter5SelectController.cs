@@ -323,7 +323,14 @@ public class Chapter5SelectController : MonoBehaviour
         {
             card5Bg.sprite = null;
             card5Bg.color = new Color(0f, 0f, 0f, 0f);
+            card5Bg.raycastTarget = true;
         }
+
+        // 중요: 투명한 그림은 'Cull Transparent Mesh'가 켜져 있으면 클릭도 안 됨
+        //       → 꺼서 투명한 카드 전체가 클릭되게 함
+        CanvasRenderer card5Renderer = card5.GetComponent<CanvasRenderer>();
+        if (card5Renderer != null)
+            card5Renderer.cullTransparentMesh = false;
 
         card5Outline = card5.GetComponent<Outline>();
         if (card5Outline != null)
@@ -1077,7 +1084,7 @@ public class Chapter5SelectController : MonoBehaviour
 
     private void OnClickChapter5()
     {
-        if (revealing)
+        if (revealing || leavingToChapter5)
             return;
 
         // (데모 안내창은 이제 쓰지 않음 - 챕터5 바로 플레이)

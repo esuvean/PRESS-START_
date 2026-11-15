@@ -14,6 +14,8 @@ public class Minigame23_WildStart : MinigameBase
     public RectTransform playArea;
     public TMP_Text startText;
     public TMP_Text currentTargetText;
+    [Tooltip("CURRENT TARGET 상자 안 알파벳 그림 (비워 두면 C5_TargetLetter 를 자동으로 찾음)")]
+    public Image currentTargetImage;
     public TMP_Text progressText;
 
     [Header("Moving Letters")]
@@ -87,8 +89,7 @@ public class Minigame23_WildStart : MinigameBase
         instruction =
             "움직이는 글자를 S-T-A-R-T 순서로 잡으세요.";
 
-        // 제한시간 없음
-        timeLimit = 999999f;
+        // 제한 시간은 프리팹 Inspector의 Time Limit 값 사용 (챕터5 도구가 60초/90초로 맞춤)
 
         base.StartMinigame();
 
@@ -762,6 +763,9 @@ public class Minigame23_WildStart : MinigameBase
         wrongNoticeUntil =
             Time.unscaledTime + 1.3f;
 
+        // 챕터5: 틀린 횟수 +1 (한 미니게임에서 5번 틀리면 챕터5 처음부터)
+        ReportMistake();
+
         for (int i = 0; i < 5; i++)
         {
             letterRects[i].anchoredPosition =
@@ -784,26 +788,66 @@ public class Minigame23_WildStart : MinigameBase
         if (currentTargetText == null)
             return;
 
+        if (currentTargetImage == null)
+        {
+            Transform img = transform.Find("C5_TargetLetter");
+            if (img != null)
+                currentTargetImage = img.GetComponent<Image>();
+        }
+
+        // 상자 안에는 다음에 잡을 알파벳 그림 하나만 (움직이는 글자와 같은 그림)
         if (finalReady ||
             currentTargetIndex >= answer.Length)
         {
+            ShowTargetLetter(-1, Color.white);
             currentTargetText.text =
-                "CURRENT TARGET : COMPLETE";
+                "<color=#91FFCC>OK</color>";
 
             return;
         }
 
         if (Time.unscaledTime < wrongNoticeUntil)
         {
-            currentTargetText.text =
-                "WRONG! CURRENT TARGET : S";
+            // 틀리면 잠깐 빨간 S (처음부터 다시)
+            if (ShowTargetLetter(0, new Color(1f, 0.3f, 0.4f, 1f)))
+                currentTargetText.text = "";
+            else
+                currentTargetText.text = "<color=#FF4D6A>S</color>";
 
             return;
         }
 
-        currentTargetText.text =
-            "CURRENT TARGET : " +
-            answer[currentTargetIndex];
+        if (ShowTargetLetter(currentTargetIndex, Color.white))
+            currentTargetText.text = "";
+        else
+            currentTargetText.text =
+                answer[currentTargetIndex].ToString();
+    }
+
+    // 상자 안 알파벳 그림 바꾸기 (index = -1 이면 숨김). 그림이 있으면 true
+    private bool ShowTargetLetter(int index, Color tint)
+    {
+        if (currentTargetImage == null)
+            return false;
+
+        Sprite sprite = null;
+        if (index >= 0 &&
+            letterButtons != null &&
+            index < letterButtons.Length &&
+            letterButtons[index] != null)
+        {
+            Image source = letterButtons[index].GetComponent<Image>();
+            if (source != null)
+                sprite = source.sprite;
+        }
+
+        currentTargetImage.gameObject.SetActive(sprite != null);
+        if (sprite == null)
+            return false;
+
+        currentTargetImage.sprite = sprite;
+        currentTargetImage.color = tint;
+        return true;
     }
 
     // =========================================

@@ -93,7 +93,7 @@ public class Minigame25_PopupMaze : MinigameBase
         instruction =
             "팝업을 치우고 START를 GOAL까지 옮기십시오.";
 
-        timeLimit = 999999f;
+        // 제한 시간은 프리팹 Inspector의 Time Limit 값 사용 (챕터5 도구가 60초/90초로 맞춤)
 
         base.StartMinigame();
 
@@ -556,14 +556,13 @@ public class Minigame25_PopupMaze : MinigameBase
             maxCount + 1
         );
 
-        count = Mathf.Clamp(count, 4, 25);
+        count = Mathf.Clamp(count, 2, 25);
 
         List<MG25PopupKind> types =
             new List<MG25PopupKind>();
 
+        // 처음 팝업: 함정 1개 + 움직이는 창 1개 + 나머지 일반 (모두 X로 닫을 수 있음)
         types.Add(MG25PopupKind.Trap);
-        types.Add(MG25PopupKind.Trap);
-        types.Add(MG25PopupKind.Move);
         types.Add(MG25PopupKind.Move);
 
         while (types.Count < count)
@@ -582,33 +581,47 @@ public class Minigame25_PopupMaze : MinigameBase
             types[randomIndex] = temp;
         }
 
+        // 미로판 전체에 골고루 랜덤 배치 (서로 너무 겹치지 않게)
+        List<Vector2> used = new List<Vector2>();
+
         for (int i = 0; i < count; i++)
         {
-            int slot = i % 12;
+            Vector2 position = RandomPopupPosition();
 
-            int col = slot % 4;
-            int row = slot / 4;
-
-            Vector2 position = new Vector2(
-                -540f + col * 360f,
-                210f - row * 210f
-            );
-
-            position += new Vector2(
-                Random.Range(-32f, 32f),
-                Random.Range(-22f, 22f)
-            );
-
-            if (i >= 12)
+            for (int tries = 0; tries < 25; tries++)
             {
-                position += new Vector2(
-                    Random.Range(-100f, 100f),
-                    Random.Range(-60f, 60f)
-                );
+                bool tooClose = false;
+                foreach (Vector2 u in used)
+                {
+                    if (Mathf.Abs(u.x - position.x) < 300f &&
+                        Mathf.Abs(u.y - position.y) < 160f)
+                    {
+                        tooClose = true;
+                        break;
+                    }
+                }
+
+                if (!tooClose)
+                    break;
+
+                position = RandomPopupPosition();
             }
 
+            used.Add(position);
             SpawnPopup(types[i], position);
         }
+    }
+
+    // 미로판 안의 아무 위치 (팝업이 밖으로 안 나가게 SpawnPopup에서 다시 맞춤)
+    private Vector2 RandomPopupPosition()
+    {
+        float halfW = popupLayer != null ? popupLayer.rect.width * 0.5f : 700f;
+        float halfH = popupLayer != null ? popupLayer.rect.height * 0.5f : 280f;
+
+        return new Vector2(
+            Random.Range(-halfW, halfW),
+            Random.Range(-halfH, halfH)
+        );
     }
 
     // =====================================
@@ -720,9 +733,6 @@ public class Minigame25_PopupMaze : MinigameBase
             return;
         }
 
-        if (popup.Kind == MG25PopupKind.Move)
-            return;
-
         Vector2 position =
             popup.Rect.anchoredPosition;
 
@@ -734,34 +744,34 @@ public class Minigame25_PopupMaze : MinigameBase
         popup.gameObject.SetActive(false);
         Destroy(popup.gameObject);
 
+        // 함정 팝업을 닫으면 = 틀림 → 팝업 하나 새로 나옴
         if (isTrap)
         {
-            int count = Random.Range(2, 4);
-
-            for (int i = 0; i < count; i++)
-            {
-                Vector2 nextPosition =
-                    position + new Vector2(
-                        Random.Range(-250f, 250f),
-                        Random.Range(-170f, 170f)
-                    );
-
-                MG25PopupKind nextKind =
-                    Random.value < 0.75f
-                        ? MG25PopupKind.Normal
-                        : MG25PopupKind.Move;
-
-                SpawnPopup(
-                    nextKind,
-                    nextPosition
-                );
-            }
-
-            Debug.Log(
-                "MG25: 함정 팝업! " +
-                count + "개 추가"
-            );
+            Debug.Log("MG25: 함정 팝업! 팝업 1개 추가");
+            OnMistakeMade(position);
         }
+    }
+
+    // 틀렸을 때 (벽에 닿음 / 함정 팝업): 챕터5 틀린 횟수 +1, 팝업 하나만 새로
+    public void OnMistakeMade(Vector2 near)
+    {
+        if (!isGameActive || cleared)
+            return;
+
+        ReportMistake();
+
+        // 틀리면 팝업 하나가 미로판 아무 곳에나 나옴
+        SpawnPopup(MG25PopupKind.Normal, RandomPopupPosition());
+    }
+
+    // 벽에 닿았을 때 (드래그 핸들러가 부름)
+    public void OnWallHit()
+    {
+        Vector2 near = startButton != null
+            ? startButton.GetComponent<RectTransform>().anchoredPosition
+            : Vector2.zero;
+
+        OnMistakeMade(near);
     }
 
     // =====================================
@@ -1195,13 +1205,9 @@ public class MG25PopupWindow : MonoBehaviour
         Transform close =
             title.Find("CloseButton");
 
-        if (kind == MG25PopupKind.Move)
-        {
-            if (close != null)
-                close.gameObject.SetActive(false);
-
-            return;
-        }
+        // 움직이는 창도 X로 닫을 수 있음
+        if (close != null)
+            close.gameObject.SetActive(true);
 
         if (close == null)
         {
@@ -1386,6 +1392,9 @@ public class MG25StartDrag :
                 // 벽에 닿으면 마우스를 다시 놓고
                 // START부터 재시도해야 함
                 blocked = true;
+
+                // 틀림 → 팝업 하나 추가 + 챕터5 틀린 횟수 +1
+                owner.OnWallHit();
             }
         }
     }

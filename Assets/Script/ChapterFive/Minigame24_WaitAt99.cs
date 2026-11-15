@@ -30,6 +30,16 @@ public class Minigame24_WaitAt99 : MinigameBase
     [Header("99 Percent Waiting")]
     public float waitAt99Time = 5f;
 
+    [Header("99% 이후: 내려가는 퍼센트를 연타로 100%까지 올리기")]
+    [Tooltip("99%에서 고장 나서 처음에 이만큼까지 뚝 떨어짐")]
+    public float dropTo = 85f;
+    [Tooltip("1초에 내려가는 퍼센트")]
+    public float drainPerSecond = 5f;
+    [Tooltip("버튼 한 번 누를 때 올라가는 퍼센트")]
+    public float pushPerClick = 2f;
+    [Tooltip("이 퍼센트까지 내려가면 실패 (틀린 횟수 +1, 다시 시도)")]
+    public float failPercent = 50f;
+
     [Header("Effects")]
     public float errorDisplayTime = 1.3f;
     public float successDisplayTime = 0.6f;
@@ -68,13 +78,12 @@ public class Minigame24_WaitAt99 : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "99%에서 기다리십시오";
+        gameName = "99%에서 멈춘 로딩";
 
         instruction =
-            "로딩이 완료될 때까지 기다리십시오.";
+            "내려가는 로딩을 버튼 연타로 100%까지 올리십시오.";
 
-        // MG24에는 시간 제한이 없음
-        timeLimit = 999999f;
+        // 제한 시간은 프리팹 Inspector의 Time Limit 값 사용 (챕터5 도구가 60초/90초로 맞춤)
 
         base.StartMinigame();
 
@@ -466,7 +475,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (percentText != null)
         {
             percentText.text =
-                Mathf.RoundToInt(currentPercent) + "%";
+                Mathf.FloorToInt(currentPercent) + "%";
         }
     }
 
@@ -480,35 +489,132 @@ public class Minigame24_WaitAt99 : MinigameBase
 
         SetLoadingPercent(99f);
 
-        Debug.Log("MG24: 로딩 99%에서 정지");
+        Debug.Log("MG24: 99%에서 고장 → 퍼센트가 내려가기 시작");
 
-        // 함정 버튼 등장
+        // 버튼은 보이지만 떨어지는 동안은 아직 못 누름
         completeButton.gameObject.SetActive(true);
-        completeButton.interactable = true;
+        completeButton.interactable = false;
+        completeButton.transform.localScale = Vector3.one;
 
         realStartButton.gameObject.SetActive(false);
 
+        if (errorText != null)
+            errorText.gameObject.SetActive(false);
+
         if (fakeInstructionText != null)
         {
+            fakeInstructionText.text =
+                "로딩이 거꾸로 내려갑니다! 버튼을 연타해서 100%로 올리세요!";
             fakeInstructionText.gameObject.SetActive(true);
         }
 
         if (smallHintText != null)
         {
             smallHintText.gameObject.SetActive(true);
-
             UpdateHintText();
         }
 
-        // 실패 2~3회라면 안내문이 잠시 밝아짐
-        if (failureCount >= 2 &&
-            failureCount < 4)
+        StartCoroutine(DrainRoutine());
+    }
+
+    // 99% → 뚝 떨어진 뒤 계속 조금씩 내려감 (버튼 연타로 막기)
+    private IEnumerator DrainRoutine()
+    {
+        // 1) 고장: 99% → dropTo 까지 빠르게 떨어짐
+        float start = currentPercent;
+        float t = 0f;
+        const float dropTime = 0.7f;
+
+        while (t < dropTime)
         {
-            StartCoroutine(HintFlashRoutine());
+            if (currentState != LoadingState.WaitingAt99)
+                yield break;
+
+            t += Time.unscaledDeltaTime;
+            SetLoadingPercent(Mathf.Lerp(start, dropTo, Mathf.Clamp01(t / dropTime)));
+            yield return null;
         }
 
-        // 5초 동안 기다리기
-        StartCoroutine(WaitAt99Routine());
+        // 2) 이제 버튼을 누를 수 있음, 퍼센트는 계속 내려감
+        completeButton.interactable = true;
+
+        while (currentState == LoadingState.WaitingAt99)
+        {
+            SetLoadingPercent(currentPercent - drainPerSecond * Time.unscaledDeltaTime);
+
+            if (currentPercent <= failPercent)
+            {
+                DrainFailed();
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    // 너무 많이 내려감 = 실패 (틀린 횟수 +1) → 99%부터 다시
+    private void DrainFailed()
+    {
+        currentState = LoadingState.Error;
+        failureCount++;
+
+        // 챕터5: 틀린 횟수 +1
+        ReportMistake();
+
+        Debug.Log("MG24: 퍼센트가 너무 내려감! 실패 " + failureCount + "회");
+
+        completeButton.gameObject.SetActive(false);
+
+        if (fakeInstructionText != null)
+            fakeInstructionText.gameObject.SetActive(false);
+
+        if (smallHintText != null)
+            smallHintText.gameObject.SetActive(false);
+
+        if (errorText != null)
+        {
+            errorText.text =
+                "ERROR\n" +
+                "LOADING DROPPED\n" +
+                "로딩이 너무 많이 내려갔습니다. 다시 시도합니다.";
+
+            errorText.gameObject.SetActive(true);
+        }
+
+        StartCoroutine(RetryFrom99Routine());
+    }
+
+    private IEnumerator RetryFrom99Routine()
+    {
+        yield return new WaitForSecondsRealtime(
+            Mathf.Max(0f, errorDisplayTime)
+        );
+
+        if (!isGameActive)
+            yield break;
+
+        if (errorText != null)
+            errorText.gameObject.SetActive(false);
+
+        // 처음(0%)부터가 아니라 99%부터 다시
+        Enter99Percent();
+    }
+
+    // 버튼 눌린 느낌 (살짝 작아졌다 돌아옴)
+    private IEnumerator PunchButton()
+    {
+        Transform tr = completeButton.transform;
+        tr.localScale = Vector3.one * 0.92f;
+
+        float t = 0f;
+        while (t < 0.08f)
+        {
+            t += Time.unscaledDeltaTime;
+            tr.localScale = Vector3.Lerp(Vector3.one * 0.92f, Vector3.one, t / 0.08f);
+            yield return null;
+        }
+
+        tr.localScale = Vector3.one;
     }
 
     // =========================================
@@ -561,7 +667,7 @@ public class Minigame24_WaitAt99 : MinigameBase
         }
 
         Debug.Log(
-            "MG24: 5초 대기 성공! START 등장"
+            "MG24: START 등장"
         );
     }
 
@@ -574,48 +680,25 @@ public class Minigame24_WaitAt99 : MinigameBase
         if (!isGameActive)
             return;
 
-        if (currentState != LoadingState.WaitingAt99)
+        if (currentState != LoadingState.WaitingAt99 ||
+            !completeButton.interactable)
             return;
 
-        currentState = LoadingState.Error;
+        // 연타할 때마다 퍼센트가 올라감
+        SetLoadingPercent(currentPercent + pushPerClick);
+        StartCoroutine(PunchButton());
 
-        failureCount++;
-
-        Debug.Log(
-            "MG24: COMPLETE 클릭! 실패 " +
-            failureCount + "회"
-        );
-
-        // 기다림 / 힌트 애니메이션 중단
-        StopAllCoroutines();
-
-        completeButton.gameObject.SetActive(false);
-        realStartButton.gameObject.SetActive(false);
-
-        if (fakeInstructionText != null)
+        if (currentPercent >= 100f)
         {
-            fakeInstructionText.gameObject.SetActive(false);
+            SetLoadingPercent(100f);
+
+            if (loadingText != null)
+                loadingText.text = "LOADING...";
+
+            Debug.Log("MG24: 100% 달성! START 등장");
+
+            ShowRealStartButton();
         }
-
-        if (smallHintText != null)
-        {
-            smallHintText.gameObject.SetActive(false);
-        }
-
-        // 오류와 동시에 0% 초기화
-        SetLoadingPercent(0f);
-
-        if (errorText != null)
-        {
-            errorText.text =
-                "ERROR\n" +
-                "USER INTERRUPTED PROCESS\n" +
-                "로딩이 다시 0%부터 시작합니다.";
-
-            errorText.gameObject.SetActive(true);
-        }
-
-        StartCoroutine(ErrorRoutine());
     }
 
     // =========================================
@@ -654,24 +737,20 @@ public class Minigame24_WaitAt99 : MinigameBase
             ? originalHintColor
             : Color.white;
 
-        if (failureCount >= 4)
+        if (failureCount >= 2)
         {
-            // 실패 4회 이상
+            // 두 번 이상 실패하면 더 분명한 힌트
             smallHintText.text =
-                "입력이 항상 필요한 것은 아닙니다.";
+                "※ 쉬지 말고 버튼을 아주 빠르게 연타하세요!";
 
             color.a = 1f;
-
-            smallHintText.fontSize = 22f;
         }
         else
         {
             smallHintText.text =
-                "※ 입력하지 않고 기다리십시오.";
+                "※ 손을 멈추면 퍼센트가 계속 내려갑니다.";
 
-            color.a = 0.45f;
-
-            smallHintText.fontSize = 17f;
+            color.a = 0.8f;
         }
 
         smallHintText.color = color;
