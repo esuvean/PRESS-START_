@@ -2918,6 +2918,7 @@ GameObject:
   - component: {fileID: 3664937677634524374}
   - component: {fileID: 5365434746307397147}
   - component: {fileID: 2771568451647965614}
+  - component: {fileID: 1424259805530785660}
   m_Layer: 5
   m_Name: Minigame_25Panel
   m_TagString: Untagged
@@ -3024,6 +3025,19 @@ MonoBehaviour:
   minPopups: 4
   maxPopups: 5
   popupScale: 1
+--- !u!114 &1424259805530785660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6181519752976966408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 322edd656d1c62c4597dc7771a74a16a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG25PopupAchievement
+  popupLayer: {fileID: 122159103247766874}
 --- !u!1 &6674010314563464434
 GameObject:
   m_ObjectHideFlags: 0
@@ -3588,7 +3602,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4286578432
   m_fontColor: {r: 0, g: 1, b: 0.4980392, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -3601,7 +3615,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2

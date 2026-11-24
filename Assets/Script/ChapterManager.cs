@@ -68,6 +68,10 @@ public class ChapterManager : MonoBehaviour
 
     private void Start()
     {
+        // 업적 이벤트 수신기를 씬별로 자동 생성 (Inspector 연결 불필요)
+        if (GetComponent<AchievementRunMonitor>() == null)
+            gameObject.AddComponent<AchievementRunMonitor>();
+
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(false);
@@ -213,6 +217,8 @@ public class ChapterManager : MonoBehaviour
 
         if (gameScript != null)
         {
+            // 반드시 StartMinigame 전에 호출해야 시간/조건 측정이 정확함
+            AchievementRunMonitor.Begin(gameScript);
             gameScript.StartMinigame();
         }
         else
@@ -254,11 +260,14 @@ public class ChapterManager : MonoBehaviour
         currentMinigameIndex++;
 
 
-        // 현재 챕터 진행도 저장
-        SessionProgress.SetProgress(
-            chapterNumber,
-            currentMinigameIndex
-        );
+        // ChapterData가 여러 묶음이어도 현재 완료 개수를 정확하게 합산
+        int completedGames = currentMinigameIndex;
+        for (int i = 0; i < currentChapterIndex; i++)
+        {
+            if (chapters[i] != null && chapters[i].minigamePrefabs != null)
+                completedGames += chapters[i].minigamePrefabs.Count;
+        }
+        SessionProgress.SetProgress(chapterNumber, completedGames);
 
 
         Debug.Log(
@@ -365,6 +374,12 @@ public class ChapterManager : MonoBehaviour
         int totalGames =
             GetTotalMinigameCount();
 
+        // 비어 있는 챕터에서 실수로 클리어 업적을 주지 않도록 방지
+        if (totalGames <= 0)
+        {
+            Debug.LogError("[ChapterManager] 미니게임 프리팹이 없어 챕터 완료를 처리하지 않습니다.");
+            return;
+        }
 
         // 마지막에 확실하게 저장
         SessionProgress.SetProgress(
@@ -377,6 +392,11 @@ public class ChapterManager : MonoBehaviour
             chapterNumber
         );
 
+        // 기본 업적 01~05 : 진짜 챕터 완료 시에만 지급
+        if (AchievementManager.Instance != null)
+            AchievementManager.Instance.ReportChapterClear(chapterNumber);
+        else
+            Debug.LogWarning("[Achievements] MainScene에서 시작해 AchievementManager를 유지해야 합니다.");
 
         Debug.Log(
             $"Chapter {chapterNumber} 최종 완료 : " +
@@ -385,9 +405,9 @@ public class ChapterManager : MonoBehaviour
         );
 
 
-        // 4개 챕터를 모두 깼으면 메인 시작 화면으로, 아니면 SYSTEM CHECK(챕터 선택) 화면으로
+        // 기획서 기준 Chapter 1~5 완료를 확인
         bool allCleared = true;
-        for (int i = 1; i <= SessionProgress.TotalChapters; i++)
+        for (int i = 1; i <= Mathf.Max(5, SessionProgress.TotalChapters); i++)
         {
             if (!SessionProgress.IsChapterCompleted(i))
                 allCleared = false;
