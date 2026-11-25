@@ -74,7 +74,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4292918441
   m_fontColor: {r: 0.6627451, g: 0.7372549, b: 0.8784314, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -470,7 +470,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4286578432
   m_fontColor: {r: 0, g: 1, b: 0.4980392, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -483,7 +483,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1533,6 +1533,7 @@ GameObject:
   - component: {fileID: 31915102012725117}
   - component: {fileID: 2693197462615560495}
   - component: {fileID: 4522151261901331335}
+  - component: {fileID: 1889053422361875217}
   m_Layer: 5
   m_Name: Minigame_24Panel
   m_TagString: Untagged
@@ -1636,8 +1637,26 @@ MonoBehaviour:
   thirdLoadingTime: 1.4
   loadingPause: 0.3
   waitAt99Time: 5
+  dropTo: 85
+  drainPerSecond: 5
+  pushPerClick: 2
+  failPercent: 50
   errorDisplayTime: 1.3
   successDisplayTime: 0.6
+--- !u!114 &1889053422361875217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4305160833336126052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38d2d8c5bb4e37f46826b02114d86fd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG24_TwentyRapidClicksAchievement
+  game: {fileID: 4522151261901331335}
+  maxGapSeconds: 0.8
 --- !u!1 &5362157490134874232
 GameObject:
   m_ObjectHideFlags: 0

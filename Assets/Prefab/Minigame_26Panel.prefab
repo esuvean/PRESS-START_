@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 8502859674779885344}
   - component: {fileID: 3557348283119849731}
   - component: {fileID: 183865619426144544}
+  - component: {fileID: 408423475964232697}
   m_Layer: 5
   m_Name: Minigame_26Panel
   m_TagString: Untagged
@@ -275,6 +276,19 @@ MonoBehaviour:
   snapDistanceX: 65
   snapDistanceY: 65
   stableSeconds: 3
+--- !u!114 &408423475964232697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1155921133358171065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d67754b753a5b8344a94272ea8d4db26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG26_FirstCatchPerfectAchievement
+  game: {fileID: 183865619426144544}
 --- !u!1 &1513815427603649248
 GameObject:
   m_ObjectHideFlags: 0

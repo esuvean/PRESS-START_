@@ -928,7 +928,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
+  m_fontSize: 28
   m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2518,6 +2518,7 @@ GameObject:
   - component: {fileID: 1419299008899232765}
   - component: {fileID: 7718692741954636153}
   - component: {fileID: 5135194780457679932}
+  - component: {fileID: 4933904762853690767}
   m_Layer: 5
   m_Name: Minigame_19Panel
   m_TagString: Untagged
@@ -2644,7 +2645,23 @@ MonoBehaviour:
   autoHelpTime: 90
   movementDuration: 0.22
   trayLineSpacing: 65
+  showStepGuide: 1
+  guideColor: {r: 1, g: 0.9, b: 0.25, a: 1}
+  guideFontSize: 28
   autoClearDelay: 0.8
+--- !u!114 &4933904762853690767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8515168180341924717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b5fa44aa1be2804483f6615875e9823, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG19_FirstRunSuccessAchievement
+  game: {fileID: 5135194780457679932}
 --- !u!1 &8900851789114937476
 GameObject:
   m_ObjectHideFlags: 0

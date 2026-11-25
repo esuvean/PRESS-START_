@@ -1559,6 +1559,7 @@ GameObject:
   - component: {fileID: 3196497042994054321}
   - component: {fileID: 7453732365212702399}
   - component: {fileID: 8803589011269052599}
+  - component: {fileID: 3180382711032445037}
   m_Layer: 5
   m_Name: Minigame_21Panel
   m_TagString: Untagged
@@ -1672,6 +1673,19 @@ MonoBehaviour:
     \uAE5C\uBE61\uC774\uB294 \uB2E8\uC5B4\uB97C \uCC3E\uC73C\uC138\uC694."
   finalHint: "\uD78C\uD2B8: \uB178\uB797\uAC8C \uBE5B\uB098\uB294 \uB2E8\uC5B4\uB97C
     \uD074\uB9AD\uD558\uC138\uC694!"
+--- !u!114 &3180382711032445037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5840068138700234467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fc1ca7b308ddd347aeac7d48e335bff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG21_EarlyHiddenStartAchievement
+  game: {fileID: 8803589011269052599}
 --- !u!1 &5853545272956840226
 GameObject:
   m_ObjectHideFlags: 0
@@ -2303,7 +2317,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4292920243
+    rgba: 4292918441
   m_fontColor: {r: 0.6627451, g: 0.7372549, b: 0.8784314, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3

@@ -378,6 +378,7 @@ GameObject:
   - component: {fileID: 3440196143427652082}
   - component: {fileID: 3796598763741852518}
   - component: {fileID: 334831408016815387}
+  - component: {fileID: 5102155118014029067}
   m_Layer: 5
   m_Name: Minigame_18Panel
   m_TagString: Untagged
@@ -487,6 +488,19 @@ MonoBehaviour:
   answerDelay: 2
   wrongAnswerDelay: 2.5
   successDelay: 1
+--- !u!114 &5102155118014029067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2768759431723067336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb18bf9f3c9b4a548a3f7c3be51b0f68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG18_ConnectionAchievement
+  game: {fileID: 334831408016815387}
 --- !u!1 &3794137548811937512
 GameObject:
   m_ObjectHideFlags: 0
