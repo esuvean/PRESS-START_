@@ -3046,6 +3046,7 @@ GameObject:
   - component: {fileID: 9153323951951572618}
   - component: {fileID: 8333932826573325663}
   - component: {fileID: 7710973437022442280}
+  - component: {fileID: 2079250398832384159}
   m_Layer: 5
   m_Name: Minigame_12Panel
   m_TagString: Untagged
@@ -3164,6 +3165,19 @@ MonoBehaviour:
   maxMissCount: 5
   paddleBonusWidth: 80
   startHintRemainingTime: 15
+--- !u!114 &2079250398832384159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8823492385055900040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4fe2d6cfd2185142a1a4d29db922cbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG12_NoBallLostAchievement
+  game: {fileID: 7710973437022442280}
 --- !u!1 &9158075441371714463
 GameObject:
   m_ObjectHideFlags: 0

@@ -2082,6 +2082,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4603679691935467028}
   - component: {fileID: 6702292712782142018}
+  - component: {fileID: 3730335587745782350}
   m_Layer: 5
   m_Name: Minigame_4Panel
   m_TagString: Untagged
@@ -2153,6 +2154,19 @@ MonoBehaviour:
   candidatesText: {fileID: 0}
   hintText: {fileID: 4005309390265895986}
   timerText: {fileID: 5833027592339798113}
+--- !u!114 &3730335587745782350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3550710048723378959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31743fcab9be9a7429b7c660c5eaaacb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG04_NoFakeClickAchievement
+  game: {fileID: 6702292712782142018}
 --- !u!1 &3658842503848623888
 GameObject:
   m_ObjectHideFlags: 0

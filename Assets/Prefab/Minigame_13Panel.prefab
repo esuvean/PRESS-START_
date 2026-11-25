@@ -3344,6 +3344,7 @@ GameObject:
   - component: {fileID: 6505505919139002354}
   - component: {fileID: 1196551909988584597}
   - component: {fileID: 5036701250008817392}
+  - component: {fileID: 5574206189444059149}
   m_Layer: 5
   m_Name: Minigame_13Panel
   m_TagString: Untagged
@@ -3453,6 +3454,7 @@ MonoBehaviour:
   partSpacing: 160
   continuousSpacing: 110
   extraBufferParts: 3
+  itemGap: 130
   assemblySlots: []
   completedStartButton: {fileID: 939393715602336697}
   badButtonPreview: {fileID: 648050322484293264}
@@ -3469,6 +3471,30 @@ MonoBehaviour:
   badPreviewEjectDuration: 0.45
   badPreviewEjectDistance: 700
   messageDuration: 2
+  showStartPreview: 1
+  previewPopInterval: 0.1
+  previewHoldTime: 1.1
+  previewSlotPositions:
+  - {x: -82, y: 30}
+  - {x: 12, y: 30}
+  - {x: 106, y: 30}
+  - {x: -35, y: -58}
+  - {x: 59, y: -58}
+  previewIconMaxSize: {x: 86, y: 73}
+  previewGhostAlpha: 0.12
+--- !u!114 &5574206189444059149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8736532416430029957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69771eb1a9356c746a90c5985caf6c24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG13_ThreeBadPartsAchievement
+  game: {fileID: 5036701250008817392}
 --- !u!1 &8820740880355554284
 GameObject:
   m_ObjectHideFlags: 0

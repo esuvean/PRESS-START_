@@ -662,6 +662,7 @@ GameObject:
   - component: {fileID: 8406200498038159231}
   - component: {fileID: 5045093140324821674}
   - component: {fileID: 1539741592388297289}
+  - component: {fileID: 8642524452724734439}
   m_Layer: 5
   m_Name: Minigame_14Panel
   m_TagString: Untagged
@@ -793,6 +794,7 @@ MonoBehaviour:
   startLabel: {fileID: 5723447421687190426}
   separateStartButton: {fileID: 2746820439639287782}
   puzzleObjectsToHide: []
+  startPopScale: 1.3
   startDisabledColor: {r: 1, g: 1, b: 1, a: 1}
   startEnabledColor: {r: 1, g: 1, b: 1, a: 1}
   errorText: {fileID: 4242078292153748588}
@@ -800,6 +802,21 @@ MonoBehaviour:
   hintText: {fileID: 8141049905221222152}
   hintLines: []
   finalDisconnectDelay: 0.7
+  sparkParticleCount: 16
+  sparkDuration: 0.45
+--- !u!114 &8642524452724734439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 720003785661955583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aded179e50b68b4cbe88e8bba3a5290, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG14_FirstTryCircuitAchievement
+  game: {fileID: 1539741592388297289}
 --- !u!1 &769919467973571569
 GameObject:
   m_ObjectHideFlags: 0

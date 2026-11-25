@@ -284,6 +284,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9097360001960908005}
   - component: {fileID: 5419057288764756186}
+  - component: {fileID: 4267048006129518030}
   m_Layer: 5
   m_Name: Minigame_9Panel
   m_TagString: Untagged
@@ -355,6 +356,19 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 708d7031eabcf634c88e983f6ab3e3b8, type: 3}
   - {fileID: 21300000, guid: bb31b35410b8d3342a66437af839fc08, type: 3}
   - {fileID: 21300000, guid: bad73ccc858010f44824e3e3a951b5fd, type: 3}
+--- !u!114 &4267048006129518030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1847466556680343471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2497cadc25ff3a3468de96ee33c8a7de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG09_PerfectReceiptAchievement
+  game: {fileID: 5419057288764756186}
 --- !u!1 &2431016922573166561
 GameObject:
   m_ObjectHideFlags: 0

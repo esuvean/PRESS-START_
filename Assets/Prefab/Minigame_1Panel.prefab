@@ -1096,6 +1096,7 @@ GameObject:
   - component: {fileID: 5172066308333687893}
   - component: {fileID: 5129703732600201297}
   - component: {fileID: -1384648050288608166}
+  - component: {fileID: 7342921344318492082}
   m_Layer: 5
   m_Name: Minigame_1Panel
   m_TagString: Untagged
@@ -1200,6 +1201,19 @@ MonoBehaviour:
   areaRight: 800
   areaTop: 320
   areaBottom: -440
+--- !u!114 &7342921344318492082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3735909273749746481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2de50e74d8bede458ec30a1672a806b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG01_FastClearAchievement
+  game: {fileID: -1384648050288608166}
 --- !u!1 &4128248270173227071
 GameObject:
   m_ObjectHideFlags: 0

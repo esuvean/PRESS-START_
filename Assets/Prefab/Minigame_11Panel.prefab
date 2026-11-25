@@ -1898,6 +1898,7 @@ GameObject:
   - component: {fileID: 2672144165565245486}
   - component: {fileID: 3731885955999880287}
   - component: {fileID: 2511126166200280284}
+  - component: {fileID: 8849957696938202931}
   m_Layer: 5
   m_Name: Minigame_11Panel
   m_TagString: Untagged
@@ -2022,6 +2023,21 @@ MonoBehaviour:
   firstHintTime: 30
   secondHintTime: 50
   routeHintTime: 70
+--- !u!114 &8849957696938202931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4527928557001740061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d6526a668eb4e14788483ba2d397db3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG11_MinimumMovesAchievement
+  game: {fileID: 2511126166200280284}
+  stage1MinimumMoves: 0
+  stage2MinimumMoves: 0
 --- !u!1 &4912389566838298942
 GameObject:
   m_ObjectHideFlags: 0

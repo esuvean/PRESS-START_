@@ -622,6 +622,7 @@ GameObject:
   - component: {fileID: 192277335740680337}
   - component: {fileID: 8704751836149509104}
   - component: {fileID: 87293628182907808}
+  - component: {fileID: 6697737406382035881}
   m_Layer: 5
   m_Name: Minigame_17Panel
   m_TagString: Untagged
@@ -730,6 +731,22 @@ MonoBehaviour:
   leftButtonText: {fileID: 1384731062353723848}
   rightButtonText: {fileID: 8942026071456251065}
   feedbackDelay: 1
+  correctColor: {r: 0.45, g: 1, b: 0.55, a: 1}
+  wrongColor: {r: 1, g: 0.35, b: 0.55, a: 1}
+  hintColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+--- !u!114 &6697737406382035881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2124156101129491360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 053310a96d422be4caacd5b381049047, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MG17_SmallRules3Achievement
+  game: {fileID: 87293628182907808}
 --- !u!1 &2395725934690784294
 GameObject:
   m_ObjectHideFlags: 0
@@ -2497,7 +2514,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 52
+  m_fontSize: 51.3
   m_fontSizeBase: 52
   m_fontWeight: 400
   m_enableAutoSizing: 1
