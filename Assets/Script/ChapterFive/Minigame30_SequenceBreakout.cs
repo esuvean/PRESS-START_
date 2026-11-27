@@ -1,74 +1,63 @@
-
-using System.Collections;
+Ôªøusing System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
+/// <summary>
+/// MG30 ÏàúÏÑúÎåÄÎ°ú Íπ®Îäî START (Ïã§Ìñâ Î¨∏Ïûê ÏàúÏÑú Ï†úÍ±∞ Í≤ÄÏÇ¨) - Í∏∞Ï°¥ Î≤ΩÎèåÍπ®Í∏∞ Î∞©Ïãù
+///  - S / T / A / R / T Î¨∏Ïûê Î≤ΩÎèå 5Í∞úÎ•º ÏàúÏÑú ÏÉÅÍ¥ÄÏóÜÏù¥ Î™®Îëê Íπ®Î©¥ Îê® (ÏùºÎ∞ò Î≤ΩÎèåÏùÄ Í∑∏ÎÉ• Íπ®Ïßê)
+///  - Í≥µ ÏÜçÎèÑÏôÄ ÌäïÍ∏∞Îäî Í∞ÅÎèÑÎäî MG12 Î≤ΩÎèåÍπ®Í∏∞ÏôÄ Í∞ôÏùå
+///  - Í≥µÏùÑ ÎÜìÏ≥êÎèÑ ÏßÑÌñâÎèÑÎäî Ïú†ÏßÄ (ÏÉà Í≥µÎßå ÎÇòÏò¥)
+///  - Îã§ Íπ®Î©¥ S¬∑T¬∑A¬∑R¬∑T ‚Üí START Í≤∞Ìï© ‚Üí START ÌÅ¥Î¶≠
+/// Î≤ΩÎèå ÌÅ¨Í∏∞Îäî ÏãúÏïàÏùò ÏïΩ 2/3, Í≥µÍ≥º Î∞õÏπ®ÎåÄ ÏÇ¨Ïù¥ Í≥µÍ∞ÑÏù¥ ÎÑâÎÑâÌï¥ÏÑú 7Ï§Ñ.
+/// </summary>
 public class Minigame30_SequenceBreakout : MinigameBase
 {
-    [Header("Main UI")]
-    public RectTransform gameArea;
-    public RectTransform brickLayer;
-    public RectTransform ballLayer;
-    public RectTransform paddle;
+    [Header("Ï±ïÌÑ∞5 Í∑∏Î¶º (ÏóêÎîîÌÑ∞ ÎèÑÍµ¨Í∞Ä ÏûêÎèôÏúºÎ°ú ÎÑ£Ïùå)")]
+    public TMP_FontAsset uiFont;
+    public Sprite panelSprite;          // 23_line_back
+    public Sprite plateSprite;          // 26_upline
+    public Sprite startButtonSprite;    // normal_button
+    public Sprite slotFrameSprite;      // 26_miniline
+    public Sprite slotEmptySprite;      // 26_blueblank
+    public Sprite slotArrowLeft;
+    public Sprite slotArrowRight;
+    public Sprite[] slotLetterSprites = new Sprite[5];    // 26_pink_S/T/A/R/T
+    public Sprite[] letterBrickSprites = new Sprite[5];   // 30_block_S/T/A/R/T
+    public Sprite normalBrickSprite;                      // 30_blank
 
-    public TMP_Text targetText;
-    public TMP_Text progressText;
-    public TMP_Text errorText;
+    [Header("Í∑úÏπô")]
+    [Tooltip("SEQUENCE ERROR Î•º Ï±ïÌÑ∞5 Ïò§Î•ò ÌöüÏàòÏóê Ìè¨Ìï® (Í≥µÏù¥ ÌäÄÎäî Í≤åÏûÑÏù¥Îùº Í∏∞Î≥∏ÏùÄ ÎÅî)")]
+    public bool countMistakes = false;
 
-    public GameObject resultPanel;
-    public TMP_Text resultText;
-    public Button finalStartButton;
+    [Header("Î≤ΩÎèå")]
+    public int columns = 13;
+    public int rows = 7;
+    public Vector2 brickSize = new Vector2(96f, 30f);
+    public float brickGap = 6f;
+    public int distractorCount = 0;   // Î∞©Ìï¥ Î¨∏Ïûê ÏóÜÏùå
 
-    [Header("ART - Correct Letter Sprites")]
-    public Sprite letterS;
-    public Sprite letterT;
-    public Sprite letterA;
-    public Sprite letterR;
-
-    [Header("ART - Other Letter Sprites")]
-    public Sprite letterE;
-    public Sprite letterN;
-    public Sprite letterD;
-    public Sprite letterX;
-    public Sprite letterI;
-    public Sprite letterP;
-    public Sprite letterL;
-    public Sprite letterY;
-
-    [Header("ART - Other Sprites")]
-    public Sprite normalBrickSprite;
-    public Sprite ballSprite;
-    public Sprite paddleSprite;
-    public Sprite backgroundSprite;
-    public Sprite finalStartSprite;
-
-    [Header("ART - Options")]
-    public bool hideLetterTextWhenSpriteExists = true;
-    public bool hideFinalTextWhenSpriteExists = true;
-
-    [Header("Brick Settings")]
-    public Vector2 targetBrickSize = new Vector2(150f, 54f);
-    public Vector2 obstacleBrickSize = new Vector2(96f, 44f);
-    public Vector2 normalBrickSize = new Vector2(145f, 38f);
-
-    [Header("Ball Settings")]
-    public float ballSpeed = 620f;
-    public float ballSize = 28f;
-    public float paddleBounceAngle = 65f;
-    public float collisionStep = 4f;
-
-    [Header("Paddle Settings")]
+    [Header("Í≥µ / Î∞õÏπ®ÎåÄ")]
+    public float ballSpeed = 430f;     // MG12ÏôÄ Í∞ôÏùÄ ÏÜçÎèÑ
+    public float ballSize = 22f;
+    public float maxBounceAngle = 60f;
+    public Vector2 paddleSize = new Vector2(220f, 26f);
     public float paddleMoveSpeed = 1100f;
-
-    [Header("Error Settings")]
     public float errorDisplayTime = 1.1f;
 
-    private const string TargetWord = "START";
+    private const string Word = "START";
+    private const string Distractors = "ENDXIPLY";
 
-    // πÊ«ÿ πÆ¿⁄: END, EXIT, PLAY
-    private const string ObstacleWord = "ENDEXITPLAY";
+    // ---- Î∞∞Ïπò ----
+    private static readonly Vector2 PanelPos = new Vector2(0f, 30f);
+    private static readonly Vector2 PanelSize = new Vector2(1480f, 580f);
+    private static readonly Vector2 PlatePos = new Vector2(0f, 300f);
+    private static readonly Vector2 AreaPos = new Vector2(0f, 25f);
+    private static readonly Vector2 AreaSize = new Vector2(1420f, 510f);
+    private static readonly Vector2 SlotRowPos = new Vector2(0f, -338f);
+    private const float TopBrickY = 205f;
+    private const float PaddleY = -215f;
 
     private enum GamePhase
     {
@@ -79,1446 +68,617 @@ public class Minigame30_SequenceBreakout : MinigameBase
         Completed
     }
 
-    private GamePhase phase;
-
-    private class BrickData
+    private class Brick
     {
-        public GameObject obj;
         public RectTransform rect;
-
+        public Image image;
+        public Outline glow;
         public char character;
-        public int targetIndex;
-
-        public bool isTarget;
-        public bool isNormal;
+        public int targetIndex = -1;   // START Î¨∏ÏûêÎ©¥ 0~4
+        public bool distractor;
         public bool broken;
     }
 
-    private readonly List<BrickData> bricks =
-        new List<BrickData>();
-
-    private RectTransform ballRect;
+    private GamePhase phase;
+    private bool finished;
+    private int currentTargetIndex;          // ÏßÄÍ∏àÍπåÏßÄ Íπ¨ START Î¨∏Ïûê Ïàò
+    private readonly bool[] slotFilled = new bool[5];
+    private float launchTimer;
     private Vector2 ballVelocity;
 
-    private int currentTargetIndex;
-    private int ballSerial;
+    private readonly List<Brick> bricks = new List<Brick>();
 
-    private bool finished;
-
-    private Texture2D defaultBallTexture;
-    private Sprite defaultBallSprite;
-
-    private readonly Vector3[] corners = new Vector3[4];
+    // ---- ÎßåÎì† UI ----
+    private TMP_FontAsset font;
+    private RectTransform screen;
+    private RectTransform panel;
+    private RectTransform area;
+    private RectTransform paddle;
+    private RectTransform ball;
+    private TextMeshProUGUI plateText;
+    private TextMeshProUGUI bottomText;
+    private CanvasGroup banner;
+    private TextMeshProUGUI bannerText;
+    private C5SlotRow slotRow;
+    private Button finalStartButton;
+    private Texture2D ballTexture;
+    private Sprite ballSprite;
+    private Coroutine messageRoutine;
 
     private void Start()
     {
         if (!isGameActive)
-        {
             StartMinigame();
-        }
     }
-
-    // ====================================
-    // ∞‘¿” Ω√¿€
-    // ====================================
 
     public override void StartMinigame()
     {
-        gameName = "º¯º≠¥Î∑Œ ±˙¥¬ START";
-
-        instruction =
-            "S-T-A-R-T º¯º≠¥Î∑Œ πÆ¿⁄ ∫Æµπ¿ª ±˙Ω Ω√ø¿.";
-
-        timeLimit = 999999f;
+        gameName = "Ïã§Ìñâ Î¨∏Ïûê ÏàúÏÑú Ï†úÍ±∞ Í≤ÄÏÇ¨";
+        instruction = "Î≤ΩÎèåÏùÑ Íπ®Î©∞ S-T-A-R-TÎ•º ÏàúÏÑúÎåÄÎ°ú Ï†úÍ±∞ÌïòÏÑ∏Ïöî.";
 
         base.StartMinigame();
-
         StopAllCoroutines();
+        messageRoutine = null;
 
         finished = false;
         currentTargetIndex = 0;
-        ballSerial = 0;
-
-        if (!FindReferences())
-        {
-            Debug.LogError(
-                "MG30: UI ø¨∞·¿Ã ¥©∂Ùµ«æ˙Ω¿¥œ¥Ÿ.",
-                this
-            );
-
-            isGameActive = false;
-            return;
-        }
-
-        ClearGeneratedObjects();
-
-        gameArea.gameObject.SetActive(true);
-        resultPanel.SetActive(false);
-        errorText.gameObject.SetActive(false);
-
-        Canvas.ForceUpdateCanvases();
-
-        ApplyArtwork();
-        SetupFinalButton();
-
-        CreateAllBricks();
-
-        UpdateHUD();
-        RefreshTargetHighlights();
-
-        SpawnBall();
-
-        Debug.Log("MG30: º¯º≠¥Î∑Œ ±˙¥¬ START Ω√¿€");
-    }
-
-    // ====================================
-    // ø¿∫Í¡ß∆Æ ¿⁄µø ∞Àªˆ
-    // ====================================
-
-    private Transform FindDeep(
-        Transform parent,
-        string objectName)
-    {
-        if (parent == null)
-            return null;
-
-        if (parent.name == objectName)
-            return parent;
-
-        foreach (Transform child in parent)
-        {
-            Transform found =
-                FindDeep(child, objectName);
-
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
-    private T FindUI<T>(string objectName)
-        where T : Component
-    {
-        Transform found =
-            FindDeep(transform, objectName);
-
-        return found == null
-            ? null
-            : found.GetComponent<T>();
-    }
-
-    private GameObject FindObject(string objectName)
-    {
-        Transform found =
-            FindDeep(transform, objectName);
-
-        return found == null
-            ? null
-            : found.gameObject;
-    }
-
-    private bool FindReferences()
-    {
-        if (gameArea == null)
-            gameArea = FindUI<RectTransform>("GameArea");
-
-        if (brickLayer == null)
-            brickLayer = FindUI<RectTransform>("BrickLayer");
-
-        if (ballLayer == null)
-            ballLayer = FindUI<RectTransform>("BallLayer");
-
-        if (paddle == null)
-            paddle = FindUI<RectTransform>("Paddle");
-
-        if (targetText == null)
-            targetText = FindUI<TMP_Text>("TargetText");
-
-        if (progressText == null)
-            progressText = FindUI<TMP_Text>("ProgressText");
-
-        if (errorText == null)
-            errorText = FindUI<TMP_Text>("ErrorText");
-
-        if (resultPanel == null)
-            resultPanel = FindObject("ResultPanel");
-
-        if (resultText == null)
-            resultText = FindUI<TMP_Text>("ResultText");
-
-        if (finalStartButton == null)
-            finalStartButton =
-                FindUI<Button>("FinalStartButton");
-
-        bool valid =
-            gameArea != null &&
-            brickLayer != null &&
-            ballLayer != null &&
-            paddle != null &&
-            targetText != null &&
-            progressText != null &&
-            errorText != null &&
-            resultPanel != null &&
-            resultText != null &&
-            finalStartButton != null;
-
-        if (!valid)
-        {
-            Debug.LogError(
-                "MG30: GameArea, BrickLayer, BallLayer, " +
-                "Paddle, TargetText, ProgressText, ErrorText, " +
-                "ResultPanel, ResultText, FinalStartButton∏¶ " +
-                "»Æ¿Œ«œººø‰.",
-                this
-            );
-        }
-
-        return valid;
-    }
-
-    // ====================================
-    // æ∆∆Æ ¿ÃπÃ¡ˆ ¿˚øÎ
-    // ====================================
-
-    private void ApplyArtwork()
-    {
-        ApplySprite(
-            gameArea.GetComponent<Image>(),
-            backgroundSprite,
-            false
-        );
-
-        ApplySprite(
-            paddle.GetComponent<Image>(),
-            paddleSprite,
-            true
-        );
-
-        ApplySprite(
-            finalStartButton.GetComponent<Image>(),
-            finalStartSprite,
-            true
-        );
-
-        foreach (TMP_Text label in
-            finalStartButton.GetComponentsInChildren<
-                TMP_Text>(true))
-        {
-            bool hide =
-                finalStartSprite != null &&
-                hideFinalTextWhenSpriteExists;
-
-            label.gameObject.SetActive(!hide);
-            label.raycastTarget = false;
-        }
-
-        Image paddleImage = paddle.GetComponent<Image>();
-
-        if (paddleImage != null)
-            paddleImage.raycastTarget = false;
-    }
-
-    private void ApplySprite(
-        Image image,
-        Sprite sprite,
-        bool preserveAspect)
-    {
-        if (image == null || sprite == null)
-            return;
-
-        image.sprite = sprite;
-        image.color = Color.white;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = preserveAspect;
-    }
-
-    private Sprite GetLetterSprite(char character)
-    {
-        switch (character)
-        {
-            case 'S': return letterS;
-            case 'T': return letterT;
-            case 'A': return letterA;
-            case 'R': return letterR;
-
-            case 'E': return letterE;
-            case 'N': return letterN;
-            case 'D': return letterD;
-            case 'X': return letterX;
-            case 'I': return letterI;
-            case 'P': return letterP;
-            case 'L': return letterL;
-            case 'Y': return letterY;
-        }
-
-        return null;
-    }
-
-    // ====================================
-    // ª˝º∫µ» ∞‘¿” ø¿∫Í¡ß∆Æ ¡§∏Æ
-    // ====================================
-
-    private void ClearGeneratedObjects()
-    {
-        ClearBall();
-
-        foreach (BrickData brick in bricks)
-        {
-            if (brick.obj != null)
-            {
-                brick.obj.SetActive(false);
-                Destroy(brick.obj);
-            }
-        }
-
+        for (int i = 0; i < slotFilled.Length; i++)
+            slotFilled[i] = false;
         bricks.Clear();
+
+        BuildScreen();
+        C5Kit.PrepareNoise(transform);
+        CreateBricks();
+        slotRow.SetCount(0);
+        UpdateHud();
+        ResetBall();
+        SetBottom(DefaultGuide());
     }
 
-    // ====================================
-    // πÆ¿⁄ ∫Æµπ ª˝º∫
-    // ====================================
-
-    private void CreateAllBricks()
+    private string DefaultGuide()
     {
-        float areaWidth = gameArea.rect.width;
-
-        // 1. ¿œπ› ∫Æµπ
-        // ∞°¿Â æ∆∑°ø° πËƒ°
-        for (int i = 0; i < 8; i++)
-        {
-            float x =
-                (i - 3.5f) * (areaWidth * 0.11f);
-
-            CreateBrick(
-                "NormalBrick_" + i,
-                ' ',
-                -1,
-                false,
-                true,
-                new Vector2(x, 65f),
-                normalBrickSize
-            );
-        }
-
-        // 2. START ∏Ò«• πÆ¿⁄ 5∞≥
-        // T¥¬ √π π¯¬∞øÕ ∏∂¡ˆ∏∑¿ª ∫∞∞≥∑Œ ∞¸∏Æ
-        float targetSpacing =
-            Mathf.Min(260f, areaWidth * 0.18f);
-
-        for (int i = 0; i < TargetWord.Length; i++)
-        {
-            char character = TargetWord[i];
-
-            float x = (i - 2) * targetSpacing;
-
-            CreateBrick(
-                "Target_" + character + "_" + i,
-                character,
-                i,
-                true,
-                false,
-                new Vector2(x, 155f),
-                targetBrickSize
-            );
-        }
-
-        // 3. πÊ«ÿ πÆ¿⁄ 11∞≥
-        float obstacleSpacing =
-            Mathf.Min(110f, areaWidth * 0.075f);
-
-        float centerIndex =
-            (ObstacleWord.Length - 1) * 0.5f;
-
-        for (int i = 0; i < ObstacleWord.Length; i++)
-        {
-            char character = ObstacleWord[i];
-
-            float x =
-                (i - centerIndex) * obstacleSpacing;
-
-            CreateBrick(
-                "Obstacle_" + character + "_" + i,
-                character,
-                -1,
-                false,
-                false,
-                new Vector2(x, 246f),
-                obstacleBrickSize
-            );
-        }
-    }
-
-    private void CreateBrick(
-        string objectName,
-        char character,
-        int targetIndex,
-        bool isTarget,
-        bool isNormal,
-        Vector2 position,
-        Vector2 size)
-    {
-        GameObject go = new GameObject(
-            objectName,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        go.transform.SetParent(brickLayer, false);
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image image = go.GetComponent<Image>();
-
-        Sprite sprite = isNormal
-            ? normalBrickSprite
-            : GetLetterSprite(character);
-
-        if (sprite != null)
-        {
-            image.sprite = sprite;
-            image.color = Color.white;
-            image.type = Image.Type.Simple;
-            image.preserveAspect = true;
-        }
-        else
-        {
-            image.color = isNormal
-                ? new Color32(67, 109, 137, 255)
-                : isTarget
-                    ? new Color32(35, 125, 154, 255)
-                    : new Color32(85, 96, 128, 255);
-        }
-
-        image.raycastTarget = false;
-
-        bool showText =
-            !isNormal &&
-            (sprite == null ||
-             !hideLetterTextWhenSpriteExists);
-
-        if (showText)
-        {
-            CreateBrickLetter(
-                go.transform,
-                character
-            );
-        }
-
-        BrickData data = new BrickData();
-
-        data.obj = go;
-        data.rect = rect;
-        data.character = character;
-        data.targetIndex = targetIndex;
-        data.isTarget = isTarget;
-        data.isNormal = isNormal;
-        data.broken = false;
-
-        bricks.Add(data);
-    }
-
-    // ====================================
-    // ±‚∫ª πÆ¿⁄ TMP ª˝º∫
-    // ====================================
-
-    private void CreateBrickLetter(
-        Transform parent,
-        char character)
-    {
-        GameObject go = new GameObject(
-            "LetterText",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI)
-        );
-
-        go.transform.SetParent(parent, false);
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
-
-        text.text = character.ToString();
-        text.fontSize = 34f;
-        text.fontStyle = FontStyles.Bold;
-
-        text.color = Color.white;
-
-        text.alignment =
-            TextAlignmentOptions.Center;
-
-        text.raycastTarget = false;
-    }
-
-    // ====================================
-    // «ˆ¿Á ∏Ò«• ∞≠¡∂
-    // ====================================
-
-    private void RefreshTargetHighlights()
-    {
-        foreach (BrickData brick in bricks)
-        {
-            if (!brick.isTarget || brick.broken)
-                continue;
-
-            Image image =
-                brick.obj.GetComponent<Image>();
-
-            if (image == null)
-                continue;
-
-            if (brick.targetIndex == currentTargetIndex)
-            {
-                image.color = new Color32(
-                    255, 211, 105, 255
-                );
-            }
-            else if (image.sprite != null)
-            {
-                image.color = Color.white;
-            }
-            else
-            {
-                image.color = new Color32(
-                    35, 125, 154, 255
-                );
-            }
-        }
-    }
-
-    // ====================================
-    // ±‚∫ª ∞¯ ¿ÃπÃ¡ˆ ª˝º∫
-    // ====================================
-
-    private Sprite GetBallVisual()
-    {
-        if (ballSprite != null)
-            return ballSprite;
-
-        if (defaultBallSprite != null)
-            return defaultBallSprite;
-
-        const int size = 48;
-
-        defaultBallTexture = new Texture2D(
-            size,
-            size,
-            TextureFormat.RGBA32,
-            false
-        );
-
-        defaultBallTexture.filterMode =
-            FilterMode.Bilinear;
-
-        Color[] pixels = new Color[size * size];
-
-        float radius = size * 0.46f;
-        Vector2 center = new Vector2(
-            (size - 1) * 0.5f,
-            (size - 1) * 0.5f
-        );
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float distance = Vector2.Distance(
-                    new Vector2(x, y),
-                    center
-                );
-
-                float alpha = Mathf.Clamp01(
-                    radius - distance + 0.7f
-                );
-
-                pixels[y * size + x] =
-                    new Color(1f, 1f, 1f, alpha);
-            }
-        }
-
-        defaultBallTexture.SetPixels(pixels);
-        defaultBallTexture.Apply();
-
-        defaultBallSprite = Sprite.Create(
-            defaultBallTexture,
-            new Rect(0, 0, size, size),
-            new Vector2(0.5f, 0.5f)
-        );
-
-        return defaultBallSprite;
+        return "<color=" + C5Kit.YellowHex + ">S ¬∑ T ¬∑ A ¬∑ R ¬∑ T</color> Î¨∏Ïûê Î≤ΩÎèåÏùÑ Î™®Îëê Íπ®ÏÑ∏Ïöî. (ÏàúÏÑú ÏÉÅÍ¥ÄÏóÜÏùå)";
     }
 
     private void OnDestroy()
     {
-        if (defaultBallSprite != null)
-            Destroy(defaultBallSprite);
-
-        if (defaultBallTexture != null)
-            Destroy(defaultBallTexture);
+        if (ballSprite != null) Destroy(ballSprite);
+        if (ballTexture != null) Destroy(ballTexture);
     }
 
-    // ====================================
-    // ∞¯ ª˝º∫ / ªË¡¶
-    // ====================================
-
-    private void ClearBall()
+    // =========================================
+    // ÌôîÎ©¥ ÎßåÎì§Í∏∞
+    // =========================================
+    private void BuildScreen()
     {
-        if (ballRect != null)
+        font = C5Kit.ResolveFont(transform, uiFont);
+        C5Kit.HideLegacy(transform);
+        screen = C5Kit.NewScreen(transform, "RT_MG30");
+
+        panel = C5Kit.Panel(screen, panelSprite, PanelPos, PanelSize).rectTransform;
+        area = C5Kit.Rect(screen, "RT_Area", AreaPos, AreaSize);
+
+        Image pad = C5Kit.Img(area, "RT_Paddle", null, C5Kit.Cyan, new Vector2(0f, PaddleY), paddleSize);
+        C5Kit.Img(pad.transform, "Shine", null, new Color(0.78f, 0.98f, 1f, 1f), new Vector2(0f, paddleSize.y * 0.3f),
+            new Vector2(paddleSize.x - 14f, 5f));
+        C5Kit.Img(pad.transform, "Shade", null, new Color32(8, 120, 160, 255), new Vector2(0f, -paddleSize.y * 0.38f),
+            new Vector2(paddleSize.x, 6f));
+        paddle = pad.rectTransform;
+
+        if (ballSprite == null)
+            ballSprite = MakeBallSprite();
+        ball = C5Kit.Img(area, "RT_Ball", ballSprite, C5Kit.White, Vector2.zero, new Vector2(ballSize, ballSize))
+            .rectTransform;
+
+        plateText = C5Kit.Plate(screen, plateSprite, font, PlatePos, new Vector2(480f, 80f), "");
+        slotRow = new C5SlotRow(screen, SlotRowPos, slotFrameSprite, slotEmptySprite, slotLetterSprites,
+            slotArrowLeft, slotArrowRight, font);
+        bottomText = C5Kit.BottomText(screen, font, "");
+        banner = C5Kit.Banner(screen, font, new Vector2(0f, 20f), new Vector2(760f, 160f), out bannerText);
+
+        finalStartButton = C5Kit.StartButton(screen, startButtonSprite, font, new Vector2(0f, 40f),
+            new Vector2(360f, 84f), OnFinalStartClicked);
+        finalStartButton.gameObject.SetActive(false);
+    }
+
+    private Sprite MakeBallSprite()
+    {
+        const int N = 16;
+        ballTexture = new Texture2D(N, N, TextureFormat.RGBA32, false);
+        ballTexture.filterMode = FilterMode.Point;
+        ballTexture.wrapMode = TextureWrapMode.Clamp;
+        Color rim = new Color32(25, 220, 245, 255);
+        Color core = Color.white;
+        for (int y = 0; y < N; y++)
         {
-            ballRect.gameObject.SetActive(false);
-            Destroy(ballRect.gameObject);
-            ballRect = null;
-        }
-    }
-
-    private void SpawnBall()
-    {
-        ClearBall();
-
-        GameObject go = new GameObject(
-            "Ball_" + (++ballSerial),
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        go.transform.SetParent(ballLayer, false);
-
-        ballRect = go.GetComponent<RectTransform>();
-
-        ballRect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        ballRect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        ballRect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        ballRect.sizeDelta =
-            new Vector2(ballSize, ballSize);
-
-        Image image = go.GetComponent<Image>();
-
-        image.sprite = GetBallVisual();
-        image.color = Color.white;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = true;
-        image.raycastTarget = false;
-
-        ballVelocity = Vector2.zero;
-
-        phase = GamePhase.WaitingLaunch;
-
-        AttachBallToPaddle();
-    }
-
-    private void AttachBallToPaddle()
-    {
-        if (ballRect == null)
-            return;
-
-        Rect paddleBounds = GetAreaBounds(paddle);
-
-        Vector2 position = new Vector2(
-            paddleBounds.center.x,
-            paddleBounds.yMax +
-            BallRadius() + 10f
-        );
-
-        ballRect.anchoredPosition = position;
-    }
-
-    private float BallRadius()
-    {
-        return Mathf.Max(5f, ballSize * 0.5f);
-    }
-
-    // ====================================
-    // ∞¯ πﬂªÁ
-    // ====================================
-
-    private void LaunchBall()
-    {
-        if (phase != GamePhase.WaitingLaunch)
-            return;
-
-        float horizontal = Random.Range(
-            -0.28f,
-            0.28f
-        );
-
-        ballVelocity = new Vector2(
-            horizontal,
-            1f
-        ).normalized * ballSpeed;
-
-        phase = GamePhase.Playing;
-    }
-
-    // ====================================
-    // ∏∂øÏΩ∫ / ≈∞∫∏µÂ ¿‘∑¬
-    // ====================================
-
-    private bool ReadInput(out Vector2 mousePosition,
-                           out bool mouseClicked,
-                           out bool launchPressed,
-                           out float horizontal)
-    {
-        mousePosition = Vector2.zero;
-        mouseClicked = false;
-        launchPressed = false;
-        horizontal = 0f;
-
-        bool mouseAvailable = false;
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-        mousePosition = Input.mousePosition;
-        mouseAvailable = true;
-
-        mouseClicked |= Input.GetMouseButtonDown(0);
-
-        launchPressed |=
-            Input.GetKeyDown(KeyCode.Space);
-
-        if (Input.GetKey(KeyCode.A) ||
-            Input.GetKey(KeyCode.LeftArrow))
-            horizontal -= 1f;
-
-        if (Input.GetKey(KeyCode.D) ||
-            Input.GetKey(KeyCode.RightArrow))
-            horizontal += 1f;
-#endif
-
-#if ENABLE_INPUT_SYSTEM
-        var mouse =
-            UnityEngine.InputSystem.Mouse.current;
-
-        if (mouse != null)
-        {
-            mousePosition =
-                mouse.position.ReadValue();
-
-            mouseAvailable = true;
-
-            mouseClicked |=
-                mouse.leftButton.wasPressedThisFrame;
-        }
-
-        var keyboard =
-            UnityEngine.InputSystem.Keyboard.current;
-
-        if (keyboard != null)
-        {
-            launchPressed |=
-                keyboard.spaceKey.wasPressedThisFrame;
-
-            if (horizontal == 0f)
+            for (int x = 0; x < N; x++)
             {
-                if (keyboard.aKey.isPressed ||
-                    keyboard.leftArrowKey.isPressed)
-                    horizontal -= 1f;
-
-                if (keyboard.dKey.isPressed ||
-                    keyboard.rightArrowKey.isPressed)
-                    horizontal += 1f;
+                float dx = x + 0.5f - N * 0.5f;
+                float dy = y + 0.5f - N * 0.5f;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                Color c = Color.clear;
+                if (d <= N * 0.5f - 0.2f)
+                    c = d > N * 0.5f - 2.4f ? rim : core;
+                if (d <= 2.2f && dx < 0f && dy > 0f)
+                    c = new Color(0.85f, 1f, 1f, 1f);
+                ballTexture.SetPixel(x, y, c);
             }
         }
-#endif
-
-        horizontal =
-            Mathf.Clamp(horizontal, -1f, 1f);
-
-        return mouseAvailable;
+        ballTexture.Apply();
+        return Sprite.Create(ballTexture, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f), 100f);
     }
 
-    // ====================================
-    // ∞‘¿” æ˜µ•¿Ã∆Æ
-    // ====================================
-
-    private void LateUpdate()
+    // =========================================
+    // Î≤ΩÎèå Î∞∞Ïπò
+    // =========================================
+    private void CreateBricks()
     {
+        foreach (Brick b in bricks)
+            if (b.rect != null) Destroy(b.rect.gameObject);
+        bricks.Clear();
+
+        // Î¨∏Ïûê Ïπ∏ Ï†ïÌïòÍ∏∞ (S-T-A-R-T + Î∞©Ìï¥ Î¨∏Ïûê, ÏÑúÎ°ú Î∂ôÏßÄ ÏïäÍ≤å)
+        Dictionary<Vector2Int, int> letterCells = new Dictionary<Vector2Int, int>();   // Í∞í: 0~4 START, 10+ Î∞©Ìï¥
+        List<Vector2Int> used = new List<Vector2Int>();
+        for (int i = 0; i < Word.Length; i++)
+            letterCells[PickCell(used, 0, rows - 2)] = i;
+        int dCount = Mathf.Clamp(distractorCount, 0, Distractors.Length);
+        string pool = Shuffle(Distractors);
+        for (int i = 0; i < dCount; i++)
+            letterCells[PickCell(used, 0, rows - 1)] = 10 + (pool[i] - 'A');
+
+        float pitchX = brickSize.x + brickGap;
+        float pitchY = brickSize.y + brickGap;
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < columns; c++)
+            {
+                Vector2 pos = new Vector2((c - (columns - 1) * 0.5f) * pitchX, TopBrickY - r * pitchY);
+                Vector2Int cell = new Vector2Int(c, r);
+                Brick b = new Brick();
+
+                if (letterCells.TryGetValue(cell, out int code))
+                {
+                    if (code < 10)
+                    {
+                        b.targetIndex = code;
+                        b.character = Word[code];
+                        Sprite s = letterBrickSprites != null && code < letterBrickSprites.Length
+                            ? letterBrickSprites[code] : null;
+                        b.image = C5Kit.Img(area, "Brick_" + b.character, s, s != null ? C5Kit.White : C5Kit.Cyan,
+                            pos, brickSize);
+                        if (s == null)
+                            BrickLetter(b.image.transform, b.character, C5Kit.Navy);
+                        b.glow = b.image.gameObject.AddComponent<Outline>();
+                        b.glow.effectColor = C5Kit.Clear;
+                        b.glow.effectDistance = new Vector2(3f, -3f);
+                        b.glow.useGraphicAlpha = false;
+                    }
+                    else
+                    {
+                        b.distractor = true;
+                        b.character = (char)('A' + (code - 10));
+                        b.image = C5Kit.Img(area, "Brick_" + b.character, normalBrickSprite,
+                            new Color(0.74f, 0.78f, 0.92f, 1f), pos, brickSize);
+                        BrickLetter(b.image.transform, b.character, new Color32(30, 36, 70, 255));
+                    }
+                }
+                else
+                {
+                    b.image = C5Kit.Img(area, "Brick", normalBrickSprite,
+                        normalBrickSprite != null ? C5Kit.White : C5Kit.Pale, pos, brickSize);
+                }
+
+                b.rect = b.image.rectTransform;
+                bricks.Add(b);
+            }
+        }
+
+        paddle.SetAsLastSibling();
+        ball.SetAsLastSibling();
+    }
+
+    private Vector2Int PickCell(List<Vector2Int> used, int minRow, int maxRow)
+    {
+        for (int tries = 0; tries < 200; tries++)
+        {
+            Vector2Int c = new Vector2Int(Random.Range(0, columns), Random.Range(minRow, maxRow + 1));
+            bool ok = true;
+            foreach (Vector2Int u in used)
+            {
+                if (Mathf.Abs(u.x - c.x) <= 1 && Mathf.Abs(u.y - c.y) <= 1)
+                {
+                    ok = false;
+                    break;
+                }
+            }
+            if (!ok) continue;
+            used.Add(c);
+            return c;
+        }
+
+        // ÏûêÎ¶¨Í∞Ä ÏóÜÏúºÎ©¥ Í≤πÏπòÏßÄÎßå ÏïäÍ≤å
+        for (int r = minRow; r <= maxRow; r++)
+        for (int x = 0; x < columns; x++)
+        {
+            Vector2Int c = new Vector2Int(x, r);
+            if (!used.Contains(c))
+            {
+                used.Add(c);
+                return c;
+            }
+        }
+        return Vector2Int.zero;
+    }
+
+    private static string Shuffle(string s)
+    {
+        char[] a = s.ToCharArray();
+        for (int i = a.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            char t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+        }
+        return new string(a);
+    }
+
+    private void BrickLetter(Transform parent, char c, Color color)
+    {
+        C5Kit.Txt(parent, "Letter", c.ToString(), brickSize.y * 0.82f, color, TextAlignmentOptions.Center,
+            new Vector2(0f, 1f), brickSize, font);
+    }
+
+    private void UpdateHud()
+    {
+        plateText.text = "START <color=" + C5Kit.YellowHex + "><size=44>" + currentTargetIndex + "</size></color> / 5";
+    }
+
+    // =========================================
+    // Îß§ ÌîÑÎ†àÏûÑ
+    // =========================================
+    protected override void Update()
+    {
+        // Í∏ÄÏûêÎ•º Îã§ Î™®ÏïÑ START Î≤ÑÌäºÎßå ÎÇ®ÏïòÏúºÎ©¥ ÏãúÍ∞ÑÏùÄ Î©àÏ∂§ (Îã§ Ìï¥ ÎÜìÍ≥† ÏãúÍ∞Ñ Ï¥àÍ≥ºÎ°ú Ïã§Ìå®ÌïòÏßÄ ÏïäÍ≤å)
+        bool timerFrozen = phase == GamePhase.StartReady || phase == GamePhase.Completed;
+        if (!timerFrozen)
+            base.Update();
         if (!isGameActive || finished)
             return;
 
-        if (phase != GamePhase.WaitingLaunch &&
-            phase != GamePhase.Playing)
-            return;
-
-        Vector2 mousePosition;
-        bool mouseClicked;
-        bool launchPressed;
-        float horizontal;
-
-        bool mouseAvailable = ReadInput(
-            out mousePosition,
-            out mouseClicked,
-            out launchPressed,
-            out horizontal
-        );
-
-        UpdatePaddle(
-            mouseAvailable,
-            mousePosition,
-            horizontal
-        );
+        if (phase == GamePhase.WaitingLaunch || phase == GamePhase.Playing)
+            UpdatePaddle();
 
         if (phase == GamePhase.WaitingLaunch)
         {
-            AttachBallToPaddle();
-
-            if (launchPressed ||
-                (mouseClicked &&
-                 IsMouseInsideArea(mousePosition)))
-            {
-                LaunchBall();
-            }
-
-            return;
+            ball.anchoredPosition = new Vector2(paddle.anchoredPosition.x,
+                PaddleY + paddleSize.y * 0.5f + ballSize * 0.5f + 2f);
+            launchTimer += Time.deltaTime;
+            if (launchTimer >= 0.8f || C5Kit.SpacePressedThisFrame() ||
+                (C5Kit.MousePressedThisFrame() && MouseInArea()))
+                Launch();
         }
-
-        UpdateBall();
-    }
-
-    private Camera GetUICamera()
-    {
-        Canvas canvas =
-            gameArea.GetComponentInParent<Canvas>();
-
-        if (canvas == null ||
-            canvas.renderMode ==
-            RenderMode.ScreenSpaceOverlay)
+        else if (phase == GamePhase.Playing)
         {
-            return null;
+            UpdateBall();
         }
 
-        return canvas.worldCamera;
+        PulseTarget();
     }
 
-    private bool IsMouseInsideArea(Vector2 screenPoint)
+    private bool MouseInArea()
     {
-        return RectTransformUtility
-            .RectangleContainsScreenPoint(
-                gameArea,
-                screenPoint,
-                GetUICamera()
-            );
+        return C5Kit.TryMouse(out Vector2 m) &&
+               RectTransformUtility.RectangleContainsScreenPoint(area, m, C5Kit.UiCamera(area));
     }
 
-    // ====================================
-    // ∆–µÈ ¿Ãµø
-    // ====================================
-
-    private void UpdatePaddle(
-        bool mouseAvailable,
-        Vector2 mousePosition,
-        float horizontal)
+    private void UpdatePaddle()
     {
         float x = paddle.anchoredPosition.x;
-
-        if (Mathf.Abs(horizontal) > 0.01f)
+        float key = C5Kit.KeyAxis().x;
+        if (Mathf.Abs(key) > 0.01f)
         {
-            x += horizontal *
-                paddleMoveSpeed * Time.deltaTime;
+            x += key * paddleMoveSpeed * Time.deltaTime;
         }
-        else if (mouseAvailable &&
-                 IsMouseInsideArea(mousePosition))
+        else if (C5Kit.TryMouse(out Vector2 mouse))
         {
-            Vector2 local;
-
-            if (RectTransformUtility
-                .ScreenPointToLocalPointInRectangle(
-                    gameArea,
-                    mousePosition,
-                    GetUICamera(),
-                    out local
-                ))
-            {
-                x = local.x;
-            }
+            Camera cam = C5Kit.UiCamera(area);
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(area, mouse, cam, out Vector2 local) &&
+                RectTransformUtility.RectangleContainsScreenPoint(panel, mouse, cam))
+                x = local.x;   // MG12Ï≤òÎüº ÎßàÏö∞Ïä§Î•º Î∞îÎ°ú Îî∞ÎùºÍ∞ê
         }
 
-        float halfPaddle =
-            paddle.rect.width * 0.5f;
-
-        float maxX =
-            gameArea.rect.width * 0.5f -
-            halfPaddle - 8f;
-
-        x = Mathf.Clamp(x, -maxX, maxX);
-
-        paddle.anchoredPosition = new Vector2(
-            x,
-            paddle.anchoredPosition.y
-        );
+        float limit = AreaSize.x * 0.5f - paddleSize.x * 0.5f - 6f;
+        paddle.anchoredPosition = new Vector2(Mathf.Clamp(x, -limit, limit), PaddleY);
     }
 
-    // ====================================
-    // UI ªÁ∞¢«¸¿ª GameArea ¡¬«•∑Œ ∞ËªÍ
-    // ====================================
-
-    private Rect GetAreaBounds(RectTransform rect)
+    private void ResetBall()
     {
-        rect.GetWorldCorners(corners);
-
-        float minX = float.PositiveInfinity;
-        float minY = float.PositiveInfinity;
-        float maxX = float.NegativeInfinity;
-        float maxY = float.NegativeInfinity;
-
-        for (int i = 0; i < 4; i++)
-        {
-            Vector3 point =
-                gameArea.InverseTransformPoint(corners[i]);
-
-            minX = Mathf.Min(minX, point.x);
-            minY = Mathf.Min(minY, point.y);
-
-            maxX = Mathf.Max(maxX, point.x);
-            maxY = Mathf.Max(maxY, point.y);
-        }
-
-        return Rect.MinMaxRect(
-            minX,
-            minY,
-            maxX,
-            maxY
-        );
+        phase = GamePhase.WaitingLaunch;
+        ball.gameObject.SetActive(true);
+        ballVelocity = Vector2.zero;
+        launchTimer = 0f;
+        ball.anchoredPosition = new Vector2(paddle.anchoredPosition.x, PaddleY + paddleSize.y * 0.5f + ballSize * 0.5f + 2f);
     }
 
-    // ====================================
-    // ∞¯ vs ªÁ∞¢«¸ √Êµπ
-    // ====================================
-
-    private bool CircleTouchesRect(
-        Vector2 circleCenter,
-        float radius,
-        Rect rectangle)
+    private void Launch()
     {
-        float nearestX = Mathf.Clamp(
-            circleCenter.x,
-            rectangle.xMin,
-            rectangle.xMax
-        );
-
-        float nearestY = Mathf.Clamp(
-            circleCenter.y,
-            rectangle.yMin,
-            rectangle.yMax
-        );
-
-        float dx = circleCenter.x - nearestX;
-        float dy = circleCenter.y - nearestY;
-
-        return dx * dx + dy * dy <= radius * radius;
+        ballVelocity = new Vector2(Random.Range(-0.45f, 0.45f), 1f).normalized * ballSpeed;
+        phase = GamePhase.Playing;
+        if (messageRoutine == null)
+            SetBottom(DefaultGuide());
     }
-
-    // ====================================
-    // ∞¯ ¿Ãµø
-    // ====================================
 
     private void UpdateBall()
     {
-        if (ballRect == null)
-            return;
+        Vector2 pos = ball.anchoredPosition;
+        Vector2 delta = ballVelocity * Time.deltaTime;
+        int steps = Mathf.Max(1, Mathf.CeilToInt(delta.magnitude / 4f));
+        Vector2 step = delta / steps;
+        float r = ballSize * 0.5f;
+        float halfW = AreaSize.x * 0.5f;
+        float halfH = AreaSize.y * 0.5f;
+        float topWall = TopBrickY + brickSize.y * 0.5f + 14f;   // ÏúÑÏ™Ω Ï†úÎ™© Îù† Î∞îÎ°ú ÏïÑÎûò
 
-        float dt = Mathf.Min(
-            Time.deltaTime,
-            0.05f
-        );
-
-        if (dt <= 0f)
-            return;
-
-        float speed =
-            Mathf.Max(100f, ballSpeed);
-
-        ballVelocity =
-            ballVelocity.normalized * speed;
-
-        float distance =
-            speed * dt;
-
-        float stepSize =
-            Mathf.Clamp(collisionStep, 1f, 8f);
-
-        int steps = Mathf.Max(
-            1,
-            Mathf.CeilToInt(distance / stepSize)
-        );
-
-        float stepDt = dt / steps;
-
-        float radius = BallRadius();
-
-        float left =
-            -gameArea.rect.width * 0.5f + radius;
-
-        float right =
-            gameArea.rect.width * 0.5f - radius;
-
-        float top =
-            gameArea.rect.height * 0.5f - radius;
-
-        float bottom =
-            -gameArea.rect.height * 0.5f - radius;
-
-        Vector2 position =
-            ballRect.anchoredPosition;
-
-        for (int step = 0; step < steps; step++)
+        for (int i = 0; i < steps; i++)
         {
-            if (phase != GamePhase.Playing)
-                return;
+            pos += step;
 
-            Vector2 previous = position;
+            // Î≤Ω (ÏôºÏ™Ω/Ïò§Î•∏Ï™Ω/ÏúÑ)
+            if (pos.x - r < -halfW && ballVelocity.x < 0f) { pos.x = -halfW + r; ballVelocity.x = -ballVelocity.x; step.x = -step.x; }
+            if (pos.x + r > halfW && ballVelocity.x > 0f) { pos.x = halfW - r; ballVelocity.x = -ballVelocity.x; step.x = -step.x; }
+            if (pos.y + r > topWall && ballVelocity.y > 0f) { pos.y = topWall - r; ballVelocity.y = -ballVelocity.y; step.y = -step.y; }
 
-            Vector2 next =
-                position + ballVelocity * stepDt;
-
-            // øﬁ¬  / ø¿∏•¬  ∫Æ
-            if (next.x <= left)
+            // Î∞õÏπ®ÎåÄ
+            Rect pad = new Rect(paddle.anchoredPosition.x - paddleSize.x * 0.5f, PaddleY - paddleSize.y * 0.5f,
+                paddleSize.x, paddleSize.y);
+            if (ballVelocity.y < 0f && CircleHitsRect(pos, r, pad))
             {
-                next.x = left;
-                ballVelocity.x =
-                    Mathf.Abs(ballVelocity.x);
-            }
-            else if (next.x >= right)
-            {
-                next.x = right;
-                ballVelocity.x =
-                    -Mathf.Abs(ballVelocity.x);
+                float offset = Mathf.Clamp((pos.x - pad.center.x) / (paddleSize.x * 0.5f), -1f, 1f);
+                // MG12ÏôÄ Í∞ôÏùÄ Î∞©Ïãù: ÎßûÏùÄ ÏúÑÏπòÎßåÌÅº ÏòÜÏúºÎ°ú (ÏµúÎåÄ 45ÎèÑ)
+                ballVelocity = new Vector2(offset, 1f).normalized * ballSpeed;
+                pos.y = pad.yMax + r + 0.5f;
+                step = ballVelocity * Time.deltaTime / steps;
+                GameSfx.Play("piece_place", 0.25f, 0.1f);
             }
 
-            // ¿ß¬  ∫Æ
-            if (next.y >= top)
+            // Î≤ΩÎèå
+            Brick hit = null;
+            foreach (Brick b in bricks)
             {
-                next.y = top;
-                ballVelocity.y =
-                    -Mathf.Abs(ballVelocity.y);
-            }
+                if (b.broken) continue;
+                Rect br = new Rect(b.rect.anchoredPosition - brickSize * 0.5f, brickSize);
+                if (!CircleHitsRect(pos, r, br)) continue;
 
-            // æ∆∑°∑Œ ∂≥æÓ¡ˆ∏È ∞¯∏∏ ¿Áª˝º∫
-            if (next.y < bottom)
-            {
-                Debug.Log(
-                    "MG30: ∞¯ ≥´«œ - ¡¯«‡µµ ¿Ø¡ˆ"
-                );
-
-                SpawnBall();
-                UpdateHUD();
-                return;
-            }
-
-            // ∆–µÈ √Êµπ
-            if (ballVelocity.y < 0f)
-            {
-                Rect paddleBounds =
-                    GetAreaBounds(paddle);
-
-                if (CircleTouchesRect(
-                    next,
-                    radius,
-                    paddleBounds))
+                // Îçú ÌååÍ≥†Îì† Ï™ΩÏúºÎ°ú ÌäïÍπÄ
+                float px = Mathf.Min(pos.x + r - br.xMin, br.xMax - (pos.x - r));
+                float py = Mathf.Min(pos.y + r - br.yMin, br.yMax - (pos.y - r));
+                if (px < py)
                 {
-                    next.y =
-                        paddleBounds.yMax + radius + 1f;
-
-                    float relativeX =
-                        (next.x - paddleBounds.center.x) /
-                        Mathf.Max(
-                            1f,
-                            paddleBounds.width * 0.5f
-                        );
-
-                    relativeX = Mathf.Clamp(
-                        relativeX, -1f, 1f
-                    );
-
-                    float angle =
-                        relativeX *
-                        paddleBounceAngle *
-                        Mathf.Deg2Rad;
-
-                    ballVelocity = new Vector2(
-                        Mathf.Sin(angle),
-                        Mathf.Cos(angle)
-                    ).normalized * speed;
+                    ballVelocity.x = pos.x < br.center.x ? -Mathf.Abs(ballVelocity.x) : Mathf.Abs(ballVelocity.x);
+                    pos.x += pos.x < br.center.x ? -px : px;
                 }
-            }
-
-            // ∫Æµπ √Êµπ
-            bool hitBrick = false;
-
-            foreach (BrickData brick in bricks)
-            {
-                if (brick.broken ||
-                    brick.obj == null)
-                    continue;
-
-                Rect bounds =
-                    GetAreaBounds(brick.rect);
-
-                if (!CircleTouchesRect(
-                    next,
-                    radius,
-                    bounds))
-                    continue;
-
-                HandleBrickHit(brick);
-
-                if (phase != GamePhase.Playing)
-                    return;
-
-                // √Êµπ πÊ«‚ ∆«¡§
-                Vector2 normal =
-                    GetCollisionNormal(
-                        previous,
-                        next,
-                        bounds,
-                        radius
-                    );
-
-                ballVelocity =
-                    Vector2.Reflect(
-                        ballVelocity,
-                        normal
-                    ).normalized * speed;
-
-                // ∞∞¿∫ ∫Æµπø° ¥ŸΩ√ ≥¢¡ˆ æ µµ∑œ
-                // √Êµπ ¿Ã¿¸ ¿ßƒ°∑Œ µ«µπ∏≤
-                next = previous;
-
-                hitBrick = true;
+                else
+                {
+                    ballVelocity.y = pos.y < br.center.y ? -Mathf.Abs(ballVelocity.y) : Mathf.Abs(ballVelocity.y);
+                    pos.y += pos.y < br.center.y ? -py : py;
+                }
+                step = ballVelocity * Time.deltaTime / steps;
+                hit = b;
                 break;
             }
 
-            position = next;
-
-            if (hitBrick)
+            if (hit != null)
             {
-                // ¥Ÿ¿Ω ¿€¿∫ ¿Ãµø ±∏∞£ø°º≠
-                // π›ªÁµ» πÊ«‚¿∏∑Œ ¡¯«‡
+                ball.anchoredPosition = pos;
+                HandleBrickHit(hit);
+                if (phase != GamePhase.Playing)
+                    return;
+            }
+
+            // Í≥µÏù¥ ÎÑàÎ¨¥ ÏàòÌèâÏúºÎ°ú ÌùêÎ•¥ÏßÄ ÏïäÍ≤å
+            if (Mathf.Abs(ballVelocity.y) < ballSpeed * 0.28f)
+            {
+                ballVelocity.y = Mathf.Sign(ballVelocity.y == 0f ? 1f : ballVelocity.y) * ballSpeed * 0.28f;
+                ballVelocity = ballVelocity.normalized * ballSpeed;
+                step = ballVelocity * Time.deltaTime / steps;
+            }
+
+            // ÏïÑÎûòÎ°ú Îñ®Ïñ¥Ïßê
+            if (pos.y < -halfH - r)
+            {
+                StartCoroutine(BallLost());
+                return;
             }
         }
 
-        if (ballRect != null)
+        ball.anchoredPosition = pos;
+    }
+
+    private static bool CircleHitsRect(Vector2 c, float r, Rect rect)
+    {
+        float nx = Mathf.Clamp(c.x, rect.xMin, rect.xMax);
+        float ny = Mathf.Clamp(c.y, rect.yMin, rect.yMax);
+        float dx = c.x - nx;
+        float dy = c.y - ny;
+        return dx * dx + dy * dy <= r * r;
+    }
+
+    private void PulseTarget()
+    {
+        float a = 0.35f + 0.35f * Mathf.Sin(Time.time * 6f);
+        foreach (Brick b in bricks)
         {
-            ballRect.anchoredPosition =
-                position;
+            if (b.glow == null || b.broken) continue;
+            bool on = b.targetIndex >= 0 &&
+                      (phase == GamePhase.Playing || phase == GamePhase.WaitingLaunch);
+            b.glow.effectColor = on ? new Color(C5Kit.Yellow.r, C5Kit.Yellow.g, C5Kit.Yellow.b, a) : C5Kit.Clear;
         }
     }
 
-    // ====================================
-    // ∫Æµπ √Êµπ πÊ«‚ ∞ËªÍ
-    // ====================================
-
-    private Vector2 GetCollisionNormal(
-        Vector2 previous,
-        Vector2 hitPosition,
-        Rect bounds,
-        float radius)
+    // =========================================
+    // Î≤ΩÎèå ÎßûÌûò
+    // =========================================
+    private void HandleBrickHit(Brick b)
     {
-        // ¿Ã¿¸ ¿ßƒ°∞° ¿ß / æ∆∑° / ¡¬ / øÏ ¡ﬂ
-        // æÓ¥¿ ¬ ø° ¿÷æ˙¥¬¡ˆ ∏’¿˙ »Æ¿Œ
-
-        if (previous.y + radius <= bounds.yMin)
-            return Vector2.down;
-
-        if (previous.y - radius >= bounds.yMax)
-            return Vector2.up;
-
-        if (previous.x + radius <= bounds.xMin)
-            return Vector2.left;
-
-        if (previous.x - radius >= bounds.xMax)
-            return Vector2.right;
-
-        // ∏º≠∏Æ ∫Œ±Ÿ √Êµπ
-        Vector2 nearest = new Vector2(
-            Mathf.Clamp(
-                hitPosition.x,
-                bounds.xMin,
-                bounds.xMax
-            ),
-            Mathf.Clamp(
-                hitPosition.y,
-                bounds.yMin,
-                bounds.yMax
-            )
-        );
-
-        Vector2 difference =
-            hitPosition - nearest;
-
-        if (difference.sqrMagnitude > 0.001f)
-            return difference.normalized;
-
-        // ∫Æµπ æ»¬ ±Ó¡ˆ µÈæÓ∞£ ∞ÊøÏ
-        // ¡÷µ» ¿Ãµø πÊ«‚¿« π›¥Î¬ ¿∏∑Œ π›ªÁ
-        if (Mathf.Abs(ballVelocity.x) >
-            Mathf.Abs(ballVelocity.y))
+        if (b.targetIndex < 0 && !b.distractor)
         {
-            return ballVelocity.x > 0f
-                ? Vector2.left
-                : Vector2.right;
-        }
-
-        return ballVelocity.y > 0f
-            ? Vector2.down
-            : Vector2.up;
-    }
-
-    // ====================================
-    // ∫Æµπø° ∏¬æ“¿ª ∂ß √≥∏Æ
-    // ====================================
-
-    private void HandleBrickHit(BrickData brick)
-    {
-        if (brick.isNormal)
-        {
-            // ¿œπ› ∫Æµπ¿∫ º¯º≠øÕ π´∞¸«œ∞‘ ¡¶∞≈
-            BreakBrick(brick);
-
-            Debug.Log("MG30: ¿œπ› ∫Æµπ ¡¶∞≈");
+            BreakBrick(b);
+            GameSfx.Play("block_place", 0.35f, 0.12f);
             return;
         }
 
-        if (brick.isTarget &&
-            brick.targetIndex == currentTargetIndex)
+        if (b.distractor)
         {
-            // «ˆ¿Á ¡§¥‰ πÆ¿⁄
-            BreakBrick(brick);
-
-            currentTargetIndex++;
-
-            UpdateHUD();
-            RefreshTargetHighlights();
-
-            Debug.Log(
-                "MG30: ¡§¥‰ »πµÊ " +
-                brick.character +
-                " (" + currentTargetIndex + "/5)"
-            );
-
-            if (currentTargetIndex >= TargetWord.Length)
-            {
-                CompleteAllLetters();
-            }
-
+            BreakBrick(b);
             return;
         }
 
-        // πÊ«ÿ πÆ¿⁄ ∂«¥¬ º¯º≠∞° ∆≤∏∞ START πÆ¿⁄
-        TriggerSequenceError();
+        // START Î¨∏Ïûê: ÏàúÏÑú ÏÉÅÍ¥ÄÏóÜÏù¥ Íπ®ÏßÄÍ≥†, Í∞ôÏùÄ Í∏ÄÏûê ÏûêÎ¶¨ Ïä¨Î°ØÏóê Îì§Ïñ¥Í∞ê (TÎäî ÎπÑÏñ¥ ÏûàÎäî T Ïπ∏)
+        int index = SlotFor(b.character);
+        if (index >= 0)
+            slotFilled[index] = true;
+        BreakBrick(b, false);
+        StartCoroutine(FlyToSlot(b, index));
+        currentTargetIndex++;
+        GameSfx.Play("correct_ding", 0.5f);
+        UpdateHud();
+
+        if (currentTargetIndex >= Word.Length)
+            StartCoroutine(AllCleared());
     }
 
-    private void BreakBrick(BrickData brick)
+    private int SlotFor(char c)
     {
-        brick.broken = true;
-        brick.obj.SetActive(false);
+        for (int i = 0; i < Word.Length; i++)
+            if (Word[i] == c && !slotFilled[i])
+                return i;
+        return -1;
     }
 
-    // ====================================
-    // «ˆ¿Á ∏Ò«•øÕ ¡¯«‡µµ «•Ω√
-    // ====================================
-
-    private void UpdateHUD()
+    private void BreakBrick(Brick b, bool effect = true)
     {
-        if (currentTargetIndex >= TargetWord.Length)
-        {
-            targetText.text = "TARGET : COMPLETE";
-        }
+        b.broken = true;
+        if (effect)
+            StartCoroutine(BreakEffect(b.rect, b.image.color));
         else
-        {
-            string extra = "";
-
-            if (currentTargetIndex == 1)
-                extra = " (FIRST T)";
-            else if (currentTargetIndex == 4)
-                extra = " (LAST T)";
-
-            targetText.text =
-                "TARGET : " +
-                TargetWord[currentTargetIndex] +
-                extra;
-        }
-
-        string progress = "";
-
-        for (int i = 0; i < TargetWord.Length; i++)
-        {
-            progress += i < currentTargetIndex
-                ? TargetWord[i].ToString()
-                : "_";
-
-            if (i < TargetWord.Length - 1)
-                progress += "  ";
-        }
-
-        progressText.text =
-            "PROGRESS : " + progress;
+            b.rect.gameObject.SetActive(false);
     }
 
-    // ====================================
-    // º¯º≠ ø¿∑˘
-    // ====================================
-
-    private void TriggerSequenceError()
+    private IEnumerator BreakEffect(RectTransform rect, Color color)
     {
-        if (phase != GamePhase.Playing)
-            return;
-
-        phase = GamePhase.SequenceError;
-
-        ClearBall();
-
-        StartCoroutine(
-            SequenceErrorRoutine()
-        );
+        if (rect == null) yield break;
+        Image img = rect.GetComponent<Image>();
+        TMP_Text label = rect.GetComponentInChildren<TMP_Text>();
+        float e = 0f;
+        while (e < 0.16f && rect != null)
+        {
+            e += Time.deltaTime;
+            float k = e / 0.16f;
+            rect.localScale = new Vector3(1f + k * 0.25f, 1f - k * 0.6f, 1f);
+            if (img != null) img.color = new Color(color.r, color.g, color.b, 1f - k);
+            if (label != null) label.alpha = 1f - k;
+            yield return null;
+        }
+        if (rect != null)
+        {
+            rect.gameObject.SetActive(false);
+            rect.localScale = Vector3.one;
+            if (img != null) img.color = color;
+            if (label != null) label.alpha = 1f;
+        }
     }
 
-    private IEnumerator SequenceErrorRoutine()
+    private IEnumerator FlyToSlot(Brick b, int index)
     {
-        errorText.text =
-            "SEQUENCE ERROR\nπÆ¿⁄ º¯º≠∞° ¿ﬂ∏¯µ«æ˙Ω¿¥œ¥Ÿ.";
+        Sprite s = slotLetterSprites != null && index >= 0 && index < slotLetterSprites.Length ? slotLetterSprites[index] : null;
+        RectTransform fly = C5Kit.Img(screen, "RT_Fly", s, s != null ? C5Kit.White : C5Kit.Pink, Vector2.zero,
+            new Vector2(60f, 56f), true).rectTransform;
+        fly.position = b.rect.position;
+        if (index >= 0)
+            yield return C5Kit.FlyTo(fly, slotRow.Slot(index).position, 0.35f, 1.4f);
+        Destroy(fly.gameObject);
 
-        errorText.gameObject.SetActive(true);
+        if (index >= 0)
+        {
+            slotRow.SetSlot(index, true);
+            yield return C5Kit.Pop(slotRow.Slot(index), 1.25f);
+        }
+    }
 
-        Debug.Log(
-            "MG30: SEQUENCE ERROR"
-        );
-
-        yield return new WaitForSecondsRealtime(
-            errorDisplayTime
-        );
-
+    private IEnumerator BallLost()
+    {
+        phase = GamePhase.SequenceError;   // Ïû†Íπê Î©àÏ∂§
+        ball.gameObject.SetActive(false);
+        ShowMessage("Í≥µÏùÑ ÎÜìÏ≥§ÏäµÎãàÎã§. ÏßÑÌñâÎèÑÎäî <color=" + C5Kit.YellowHex + ">Ïú†ÏßÄ</color>Îê©ÎãàÎã§.");
+        yield return new WaitForSeconds(0.5f);
         if (!isGameActive || finished)
             yield break;
-
-        errorText.gameObject.SetActive(false);
-
-        // ¡§¥‰ πÆ¿⁄ ¥Ÿº∏ ∞≥∏∏ ¥ŸΩ√ ª˝º∫µ» ªÛ≈¬∑Œ ∫π±∏
-        foreach (BrickData brick in bricks)
-        {
-            if (!brick.isTarget)
-                continue;
-
-            brick.broken = false;
-            brick.obj.SetActive(true);
-        }
-
-        // ¿œπ› ∫Æµπ∞˙ πÊ«ÿ πÆ¿⁄¿« ªÛ≈¬¥¬ ¿Ø¡ˆ
-        currentTargetIndex = 0;
-
-        UpdateHUD();
-        RefreshTargetHighlights();
-
-        SpawnBall();
+        ResetBall();
     }
 
-    // ====================================
-    // ¥Ÿº∏ ±€¿⁄ ºˆ¡˝ º∫∞¯
-    // ====================================
-
-    private void CompleteAllLetters()
+    private IEnumerator AllCleared()
     {
-        if (finished)
-            return;
-
         phase = GamePhase.StartReady;
+        ball.gameObject.SetActive(false);
+        plateText.text = "SEQUENCE <color=" + C5Kit.GreenHex + ">COMPLETE</color>";
+        SetBottom("");
+        yield return new WaitForSeconds(0.55f);
 
-        ClearBall();
+        area.gameObject.SetActive(false);
 
-        gameArea.gameObject.SetActive(false);
-        errorText.gameObject.SetActive(false);
-
-        resultPanel.SetActive(true);
-
-        resultText.text = "S - T - A - R - T";
+        Transform[] from = new Transform[5];
+        for (int i = 0; i < 5; i++)
+            from[i] = slotRow.Slot(i);
+        yield return C5Kit.MergeLetters(screen, slotLetterSprites, font, new Vector2(0f, 40f), new Vector2(88f, 81f), from);
 
         finalStartButton.gameObject.SetActive(true);
         finalStartButton.transform.SetAsLastSibling();
-
-        Debug.Log(
-            "MG30: START πÆ¿⁄ 5∞≥ ¡¶∞≈ øœ∑·!"
-        );
+        StartCoroutine(C5Kit.Pop(finalStartButton.transform, 1.25f, 0.3f));
+        SetBottom("<color=" + C5Kit.YellowHex + ">START</color>Î•º ÎàåÎü¨ Í≤ÄÏÇ¨Î•º ÏôÑÎ£åÌïòÏÑ∏Ïöî.");
     }
 
-    // ====================================
-    // √÷¡æ START πˆ∆∞
-    // ====================================
-
-    private void SetupFinalButton()
+    // =========================================
+    // ÏïàÎÇ¥ Î¨∏Íµ¨
+    // =========================================
+    private void SetBottom(string text)
     {
-        finalStartButton.onClick.RemoveAllListeners();
+        if (bottomText != null)
+            bottomText.text = text;
+    }
 
-        finalStartButton.onClick.AddListener(
-            OnFinalStartClicked
-        );
+    private void ShowMessage(string text)
+    {
+        if (messageRoutine != null)
+            StopCoroutine(messageRoutine);
+        messageRoutine = StartCoroutine(MessageRoutine(text));
+    }
 
-        finalStartButton.interactable = true;
+    private IEnumerator MessageRoutine(string text)
+    {
+        SetBottom(text);
+        yield return new WaitForSeconds(1.8f);
+        if (phase == GamePhase.Playing || phase == GamePhase.WaitingLaunch)
+            SetBottom(DefaultGuide());
+        messageRoutine = null;
     }
 
     private void OnFinalStartClicked()
     {
-        if (!isGameActive ||
-            finished ||
-            phase != GamePhase.StartReady)
-        {
+        if (!isGameActive || finished || phase != GamePhase.StartReady)
             return;
-        }
 
         finished = true;
         phase = GamePhase.Completed;
-
-        Debug.Log(
-            "MG30: √÷¡æ START ≈¨∏Ø - ∞ÀªÁ øœ∑·"
-        );
-
         Success();
     }
 
-    // ====================================
-    // »˘∆Æ π◊ ¿ÁΩ√¿€
-    // ====================================
-
     protected override void GiveHint()
     {
-        if (phase == GamePhase.Playing ||
-            phase == GamePhase.WaitingLaunch)
-        {
-            if (currentTargetIndex < TargetWord.Length)
-            {
-                targetText.text =
-                    "TARGET : " +
-                    TargetWord[currentTargetIndex] +
-                    "  |  ¥Ÿ∏• πÆ¿⁄∏¶ ±˙∏È √ ±‚»≠µÀ¥œ¥Ÿ.";
-            }
-        }
+        if (phase == GamePhase.Playing || phase == GamePhase.WaitingLaunch)
+            ShowMessage("ÌûåÌä∏: ÎÖ∏ÎûóÍ≤å ÍπúÎπ°Ïù¥Îäî Î≤ΩÎèåÏù¥ ÏßÄÍ∏à Íπ∞ Î¨∏ÏûêÏûÖÎãàÎã§.");
     }
 
     protected override void RestartGame()

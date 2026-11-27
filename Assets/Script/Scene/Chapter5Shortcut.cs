@@ -10,6 +10,7 @@ using UnityEngine.SceneManagement;
 ///       → 챕터5는 MG21부터 처음 시작
 ///  F6 : 챕터1~4 클리어 상태로 → 챕터 선택 화면에서 챕터5 등장 연출 (어느 씬에서 눌러도 메인으로 가서 보여 줌)
 ///  F7 : 챕터5 실패 횟수 +1 (3번째부터 ? → 악마 아이콘 + B곡)
+///  F9 : 바로 챕터5 MG26부터 플레이 (MG26~30 테스트용, 챕터1~4는 깬 것으로 처리)
 /// ※ 에디터에서는 키를 누르기 전에 Game 창을 마우스로 한 번 클릭해야 키가 들어감
 /// </summary>
 public class Chapter5Shortcut : MonoBehaviour
@@ -28,13 +29,17 @@ public class Chapter5Shortcut : MonoBehaviour
         GameObject go = new GameObject("[Chapter5Shortcut]");
         DontDestroyOnLoad(go);
         instance = go.AddComponent<Chapter5Shortcut>();
-        Debug.Log("[Chapter5] 단축키 준비됨 - F5: 바로 챕터5 플레이 / F6: 챕터5 등장 연출 / F7: 실패 +1");
+        Debug.Log("[Chapter5] 단축키 준비됨 - F5: 바로 챕터5 플레이 / F6: 챕터5 등장 연출 / F7: 실패 +1 / F9: 챕터5 MG26부터");
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(GoKey))
             GoToChapter5();
+
+        // F9: 챕터5를 MG26(여섯 번째 미니게임)부터
+        if (Input.GetKeyDown(KeyCode.F9))
+            GoToChapter5(5);
 
         if (Input.GetKeyDown(KeyCode.F6))
             TestRevealChapter5();
@@ -103,19 +108,33 @@ public class Chapter5Shortcut : MonoBehaviour
     /// <summary>챕터1~4를 깬 상태로 만들고 챕터5를 처음부터 시작</summary>
     public static void GoToChapter5()
     {
+        GoToChapter5(0);
+    }
+
+    /// <summary>
+    /// 챕터1~4를 깬 상태로 만들고 챕터5를 startIndex 번째 미니게임부터 시작
+    /// (0 = MG21부터, 5 = MG26부터)
+    /// </summary>
+    public static void GoToChapter5(int startIndex)
+    {
         for (int i = 1; i <= 4; i++)
         {
             SessionProgress.SetProgress(i, 5);
             SessionProgress.CompleteChapter(i);
         }
 
-        // 챕터5는 처음(MG21)부터
+        // 챕터5는 처음(MG21)부터, 또는 지정한 미니게임부터
+        // (ChapterManager 가 저장된 진행도만큼 건너뛰고 시작함)
         SessionProgress.ResetChapterProgress(5);
+        if (startIndex > 0)
+            SessionProgress.SetProgress(5, startIndex);
         SessionProgress.chapter5Revealed = true;
         SessionProgress.openChapterSelectOnLoad = false;
 
         Time.timeScale = 1f;
-        Debug.Log("[Chapter5] F5 → 챕터5로 이동");
+        Debug.Log(startIndex > 0
+            ? "[Chapter5] F9 → 챕터5 MG" + (21 + startIndex) + "부터 시작"
+            : "[Chapter5] F5 → 챕터5로 이동");
         SceneManager.LoadScene(Chapter5Scene);
     }
 }

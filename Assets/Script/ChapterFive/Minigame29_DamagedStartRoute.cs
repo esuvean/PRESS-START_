@@ -1,69 +1,85 @@
-
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
+/// <summary>
+/// MG29 ì†ìƒëœ START ê²½ë¡œ (ì‹¤í–‰ ê²½ë¡œ ë³µêµ¬ ê²€ì‚¬) - ê¸°íšì„œ Chapter 5 / ë¯¸ë‹ˆê²Œì„ 29
+///  - ìœ„ìª½ S T A R T, ì•„ë˜ìª½ ê²°ê³¼ ìŠ¬ë¡¯ 1~5, ê·¸ ì‚¬ì´ ì‚¬ë‹¤ë¦¬
+///  - ê°€ë¡œì„  ì¼ë¶€ëŠ” ì‚¬ë¼ì ¸ ìˆê³ (ë¹ˆ ìë¦¬ í´ë¦­ìœ¼ë¡œ ì¶”ê°€/ì œê±°), ì¼ë¶€ëŠ” í‰ì†Œì— ë³´ì´ì§€ ì•ŠëŠ” 'ìˆ¨ì€ ê²½ë¡œ'
+///  - ëª‡ ì´ˆë§ˆë‹¤ ê¸€ë¦¬ì¹˜ê°€ ì¼ì–´ë‚˜ëŠ” ì•½ 0.5ì´ˆ ë™ì•ˆë§Œ ìˆ¨ì€ ê²½ë¡œê°€ ë³´ì„ â†’ ê¸°ì–µí•´ì„œ ê²½ë¡œë¥¼ ê³ ì¹¨
+///  - RUN â†’ ë¬¸ìë“¤ì´ ì‚¬ë‹¤ë¦¬ë¥¼ ë”°ë¼ ë‚´ë ¤ê°. ê²°ê³¼ê°€ S T A R T ë©´ ê²°í•© â†’ START í´ë¦­
+///  - í‹€ë¦¬ë©´ ERROR INVALID ROUTE (ì‚¬ë‹¤ë¦¬ ìƒíƒœëŠ” ê·¸ëŒ€ë¡œ ìœ ì§€)
+/// </summary>
 public class Minigame29_DamagedStartRoute : MinigameBase
 {
-    [Header("Main UI")]
-    public GameObject playArea;
-    public RectTransform ladderBoard;
-    public RectTransform verticalLineLayer;
-    public RectTransform rungLayer;
-    public RectTransform letterLayer;
-    public RectTransform slotLayer;
+    [Header("ì±•í„°5 ê·¸ë¦¼ (ì—ë””í„° ë„êµ¬ê°€ ìë™ìœ¼ë¡œ ë„£ìŒ)")]
+    public TMP_FontAsset uiFont;
+    public Sprite panelSprite;          // 23_line_back
+    public Sprite startButtonSprite;    // normal_button
+    public Sprite runButtonSprite;      // 24_button
+    public Sprite[] letterSprites = new Sprite[5];   // Chapter1 S / T / A / R / T2
+    public Sprite[] numberSprites = new Sprite[5];   // 29_1 ~ 29_5
 
-    public Image glitchOverlay;
-    public Button runButton;
-    public TMP_Text statusText;
-    public TMP_Text errorText;
-    public TMP_Text resultText;
-    public Button finalStartButton;
+    [Header("ê·œì¹™")]
+    [Tooltip("RUN ê²°ê³¼ê°€ í‹€ë¦¬ë©´ ì±•í„°5 ì˜¤ë¥˜ íšŸìˆ˜ì— í¬í•¨")]
+    public bool countMistakes = true;
 
-    [Header("ART - Letter Images")]
-    public Sprite letterS;
-    public Sprite letterT;
-    public Sprite letterA;
-    public Sprite letterR;
-
-    [Header("ART - Ladder Images")]
-    public Sprite verticalLineSprite;
-    public Sprite rungSprite;
-    public Sprite hiddenRungSprite;
-    public Sprite resultSlotSprite;
-    public Sprite boardSprite;
-    public Sprite glitchSprite;
-
-    [Header("ART - Button Images")]
-    public Sprite runButtonSprite;
-    public Sprite finalStartSprite;
-
-    [Header("ART - Options")]
-    public bool hideRunTextWhenSpriteExists = true;
-    public bool hideFinalTextWhenSpriteExists = true;
-
-    [Header("Ladder Settings")]
-    public Vector2 letterSize = new Vector2(70f, 70f);
-    public Vector2 resultSlotSize = new Vector2(120f, 68f);
-    public float verticalLineWidth = 8f;
-    public float rungThickness = 15f;
-
-    [Header("Animation Settings")]
-    public float letterMoveSpeed = 1050f;
-    public float errorDisplayTime = 1.4f;
-
-    [Header("Glitch Settings")]
-    public float minGlitchInterval = 2.8f;
-    public float maxGlitchInterval = 4.5f;
+    [Header("ê¸€ë¦¬ì¹˜ (ìˆ¨ì€ ê²½ë¡œê°€ ë³´ì´ëŠ” ìˆœê°„)")]
+    public float firstGlitchDelay = 2f;
+    public float minGlitchInterval = 5f;
+    public float maxGlitchInterval = 8f;
     public float glitchDuration = 0.5f;
 
-    private const int LaneCount = 5;
-    private const int RowCount = 5;
-    private const int GapCount = 4;
+    [Header("íŒíŠ¸ (ì‹œê°„ì´ ì§€ë‚˜ê±°ë‚˜ RUNì„ í‹€ë¦´ìˆ˜ë¡ ë‹¨ê³„ê°€ ì˜¬ë¼ê°)")]
+    public float hint1Time = 25f;
+    public float hint2Time = 50f;
+    public float hint3Time = 80f;
 
-    private const string TargetWord = "START";
+    [Header("ì—°ì¶œ ì†ë„")]
+    public float rowStepTime = 0.13f;
+    public float errorDisplayTime = 1.3f;
+
+    private const int Lanes = 5;
+    private const int Rows = 6;
+    private const int Gaps = 4;
+    private const string Word = "START";
+
+    // ---- ë°°ì¹˜ ----
+    private static readonly Vector2 PanelPos = new Vector2(0f, 15f);
+    private static readonly Vector2 PanelSize = new Vector2(1500f, 620f);
+    private const float LaneSpacing = 170f;
+    private const float LetterY = 240f;
+    private const float LineTop = 196f;
+    private const float LineBottom = -204f;
+    private const float FirstRowY = 150f;
+    private const float RowSpacing = 62f;
+    private const float SlotY = -246f;
+    private static readonly Vector2 LetterSize = new Vector2(80f, 98f);
+    private static readonly Color[] RungColors =
+    {
+        new Color32(255, 232, 26, 255), new Color32(255, 45, 149, 255),
+        new Color32(25, 220, 245, 255), new Color32(255, 232, 26, 255)
+    };
+
+    // í¼ì¦ (ìˆ¨ì€ ê²½ë¡œ 2ê°œ + ì²˜ìŒë¶€í„° ìˆëŠ” ê°€ë¡œì„  3ê°œ, ë‘˜ ë‹¤ ì§€ìš¸ ìˆ˜ ì—†ìŒ)
+    //  - í”Œë ˆì´ì–´ëŠ” ê°€ë¡œì„ ì„ 'ì¶”ê°€'ë§Œ í•´ì„œ STARTë¥¼ ë§Œë“ ë‹¤ (ì¶”ê°€í•œ ê²ƒì€ ë‹¤ì‹œ ëˆŒëŸ¬ ì§€ìš¸ ìˆ˜ ìˆìŒ)
+    //  - 3ê°œë¥¼ ì¶”ê°€í•˜ë©´ í’€ë¦¬ê³ , ìˆ¨ì€ ê²½ë¡œë¥¼ ëª¨ë¥´ê³  ì¶”ê°€í•˜ë©´ í’€ë¦¬ì§€ ì•Šê²Œ ê³¨ë¼ ë‘” ë°°ì¹˜. ì‹œì‘í•  ë•Œ í•˜ë‚˜ë¥¼ ê³ ë¦„.
+    //  - ìˆ«ìëŠ” (í–‰, ì¹¸) ìŒ. í–‰ 0 = ë§¨ ìœ„, ì¹¸ 0 = 1ë²ˆê³¼ 2ë²ˆ ì„¸ë¡œì¤„ ì‚¬ì´
+    private static readonly int[][] PuzzleHidden =
+    {
+        new[] { 2, 0, 5, 2 },
+        new[] { 0, 0, 2, 1 },
+        new[] { 0, 2, 2, 3 },
+    };
+    private static readonly int[][] PuzzleVisible =
+    {
+        new[] { 1, 3, 2, 3, 4, 1 },
+        new[] { 0, 3, 1, 0, 5, 0 },
+        new[] { 1, 1, 3, 0, 4, 0 },
+    };
 
     private enum Phase
     {
@@ -75,1126 +91,639 @@ public class Minigame29_DamagedStartRoute : MinigameBase
     }
 
     private Phase phase;
-
-    private bool[,] manualRungs =
-        new bool[RowCount, GapCount];
-
-    private bool[,] hiddenRungs =
-        new bool[RowCount, GapCount];
-
-    private Image[,] rungImages =
-        new Image[RowCount, GapCount];
-
-    private RectTransform[] letters =
-        new RectTransform[LaneCount];
-
-    private TMP_Text[] slotTexts =
-        new TMP_Text[LaneCount];
-
-    private readonly List<GameObject> generatedObjects =
-        new List<GameObject>();
-
-    private float laneSpacing;
-    private float topY;
-    private float bottomY;
-
+    private bool finished;
     private bool hiddenVisible;
-    private bool completed;
+    private float glitchTimer;
+    private float editTime;
+    private int failCount;
+    private int hintLevel;
 
-    private static readonly Color NormalRungColor =
-        new Color32(83, 216, 211, 255);
+    private bool[,] manualRungs = new bool[Rows, Gaps];   // í”Œë ˆì´ì–´ê°€ ì¶”ê°€í•œ ê°€ë¡œì„ 
+    private bool[,] fixedRungs = new bool[Rows, Gaps];    // ì²˜ìŒë¶€í„° ìˆëŠ” ê°€ë¡œì„  (ì§€ìš¸ ìˆ˜ ì—†ìŒ)
+    private readonly Image[,] fixedImages = new Image[Rows, Gaps];
+    private bool[,] hiddenRungs = new bool[Rows, Gaps];
+    private readonly Image[,] rungImages = new Image[Rows, Gaps];
+    private readonly RectTransform[,] hiddenImages = new RectTransform[Rows, Gaps];
+    private readonly Image[,] previewImages = new Image[Rows, Gaps];
+    private readonly RectTransform[] letters = new RectTransform[Lanes];
+    private readonly Image[] slotImages = new Image[Lanes];
 
-    private static readonly Color HiddenRungColor =
-        new Color32(255, 204, 94, 255);
-
-    private static readonly Color EmptyRungColor =
-        new Color32(110, 153, 185, 30);
+    // ---- ë§Œë“  UI ----
+    private TMP_FontAsset font;
+    private RectTransform screen;
+    private RectTransform panel;
+    private RectTransform ladder;
+    private Button runButton;
+    private TextMeshProUGUI bottomText;
+    private CanvasGroup banner;
+    private TextMeshProUGUI bannerText;
+    private Button finalStartButton;
+    private Coroutine messageRoutine;
 
     private void Start()
     {
         if (!isGameActive)
-        {
             StartMinigame();
-        }
     }
 
     public override void StartMinigame()
     {
-        gameName = "¼Õ»óµÈ START °æ·Î";
-
-        instruction =
-            "»ç´Ù¸®ÀÇ °¡·Î¼±À» º¹±¸ÇØ START¸¦ ¸¸µå½Ê½Ã¿À.";
-
-        timeLimit = 999999f;
+        gameName = "ì‹¤í–‰ ê²½ë¡œ ë³µêµ¬ ê²€ì‚¬";
+        instruction = "ìˆ¨ì€ ê²½ë¡œë¥¼ ì°¾ì•„ START ìˆœì„œë¥¼ ë³µêµ¬í•˜ì„¸ìš”.";
 
         base.StartMinigame();
-
         StopAllCoroutines();
+        messageRoutine = null;
 
-        completed = false;
-        phase = Phase.Editing;
+        finished = false;
         hiddenVisible = false;
+        glitchTimer = firstGlitchDelay;
+        editTime = 0f;
+        failCount = 0;
+        hintLevel = 0;
 
-        if (!FindReferences())
+        SetupPuzzle(Random.Range(0, PuzzleHidden.Length));
+        BuildScreen();
+        C5Kit.PrepareNoise(transform);
+        RefreshRungs();
+        SetHiddenVisible(false);
+
+        phase = Phase.Editing;
+        SetBottom(DefaultGuide());
+    }
+
+    private void SetupPuzzle(int index)
+    {
+        manualRungs = new bool[Rows, Gaps];
+        fixedRungs = new bool[Rows, Gaps];
+        hiddenRungs = new bool[Rows, Gaps];
+        int[] h = PuzzleHidden[index];
+        for (int i = 0; i < h.Length; i += 2)
+            hiddenRungs[h[i], h[i + 1]] = true;
+        int[] v = PuzzleVisible[index];
+        for (int i = 0; i < v.Length; i += 2)
+            fixedRungs[v[i], v[i + 1]] = true;
+    }
+
+    private string DefaultGuide()
+    {
+        switch (hintLevel)
         {
-            Debug.LogError(
-                "MG29: UI ¿¬°áÀÌ ´©¶ôµÇ¾ú½À´Ï´Ù.",
-                this
-            );
+            case 1:
+                return "íŒíŠ¸: ê°™ì€ ì¹¸ì— ê°€ë¡œì„ ì´ <color=" + C5Kit.YellowHex +
+                       ">ìœ„ì•„ë˜ë¡œ ë‘ ê°œ</color> ìˆìœ¼ë©´ ì„œë¡œ ì—†ì–´ì ¸ìš”. ìˆ¨ì€ ê°€ë¡œì„ ë„ ë§ˆì°¬ê°€ì§€!";
+            case 2:
+                return "íŒíŠ¸: ê¸€ë¦¬ì¹˜ê°€ <color=" + C5Kit.YellowHex + ">ë” ìì£¼, ë” ê¸¸ê²Œ</color> ì¼ì–´ë‚˜ìš”. ì ì„  ìë¦¬ë¥¼ ì˜ ë³´ì„¸ìš”.";
+            case 3:
+                return "íŒíŠ¸: ìˆ¨ì€ ê²½ë¡œê°€ <color=" + C5Kit.YellowHex + ">í¬ë¯¸í•˜ê²Œ</color> ë³´ì—¬ìš”. ì ì„  ë°”ë¡œ ìœ„ë‚˜ ì•„ë˜ ì¹¸ì— ê°€ë¡œì„ ì„ ë†“ì•„ ë³´ì„¸ìš”.";
+        }
+        return "<color=" + C5Kit.YellowHex + ">ê¸€ë¦¬ì¹˜</color>ë¡œ ë³´ì´ëŠ” ê¸¸ì„ ê¸°ì–µí•´ ë³µêµ¬í•˜ì„¸ìš”.";
+    }
 
-            isGameActive = false;
+    // ì‹œê°„ì´ ì§€ë‚˜ê±°ë‚˜ RUNì„ í‹€ë¦° íšŸìˆ˜ë§Œí¼ íŒíŠ¸ ë‹¨ê³„ ì˜¬ë¦¬ê¸°
+    private void UpdateHintLevel()
+    {
+        int level = 0;
+        if (editTime >= hint1Time || failCount >= 1) level = 1;
+        if (editTime >= hint2Time || failCount >= 2) level = 2;
+        if (editTime >= hint3Time || failCount >= 3) level = 3;
+        if (level <= hintLevel)
             return;
+
+        hintLevel = level;
+        if (hintLevel >= 2)
+        {
+            minGlitchInterval = Mathf.Min(minGlitchInterval, 3f);
+            maxGlitchInterval = Mathf.Min(maxGlitchInterval, 4f);
+            glitchDuration = Mathf.Max(glitchDuration, 0.9f);
+            glitchTimer = Mathf.Min(glitchTimer, 1f);
+        }
+        SetHiddenVisible(hiddenVisible);
+        if (messageRoutine == null && phase == Phase.Editing)
+            SetBottom(DefaultGuide());
+    }
+
+    // =========================================
+    // í™”ë©´ ë§Œë“¤ê¸°
+    // =========================================
+    private void BuildScreen()
+    {
+        font = C5Kit.ResolveFont(transform, uiFont);
+        C5Kit.HideLegacy(transform);
+        screen = C5Kit.NewScreen(transform, "RT_MG29");
+
+        panel = C5Kit.Panel(screen, panelSprite, PanelPos, PanelSize).rectTransform;
+        ladder = C5Kit.Rect(screen, "RT_Ladder", new Vector2(-60f, 0f), new Vector2(900f, 600f));
+
+        // ì„¸ë¡œì¤„
+        for (int lane = 0; lane < Lanes; lane++)
+        {
+            float x = LaneX(lane);
+            Image line = C5Kit.Img(ladder, "Line" + lane, null, new Color(0.92f, 0.97f, 1f, 1f),
+                new Vector2(x, (LineTop + LineBottom) * 0.5f), new Vector2(7f, LineTop - LineBottom));
+            C5Kit.AddOutline(line, new Color(0.1f, 0.85f, 1f, 0.45f), 2f);
+            C5Kit.Img(ladder, "CapTop" + lane, null, C5Kit.White, new Vector2(x, LineTop), new Vector2(18f, 8f));
+            C5Kit.Img(ladder, "CapBottom" + lane, null, C5Kit.White, new Vector2(x, LineBottom), new Vector2(18f, 8f));
         }
 
-        ClearGeneratedObjects();
+        // ê°€ë¡œì„  ìë¦¬ (ë³´ì´ëŠ” ê°€ë¡œì„  / ìˆ¨ì€ ê²½ë¡œ / ë§ˆìš°ìŠ¤ ì˜¬ë ¸ì„ ë•Œ ë¯¸ë¦¬ë³´ê¸° / í´ë¦­ ì˜ì—­)
+        for (int r = 0; r < Rows; r++)
+        {
+            for (int g = 0; g < Gaps; g++)
+            {
+                Vector2 p = RungPos(r, g);
+                float w = LaneSpacing - 14f;
 
-        playArea.SetActive(true);
-        errorText.gameObject.SetActive(false);
-        resultText.gameObject.SetActive(false);
+                Image preview = C5Kit.Img(ladder, "Preview", null, new Color(1f, 1f, 1f, 0f), p, new Vector2(w, 10f));
+                previewImages[r, g] = preview;
+
+                RectTransform hidden = C5Kit.Rect(ladder, "Hidden", p, new Vector2(w, 12f));
+                for (int d = 0; d < 7; d++)
+                    C5Kit.Img(hidden, "Dash", null, C5Kit.Cyan, new Vector2(-w * 0.5f + 11f + d * (w - 22f) / 6f, 0f),
+                        new Vector2(14f, 8f));
+                hiddenImages[r, g] = hidden;
+
+                // ì²˜ìŒë¶€í„° ìˆëŠ” ê°€ë¡œì„  (ìƒ‰ê¹”, ì§€ìš¸ ìˆ˜ ì—†ìŒ)
+                Image fixedRung = C5Kit.Img(ladder, "FixedRung", null, RungColors[g], p, new Vector2(w, 13f));
+                C5Kit.Img(fixedRung.transform, "Shine", null, new Color(1f, 1f, 1f, 0.55f), new Vector2(0f, 3f),
+                    new Vector2(w - 8f, 3f));
+                fixedImages[r, g] = fixedRung;
+
+                // í”Œë ˆì´ì–´ê°€ ì¶”ê°€í•œ ê°€ë¡œì„  (í°ìƒ‰, ë‹¤ì‹œ ëˆ„ë¥´ë©´ ì§€ì›Œì§)
+                Image rung = C5Kit.Img(ladder, "Rung", null, C5Kit.White, p, new Vector2(w, 13f));
+                C5Kit.Img(rung.transform, "Glow", null, new Color(0.6f, 1f, 1f, 0.9f), new Vector2(0f, -4f),
+                    new Vector2(w - 8f, 3f));
+                rungImages[r, g] = rung;
+
+                Image hit = C5Kit.Img(ladder, "Hit", null, C5Kit.Clear, p, new Vector2(w - 10f, RowSpacing - 14f));
+                hit.raycastTarget = true;
+                int rr = r, gg = g;
+                Button b = hit.gameObject.AddComponent<Button>();
+                b.transition = Selectable.Transition.None;
+                Navigation nav = b.navigation;
+                nav.mode = Navigation.Mode.None;
+                b.navigation = nav;
+                b.onClick.AddListener(() => OnRungClicked(rr, gg));
+                AddHover(hit.gameObject, rr, gg);
+            }
+        }
+
+        // ìœ„ìª½ ë¬¸ì / ì•„ë˜ìª½ ë²ˆí˜¸ ìŠ¬ë¡¯
+        for (int lane = 0; lane < Lanes; lane++)
+        {
+            Sprite num = numberSprites != null && lane < numberSprites.Length ? numberSprites[lane] : null;
+            Image slot = C5Kit.Img(ladder, "Slot" + lane, num, num != null ? C5Kit.White : C5Kit.Navy,
+                new Vector2(LaneX(lane), SlotY), new Vector2(102f, 80f), true);
+            if (num == null)
+            {
+                C5Kit.AddOutline(slot, C5Kit.Cyan, 3f);
+                C5Kit.Txt(slot.transform, "N", (lane + 1).ToString(), 40f, C5Kit.White, TextAlignmentOptions.Center,
+                    Vector2.zero, new Vector2(102f, 80f), font);
+            }
+            slotImages[lane] = slot;
+        }
+
+        for (int i = 0; i < Lanes; i++)
+        {
+            Sprite s = letterSprites != null && i < letterSprites.Length ? letterSprites[i] : null;
+            Image img = C5Kit.Img(ladder, "Letter_" + Word[i], s, s != null ? C5Kit.White : C5Kit.Navy,
+                new Vector2(LaneX(i), LetterY), LetterSize, true);
+            if (s == null)
+            {
+                C5Kit.AddOutline(img, C5Kit.Pink, 3f);
+                C5Kit.Txt(img.transform, "L", Word[i].ToString(), 54f, C5Kit.White, TextAlignmentOptions.Center,
+                    Vector2.zero, LetterSize, font);
+            }
+            letters[i] = img.rectTransform;
+        }
+
+        // RUN ë²„íŠ¼ (ì˜¤ë¥¸ìª½)
+        Image run = C5Kit.Img(screen, "RT_RunButton", runButtonSprite,
+            runButtonSprite != null ? C5Kit.White : C5Kit.DeepNavy, new Vector2(560f, -10f), new Vector2(230f, 78f));
+        if (runButtonSprite == null)
+            C5Kit.AddOutline(run, C5Kit.Yellow, 4f);
+        C5Kit.Txt(run.transform, "Label", "RUN", 44f, C5Kit.Yellow, TextAlignmentOptions.Center, new Vector2(0f, 2f),
+            new Vector2(230f, 78f), font);
+        runButton = C5Kit.MakeButton(run, OnRunClicked);
+
+        bottomText = C5Kit.BottomText(screen, font, "");
+        banner = C5Kit.Banner(screen, font, new Vector2(-60f, 20f), new Vector2(720f, 160f), out bannerText);
+
+        finalStartButton = C5Kit.StartButton(screen, startButtonSprite, font, new Vector2(0f, 20f),
+            new Vector2(360f, 84f), OnFinalStartClicked);
         finalStartButton.gameObject.SetActive(false);
-
-        Canvas.ForceUpdateCanvases();
-
-        SetupBoardSize();
-        SetupInitialPuzzle();
-        ApplyStaticArtwork();
-        SetupButtons();
-
-        CreateVerticalLines();
-        CreateRungButtons();
-        CreateResultSlots();
-        CreateLetters();
-
-        SetHiddenRungsVisible(false);
-
-        statusText.text =
-            "ºó °¡·Î¼± ÀÚ¸®¸¦ Å¬¸¯ÇØ Ãß°¡ÇÏ°Å³ª " +
-            "±âÁ¸ °¡·Î¼±À» Á¦°ÅÇÏ¼¼¿ä.";
-
-        runButton.interactable = true;
-
-        StartCoroutine(GlitchRoutine());
-
-        Debug.Log("MG29: ¼Õ»óµÈ START °æ·Î ½ÃÀÛ");
     }
 
-    // =======================================
-    // UI ÀÚµ¿ °Ë»ö
-    // =======================================
-
-    private Transform FindDeep(
-        Transform parent,
-        string targetName)
+    private void AddHover(GameObject go, int row, int gap)
     {
-        if (parent == null)
-            return null;
+        EventTrigger trigger = go.AddComponent<EventTrigger>();
 
-        if (parent.name == targetName)
-            return parent;
+        EventTrigger.Entry enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener(_ => SetPreview(row, gap, true));
+        trigger.triggers.Add(enter);
 
-        foreach (Transform child in parent)
+        EventTrigger.Entry exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener(_ => SetPreview(row, gap, false));
+        trigger.triggers.Add(exit);
+    }
+
+    private void SetPreview(int row, int gap, bool on)
+    {
+        Image p = previewImages[row, gap];
+        if (p == null) return;
+        bool show = on && phase == Phase.Editing && !manualRungs[row, gap] && !fixedRungs[row, gap];
+        p.color = new Color(1f, 1f, 1f, show ? 0.22f : 0f);
+    }
+
+    private static float LaneX(int lane)
+    {
+        return (lane - 2) * LaneSpacing;
+    }
+
+    private static float RowY(int row)
+    {
+        return FirstRowY - row * RowSpacing;
+    }
+
+    private static Vector2 RungPos(int row, int gap)
+    {
+        return new Vector2((LaneX(gap) + LaneX(gap + 1)) * 0.5f, RowY(row));
+    }
+
+    private void RefreshRungs()
+    {
+        for (int r = 0; r < Rows; r++)
+        for (int g = 0; g < Gaps; g++)
         {
-            Transform found =
-                FindDeep(child, targetName);
-
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
-    private T FindUI<T>(string name)
-        where T : Component
-    {
-        Transform found = FindDeep(transform, name);
-
-        return found == null
-            ? null
-            : found.GetComponent<T>();
-    }
-
-    private GameObject FindObject(string name)
-    {
-        Transform found = FindDeep(transform, name);
-
-        return found == null
-            ? null
-            : found.gameObject;
-    }
-
-    private bool FindReferences()
-    {
-        if (playArea == null)
-            playArea = FindObject("PlayArea");
-
-        if (ladderBoard == null)
-            ladderBoard =
-                FindUI<RectTransform>("LadderBoard");
-
-        if (verticalLineLayer == null)
-            verticalLineLayer =
-                FindUI<RectTransform>("VerticalLineLayer");
-
-        if (rungLayer == null)
-            rungLayer =
-                FindUI<RectTransform>("RungLayer");
-
-        if (letterLayer == null)
-            letterLayer =
-                FindUI<RectTransform>("LetterLayer");
-
-        if (slotLayer == null)
-            slotLayer =
-                FindUI<RectTransform>("SlotLayer");
-
-        if (glitchOverlay == null)
-            glitchOverlay = FindUI<Image>("GlitchOverlay");
-
-        if (runButton == null)
-            runButton = FindUI<Button>("RunButton");
-
-        if (statusText == null)
-            statusText = FindUI<TMP_Text>("StatusText");
-
-        if (errorText == null)
-            errorText = FindUI<TMP_Text>("ErrorText");
-
-        if (resultText == null)
-            resultText = FindUI<TMP_Text>("ResultText");
-
-        if (finalStartButton == null)
-            finalStartButton =
-                FindUI<Button>("FinalStartButton");
-
-        bool valid =
-            playArea != null &&
-            ladderBoard != null &&
-            verticalLineLayer != null &&
-            rungLayer != null &&
-            letterLayer != null &&
-            slotLayer != null &&
-            glitchOverlay != null &&
-            runButton != null &&
-            statusText != null &&
-            errorText != null &&
-            resultText != null &&
-            finalStartButton != null;
-
-        return valid;
-    }
-
-    // =======================================
-    // °ÔÀÓÆÇ Å©±â ¼³Á¤
-    // =======================================
-
-    private void SetupBoardSize()
-    {
-        float width = ladderBoard.rect.width;
-        float height = ladderBoard.rect.height;
-
-        laneSpacing = Mathf.Min(
-            245f,
-            (width - 140f) / 4f
-        );
-
-        topY = Mathf.Min(
-            235f,
-            height * 0.5f - 42f
-        );
-
-        bottomY = -topY;
-    }
-
-    private float LaneX(int lane)
-    {
-        return (lane - 2) * laneSpacing;
-    }
-
-    private float RowY(int row)
-    {
-        return Mathf.Lerp(
-            topY - 65f,
-            bottomY + 70f,
-            row / (float)(RowCount - 1)
-        );
-    }
-
-    // =======================================
-    // ÃÊ±â ¼Õ»óµÈ ÆÛÁñ
-    // =======================================
-
-    private void SetupInitialPuzzle()
-    {
-        manualRungs =
-            new bool[RowCount, GapCount];
-
-        hiddenRungs =
-            new bool[RowCount, GapCount];
-
-        // ´«¿¡ º¸ÀÌÁö ¾ÊÁö¸¸ ½ÇÁ¦ °æ·Î¿¡
-        // ¿µÇâÀ» ÁÖ´Â ¼û°ÜÁø °¡·Î¼±
-        hiddenRungs[0, 1] = true;
-        hiddenRungs[2, 3] = true;
-
-        // ¼Õ»óµÈ »óÅÂ·Î ½ÃÀÛ
-        // ºÒÇÊ¿äÇÑ °¡·Î¼± µÎ °³
-        manualRungs[4, 0] = true;
-        manualRungs[4, 2] = true;
-
-        // º¹±¸ÇÒ ¼ö ÀÖ´Â Á¤´ä ±¸¼º:
-        // 1Çà 1¹ø °¡·Î¼± Ãß°¡
-        // 3Çà 3¹ø °¡·Î¼± Ãß°¡
-        // 4Çà 0¹ø °¡·Î¼± Á¦°Å
-        // 4Çà 2¹ø °¡·Î¼± Á¦°Å
-        //
-        // ÀÌ »óÅÂ´Â ÆíÁıÀ¸·Î º¹±¸ °¡´ÉÇÔ.
-    }
-
-    private bool IsHiddenRung(int row, int gap)
-    {
-        return hiddenRungs[row, gap];
-    }
-
-    private bool IsRungActive(int row, int gap)
-    {
-        return
-            hiddenRungs[row, gap] ||
-            manualRungs[row, gap];
-    }
-
-    // =======================================
-    // ¾ÆÆ® ÀÌ¹ÌÁö Àû¿ë
-    // =======================================
-
-    private void ApplyStaticArtwork()
-    {
-        ApplySprite(
-            ladderBoard.GetComponent<Image>(),
-            boardSprite,
-            false
-        );
-
-        ApplySprite(
-            glitchOverlay,
-            glitchSprite,
-            false
-        );
-
-        ApplySprite(
-            runButton.GetComponent<Image>(),
-            runButtonSprite,
-            true
-        );
-
-        ApplySprite(
-            finalStartButton.GetComponent<Image>(),
-            finalStartSprite,
-            true
-        );
-
-        SetupButtonText(
-            runButton,
-            runButtonSprite != null &&
-            hideRunTextWhenSpriteExists
-        );
-
-        SetupButtonText(
-            finalStartButton,
-            finalStartSprite != null &&
-            hideFinalTextWhenSpriteExists
-        );
-
-        glitchOverlay.raycastTarget = false;
-        glitchOverlay.color =
-            new Color(1f, 1f, 1f, 0f);
-    }
-
-    private void ApplySprite(
-        Image image,
-        Sprite sprite,
-        bool preserveAspect)
-    {
-        if (image == null || sprite == null)
-            return;
-
-        image.sprite = sprite;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = preserveAspect;
-        image.color = Color.white;
-    }
-
-    private void SetupButtonText(
-        Button button,
-        bool shouldHide)
-    {
-        foreach (TMP_Text label in
-            button.GetComponentsInChildren<TMP_Text>(true))
-        {
-            label.gameObject.SetActive(!shouldHide);
-            label.raycastTarget = false;
+            rungImages[r, g].gameObject.SetActive(manualRungs[r, g]);
+            fixedImages[r, g].gameObject.SetActive(fixedRungs[r, g]);
+            if (manualRungs[r, g] && previewImages[r, g] != null)
+                previewImages[r, g].color = C5Kit.Clear;
         }
     }
 
-    private Sprite GetLetterSprite(char letter)
-    {
-        switch (letter)
-        {
-            case 'S': return letterS;
-            case 'T': return letterT;
-            case 'A': return letterA;
-            case 'R': return letterR;
-        }
-
-        return null;
-    }
-
-    // =======================================
-    // »ı¼ºµÈ ¿ÀºêÁ§Æ® Á¤¸®
-    // =======================================
-
-    private void ClearGeneratedObjects()
-    {
-        foreach (GameObject go in generatedObjects)
-        {
-            if (go != null)
-            {
-                go.SetActive(false);
-                Destroy(go);
-            }
-        }
-
-        generatedObjects.Clear();
-
-        letters = new RectTransform[LaneCount];
-        slotTexts = new TMP_Text[LaneCount];
-
-        rungImages = new Image[RowCount, GapCount];
-    }
-
-    // =======================================
-    // UI ÀÌ¹ÌÁö ÀÚµ¿ »ı¼º
-    // =======================================
-
-    private RectTransform CreateImage(
-        string objectName,
-        Transform parent,
-        Vector2 position,
-        Vector2 size,
-        Sprite sprite,
-        Color defaultColor)
-    {
-        GameObject go = new GameObject(
-            objectName,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        go.transform.SetParent(parent, false);
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image image = go.GetComponent<Image>();
-
-        if (sprite != null)
-        {
-            image.sprite = sprite;
-            image.type = Image.Type.Simple;
-            image.color = Color.white;
-        }
-        else
-        {
-            image.color = defaultColor;
-        }
-
-        image.raycastTarget = false;
-
-        generatedObjects.Add(go);
-
-        return rect;
-    }
-
-    private TMP_Text CreateText(
-        string objectName,
-        Transform parent,
-        string content,
-        float fontSize,
-        Color color)
-    {
-        GameObject go = new GameObject(
-            objectName,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI)
-        );
-
-        go.transform.SetParent(parent, false);
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
-
-        text.text = content;
-        text.fontSize = fontSize;
-        text.fontStyle = FontStyles.Bold;
-        text.alignment =
-            TextAlignmentOptions.Center;
-        text.color = color;
-        text.raycastTarget = false;
-
-        return text;
-    }
-
-    // =======================================
-    // ¼¼·Î¼± 5°³ »ı¼º
-    // =======================================
-
-    private void CreateVerticalLines()
-    {
-        for (int i = 0; i < LaneCount; i++)
-        {
-            CreateImage(
-                "VerticalLine_" + i,
-                verticalLineLayer,
-                new Vector2(LaneX(i), 0f),
-                new Vector2(
-                    verticalLineWidth,
-                    topY * 2f + 10f
-                ),
-                verticalLineSprite,
-                new Color32(117, 169, 206, 255)
-            );
-        }
-    }
-
-    // =======================================
-    // °¡·Î¼± 20°³ »ı¼º
-    // Å¬¸¯À¸·Î Ãß°¡ / Á¦°Å
-    // =======================================
-
-    private void CreateRungButtons()
-    {
-        for (int row = 0; row < RowCount; row++)
-        {
-            for (int gap = 0; gap < GapCount; gap++)
-            {
-                int capturedRow = row;
-                int capturedGap = gap;
-
-                bool hidden =
-                    IsHiddenRung(row, gap);
-
-                Sprite sprite = hidden
-                    ? (
-                        hiddenRungSprite != null
-                        ? hiddenRungSprite
-                        : rungSprite
-                      )
-                    : rungSprite;
-
-                RectTransform rect = CreateImage(
-                    "Rung_" + row + "_" + gap,
-                    rungLayer,
-                    new Vector2(
-                        (
-                            LaneX(gap) +
-                            LaneX(gap + 1)
-                        ) * 0.5f,
-                        RowY(row)
-                    ),
-                    new Vector2(
-                        laneSpacing - 4f,
-                        rungThickness
-                    ),
-                    sprite,
-                    EmptyRungColor
-                );
-
-                GameObject go = rect.gameObject;
-
-                Image image =
-                    go.GetComponent<Image>();
-
-                rungImages[row, gap] = image;
-
-                if (!hidden)
-                {
-                    Button button =
-                        go.AddComponent<Button>();
-
-                    button.transition =
-                        Selectable.Transition.None;
-
-                    button.targetGraphic = image;
-
-                    button.onClick.AddListener(
-                        () => ToggleRung(
-                            capturedRow,
-                            capturedGap
-                        )
-                    );
-
-                    image.raycastTarget = true;
-                }
-                else
-                {
-                    // ¼ûÀº °æ·Î´Â Á÷Á¢ ¼öÁ¤ ºÒ°¡
-                    image.raycastTarget = false;
-                }
-
-                UpdateRungVisual(row, gap);
-            }
-        }
-    }
-
-    private void ToggleRung(int row, int gap)
-    {
-        if (phase != Phase.Editing ||
-            !isGameActive ||
-            completed)
-        {
-            return;
-        }
-
-        if (IsHiddenRung(row, gap))
-            return;
-
-        bool currentlyActive =
-            manualRungs[row, gap];
-
-        if (!currentlyActive)
-        {
-            // °°Àº ³ôÀÌ¿¡¼­ ÀÎÁ¢ÇÑ °¡·Î¼±ÀÌ
-            // ¿¬°áµÇ¸é °æ·Î°¡ ¸ğÈ£ÇØÁö¹Ç·Î Á¦ÇÑ
-            bool leftOccupied =
-                gap > 0 &&
-                IsRungActive(row, gap - 1);
-
-            bool rightOccupied =
-                gap < GapCount - 1 &&
-                IsRungActive(row, gap + 1);
-
-            if (leftOccupied || rightOccupied)
-            {
-                statusText.text =
-                    "ÀÌ À§Ä¡´Â ´Ù¸¥ °¡·Î¼±°ú " +
-                    "°ãÃÄ¼­ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.";
-
-                return;
-            }
-        }
-
-        manualRungs[row, gap] =
-            !manualRungs[row, gap];
-
-        UpdateRungVisual(row, gap);
-
-        statusText.text =
-            manualRungs[row, gap]
-            ? "°¡·Î¼±À» ¿¬°áÇß½À´Ï´Ù."
-            : "°¡·Î¼±À» Á¦°ÅÇß½À´Ï´Ù.";
-    }
-
-    // =======================================
-    // °¡·Î¼± Ç¥½Ã »óÅÂ
-    // =======================================
-
-    private void UpdateRungVisual(int row, int gap)
-    {
-        Image image = rungImages[row, gap];
-
-        if (image == null)
-            return;
-
-        if (IsHiddenRung(row, gap))
-        {
-            Color color = HiddenRungColor;
-
-            color.a =
-                hiddenVisible ? 1f : 0f;
-
-            image.color = color;
-        }
-        else if (manualRungs[row, gap])
-        {
-            image.color = NormalRungColor;
-        }
-        else
-        {
-            image.color = EmptyRungColor;
-        }
-    }
-
-    // =======================================
-    // ±Û¸®Ä¡·Î ¼ûÀº °¡·Î¼± Ç¥½Ã
-    // =======================================
-
-    private void SetHiddenRungsVisible(bool visible)
+    private void SetHiddenVisible(bool visible)
     {
         hiddenVisible = visible;
+        for (int r = 0; r < Rows; r++)
+        for (int g = 0; g < Gaps; g++)
+            ShowOneHidden(r, g, visible);
+    }
 
-        for (int row = 0; row < RowCount; row++)
+    // ìˆ¨ì€ ê²½ë¡œ ë³´ì´ê¸° (íŒíŠ¸ 3ë‹¨ê³„ë¶€í„°ëŠ” í‰ì†Œì—ë„ í¬ë¯¸í•˜ê²Œ ë³´ì„)
+    private void ShowOneHidden(int r, int g, bool visible)
+    {
+        RectTransform h = hiddenImages[r, g];
+        if (h == null)
+            return;
+
+        bool faint = !visible && hintLevel >= 3 && phase == Phase.Editing;
+        h.gameObject.SetActive(hiddenRungs[r, g] && (visible || faint));
+        float a = visible ? 1f : 0.3f;
+        foreach (Image dash in h.GetComponentsInChildren<Image>(true))
+            dash.color = new Color(C5Kit.Cyan.r, C5Kit.Cyan.g, C5Kit.Cyan.b, a);
+    }
+
+    private bool IsActive(int r, int g)
+    {
+        if (g < 0 || g >= Gaps) return false;
+        return manualRungs[r, g] || hiddenRungs[r, g] || fixedRungs[r, g];
+    }
+
+    // =========================================
+    // ë§¤ í”„ë ˆì„: ì£¼ê¸°ì ì¸ ê¸€ë¦¬ì¹˜
+    // =========================================
+    protected override void Update()
+    {
+        // ê¸€ìë¥¼ ë‹¤ ëª¨ì•„ START ë²„íŠ¼ë§Œ ë‚¨ì•˜ìœ¼ë©´ ì‹œê°„ì€ ë©ˆì¶¤ (ë‹¤ í•´ ë†“ê³  ì‹œê°„ ì´ˆê³¼ë¡œ ì‹¤íŒ¨í•˜ì§€ ì•Šê²Œ)
+        bool timerFrozen = phase == Phase.StartReady || phase == Phase.Completed;
+        if (!timerFrozen)
+            base.Update();
+        if (!isGameActive || finished || phase != Phase.Editing)
+            return;
+
+        editTime += Time.deltaTime;
+        UpdateHintLevel();
+
+        glitchTimer -= Time.deltaTime;
+        if (glitchTimer <= 0f)
         {
-            for (int gap = 0; gap < GapCount; gap++)
+            glitchTimer = Random.Range(minGlitchInterval, maxGlitchInterval);
+            StartCoroutine(GlitchReveal());
+        }
+    }
+
+    private IEnumerator GlitchReveal()
+    {
+        SetHiddenVisible(true);
+        StartCoroutine(FlickerLetters(glitchDuration));
+        yield return C5Kit.Glitch(panel, ladder, glitchDuration, 1f);
+        if (phase == Phase.Editing || phase == Phase.Error)
+            SetHiddenVisible(false);
+    }
+
+    private IEnumerator FlickerLetters(float duration)
+    {
+        float e = 0f;
+        while (e < duration)
+        {
+            e += Time.deltaTime;
+            for (int i = 0; i < Lanes; i++)
             {
-                UpdateRungVisual(row, gap);
+                if (letters[i] == null) continue;
+                Image img = letters[i].GetComponent<Image>();
+                if (img != null)
+                    img.color = Random.value < 0.25f ? new Color(1f, 0.4f, 0.7f, 0.7f) : C5Kit.White;
             }
+            yield return new WaitForSeconds(0.04f);
         }
-
-        if (glitchOverlay != null)
+        for (int i = 0; i < Lanes; i++)
         {
-            glitchOverlay.color = new Color(
-                1f, 1f, 1f,
-                visible
-                    ? (glitchSprite != null ? 0.3f : 0.06f)
-                    : 0f
-            );
+            if (letters[i] == null) continue;
+            Image img = letters[i].GetComponent<Image>();
+            if (img != null) img.color = img.sprite != null ? C5Kit.White : C5Kit.Navy;
         }
     }
 
-    private IEnumerator GlitchRoutine()
+    // =========================================
+    // ê°€ë¡œì„  í´ë¦­ (ì¶”ê°€ / ì œê±°)
+    // =========================================
+    private void OnRungClicked(int r, int g)
     {
-        while (isGameActive && !completed)
+        if (!isGameActive || finished || phase != Phase.Editing)
+            return;
+
+        if (hiddenRungs[r, g])
         {
-            yield return new WaitForSecondsRealtime(
-                Random.Range(
-                    Mathf.Min(
-                        minGlitchInterval,
-                        maxGlitchInterval
-                    ),
-                    Mathf.Max(
-                        minGlitchInterval,
-                        maxGlitchInterval
-                    )
-                )
-            );
-
-            if (!isGameActive || completed)
-                yield break;
-
-            if (phase != Phase.Editing)
-                continue;
-
-            SetHiddenRungsVisible(true);
-
-            yield return new WaitForSecondsRealtime(
-                glitchDuration
-            );
-
-            SetHiddenRungsVisible(false);
-        }
-    }
-
-    // =======================================
-    // µµÂø ½½·Ô 5°³ »ı¼º
-    // =======================================
-
-    private void CreateResultSlots()
-    {
-        for (int i = 0; i < LaneCount; i++)
-        {
-            RectTransform rect = CreateImage(
-                "ResultSlot_" + i,
-                slotLayer,
-                new Vector2(
-                    LaneX(i),
-                    bottomY - 7f
-                ),
-                resultSlotSize,
-                resultSlotSprite,
-                new Color32(39, 82, 111, 255)
-            );
-
-            slotTexts[i] = CreateText(
-                "ResultLetter",
-                rect,
-                "_",
-                34f,
-                Color.white
-            );
-        }
-    }
-
-    // =======================================
-    // ¹®ÀÚ 5°³ ÀÚµ¿ »ı¼º
-    // =======================================
-
-    private void CreateLetters()
-    {
-        for (int i = 0; i < LaneCount; i++)
-        {
-            char character = TargetWord[i];
-
-            Sprite sprite =
-                GetLetterSprite(character);
-
-            RectTransform rect = CreateImage(
-                "Letter_" + character + "_" + i,
-                letterLayer,
-                new Vector2(
-                    LaneX(i),
-                    topY
-                ),
-                letterSize,
-                sprite,
-                new Color32(22, 160, 133, 255)
-            );
-
-            Image image = rect.GetComponent<Image>();
-            image.preserveAspect = true;
-
-            if (sprite == null)
-            {
-                CreateText(
-                    "LetterText",
-                    rect,
-                    character.ToString(),
-                    36f,
-                    Color.white
-                );
-            }
-
-            letters[i] = rect;
-        }
-    }
-
-    // =======================================
-    // RUN / ÃÖÁ¾ START ¹öÆ° ¿¬°á
-    // =======================================
-
-    private void SetupButtons()
-    {
-        runButton.onClick.RemoveAllListeners();
-
-        runButton.onClick.AddListener(
-            OnRunClicked
-        );
-
-        runButton.interactable = true;
-
-        finalStartButton.onClick.RemoveAllListeners();
-
-        finalStartButton.onClick.AddListener(
-            OnFinalStartClicked
-        );
-
-        finalStartButton.interactable = true;
-    }
-
-    private void OnRunClicked()
-    {
-        if (phase != Phase.Editing ||
-            !isGameActive ||
-            completed)
-        {
+            StartCoroutine(RevealBriefly(r, g));
+            ShowMessage("<color=" + C5Kit.PinkHex + ">ì†ìƒëœ ìˆ¨ì€ ê²½ë¡œ</color>ì…ë‹ˆë‹¤. ì§€ìš¸ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
 
-        phase = Phase.Running;
+        if (fixedRungs[r, g])
+        {
+            StartCoroutine(C5Kit.Shake(fixedImages[r, g].rectTransform, 0.2f, 5f));
+            GameSfx.Play("wrong_buzz", 0.35f);
+            ShowMessage("ì›ë˜ ìˆë˜ ê°€ë¡œì„ ì€ <color=" + C5Kit.PinkHex + ">ì§€ìš¸ ìˆ˜ ì—†ìŠµë‹ˆë‹¤</color>. ìƒˆ ê°€ë¡œì„ ì„ ì¶”ê°€í•˜ì„¸ìš”.");
+            return;
+        }
 
-        runButton.interactable = false;
+        if (manualRungs[r, g])
+        {
+            manualRungs[r, g] = false;
+            GameSfx.Play("piece_place", 0.45f, 0.1f);
+            RefreshRungs();
+            SetPreview(r, g, true);
+            return;
+        }
 
-        SetHiddenRungsVisible(false);
-        ResetSlotTexts();
-        ResetLetterPositions();
+        // ê°™ì€ ì¤„ ë°”ë¡œ ì˜†ì— ê°€ë¡œì„ ì´ ìˆìœ¼ë©´ ë†“ì„ ìˆ˜ ì—†ìŒ
+        int blockedBy = -1;
+        if (IsActive(r, g - 1)) blockedBy = g - 1;
+        else if (IsActive(r, g + 1)) blockedBy = g + 1;
 
-        statusText.text =
-            "RUNNING... »ç´Ù¸® °æ·Î °Ë»ç Áß";
+        if (blockedBy >= 0)
+        {
+            if (hiddenRungs[r, blockedBy] && !manualRungs[r, blockedBy] && !fixedRungs[r, blockedBy])
+            {
+                StartCoroutine(RevealBriefly(r, blockedBy));
+                ShowMessage("ë³´ì´ì§€ ì•ŠëŠ” ê²½ë¡œì™€ <color=" + C5Kit.PinkHex + ">ê²¹ì¹©ë‹ˆë‹¤</color>.");
+            }
+            else
+            {
+                ShowMessage("ë°”ë¡œ ì˜† ê°€ë¡œì„ ê³¼ ê²¹ì³ì„œ ë†“ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            }
+            StartCoroutine(C5Kit.Shake(previewImages[r, g].rectTransform, 0.2f, 5f));
+            GameSfx.Play("wrong_buzz", 0.35f);
+            return;
+        }
 
-        StartCoroutine(RunLadderRoutine());
+        manualRungs[r, g] = true;
+        GameSfx.Play("block_place", 0.5f, 0.08f);
+        RefreshRungs();
+        StartCoroutine(C5Kit.Pop(rungImages[r, g].transform, 1.15f, 0.16f));
     }
 
-    // =======================================
-    // »ç´Ù¸® °æ·Î µû¶ó ÀÌµ¿
-    // =======================================
-
-    private IEnumerator RunLadderRoutine()
+    private IEnumerator RevealBriefly(int r, int g)
     {
-        char[] result = new char[LaneCount];
+        ShowOneHidden(r, g, true);
+        StartCoroutine(C5Kit.Glitch(hiddenImages[r, g], null, 0.3f, 0.6f, false));
+        yield return new WaitForSeconds(0.45f);
+        if (!hiddenVisible)
+            ShowOneHidden(r, g, false);
+    }
 
-        for (int source = 0; source < LaneCount; source++)
+    // =========================================
+    // RUN
+    // =========================================
+    private void OnRunClicked()
+    {
+        if (!isGameActive || finished || phase != Phase.Editing)
+            return;
+
+        StartCoroutine(RunRoutine());
+    }
+
+    private IEnumerator RunRoutine()
+    {
+        phase = Phase.Running;
+        runButton.interactable = false;
+        SetHiddenVisible(false);
+        StopMessage();
+        SetBottom("RUNNING... ê²½ë¡œ ê²€ì‚¬ ì¤‘");
+        for (int r = 0; r < Rows; r++)
+        for (int g = 0; g < Gaps; g++)
+            SetPreview(r, g, false);
+
+        int[] lane = { 0, 1, 2, 3, 4 };   // lane[ë¬¸ì] = ì§€ê¸ˆ ìˆëŠ” ì„¸ë¡œì¤„
+
+        // ì„¸ë¡œì¤„ ì‹œì‘ì ê¹Œì§€
+        yield return MoveLettersTo(i => new Vector2(LaneX(lane[i]), LineTop), 0.16f);
+
+        for (int r = 0; r < Rows; r++)
         {
-            RectTransform moving = letters[source];
+            // ì¤„ ë†’ì´ê¹Œì§€ ë‚´ë ¤ê°€ê¸°
+            yield return MoveLettersTo(i => new Vector2(LaneX(lane[i]), RowY(r)), rowStepTime);
 
-            int currentLane = source;
-
-            for (int row = 0; row < RowCount; row++)
+            // ì´ ì¤„ì˜ ê°€ë¡œì„  ê±´ë„ˆê¸° (ìˆ¨ì€ ê²½ë¡œë¥¼ ì§€ë‚˜ë©´ ì ê¹ ë³´ì„)
+            bool any = false;
+            int[] next = (int[])lane.Clone();
+            for (int i = 0; i < Lanes; i++)
             {
-                // ÇöÀç °¡·Î¼± ³ôÀÌ±îÁö ¾Æ·¡·Î ÀÌµ¿
-                Vector2 downward = new Vector2(
-                    LaneX(currentLane),
-                    RowY(row)
-                );
-
-                yield return StartCoroutine(
-                    MoveLetterTo(moving, downward)
-                );
-
-                if (!isGameActive)
-                    yield break;
-
-                int nextLane = currentLane;
-
-                // ¿ŞÂÊ ¿¬°á¼± ¿ì¼± È®ÀÎ
-                if (currentLane > 0 &&
-                    IsRungActive(row, currentLane - 1))
+                int l = lane[i];
+                if (l < Gaps && IsActive(r, l))
                 {
-                    nextLane = currentLane - 1;
+                    next[i] = l + 1;
+                    any = true;
+                    if (hiddenRungs[r, l]) ShowOneHidden(r, l, true);
                 }
-                else if (currentLane < LaneCount - 1 &&
-                         IsRungActive(row, currentLane))
+                else if (l > 0 && IsActive(r, l - 1))
                 {
-                    nextLane = currentLane + 1;
+                    next[i] = l - 1;
+                    any = true;
+                    if (hiddenRungs[r, l - 1]) ShowOneHidden(r, l - 1, true);
                 }
-
-                if (nextLane != currentLane)
-                {
-                    Vector2 across = new Vector2(
-                        LaneX(nextLane),
-                        RowY(row)
-                    );
-
-                    yield return StartCoroutine(
-                        MoveLetterTo(moving, across)
-                    );
-
-                    if (!isGameActive)
-                        yield break;
-                }
-
-                currentLane = nextLane;
             }
 
-            // ¸¶Áö¸· µµÂø ½½·Ô±îÁö ÀÌµ¿
-            yield return StartCoroutine(
-                MoveLetterTo(
-                    moving,
-                    new Vector2(
-                        LaneX(currentLane),
-                        bottomY - 7f
-                    )
-                )
-            );
-
-            if (!isGameActive)
-                yield break;
-
-            char character = TargetWord[source];
-
-            result[currentLane] = character;
-
-            slotTexts[currentLane].text =
-                character.ToString();
-
-            // ½½·Ô¿¡ ±ÛÀÚ¸¦ ¿Å°åÀ¸¹Ç·Î
-            // ÀÌµ¿ÇÏ´Â ¿øº» ÀÌ¹ÌÁö´Â ¼û±è
-            moving.gameObject.SetActive(false);
+            if (any)
+            {
+                GameSfx.Play("piece_place", 0.3f, 0.12f);
+                int[] target = next;
+                yield return MoveLettersTo(i => new Vector2(LaneX(target[i]), RowY(r)), rowStepTime * 1.4f);
+                lane = next;
+            }
         }
 
-        string resultWord = new string(result);
+        yield return MoveLettersTo(i => new Vector2(LaneX(lane[i]), LineBottom), rowStepTime);
+        yield return MoveLettersTo(i => new Vector2(LaneX(lane[i]), SlotY), 0.16f);
 
-        Debug.Log(
-            "MG29: »ç´Ù¸® °á°ú = " + resultWord
-        );
+        bool ok = true;
+        for (int i = 0; i < Lanes; i++)
+            if (lane[i] != i) ok = false;
 
-        if (resultWord == TargetWord)
-        {
-            ShowSuccess();
-        }
+        if (ok)
+            StartCoroutine(SuccessRoutine());
         else
-        {
-            StartCoroutine(
-                FailureRoutine(resultWord)
-            );
-        }
+            StartCoroutine(FailRoutine());
     }
 
-    // =======================================
-    // ¹®ÀÚ ÀÌµ¿ ¾Ö´Ï¸ŞÀÌ¼Ç
-    // =======================================
+    private delegate Vector2 LetterTarget(int letterIndex);
 
-    private IEnumerator MoveLetterTo(
-        RectTransform letter,
-        Vector2 target)
+    private IEnumerator MoveLettersTo(LetterTarget target, float duration)
     {
-        Vector2 start = letter.anchoredPosition;
-
-        float distance =
-            Vector2.Distance(start, target);
-
-        float duration =
-            distance / Mathf.Max(50f, letterMoveSpeed);
-
-        if (duration <= 0.001f)
+        Vector2[] from = new Vector2[Lanes];
+        Vector2[] to = new Vector2[Lanes];
+        for (int i = 0; i < Lanes; i++)
         {
-            letter.anchoredPosition = target;
-            yield break;
+            from[i] = letters[i].anchoredPosition;
+            to[i] = target(i);
         }
 
-        float elapsed = 0f;
-
-        while (elapsed < duration)
+        float e = 0f;
+        while (e < duration)
         {
-            if (!isGameActive)
-                yield break;
-
-            elapsed += Time.unscaledDeltaTime;
-
-            float t = Mathf.Clamp01(
-                elapsed / duration
-            );
-
-            letter.anchoredPosition =
-                Vector2.Lerp(start, target, t);
-
+            e += Time.deltaTime;
+            float k = C5Kit.EaseInOut(e / duration);
+            for (int i = 0; i < Lanes; i++)
+                if (letters[i] != null)
+                    letters[i].anchoredPosition = Vector2.Lerp(from[i], to[i], k);
             yield return null;
         }
-
-        letter.anchoredPosition = target;
+        for (int i = 0; i < Lanes; i++)
+            if (letters[i] != null)
+                letters[i].anchoredPosition = to[i];
     }
 
-    // =======================================
-    // ½ÇÆĞ Ã³¸®
-    // =======================================
-
-    private IEnumerator FailureRoutine(string wrongWord)
+    private IEnumerator FailRoutine()
     {
         phase = Phase.Error;
+        failCount++;
+        if (countMistakes)
+            ReportMistake();
+        GameSfx.Play("wrong_buzz", 0.6f);
 
-        statusText.text =
-            "°á°ú : " + wrongWord +
-            " / ¿Ã¹Ù¸¥ ¼ø¼­´Â STARTÀÔ´Ï´Ù.";
+        C5Kit.SetBanner(banner, bannerText, "ERROR\n<size=32>INVALID ROUTE</size>", C5Kit.Pink);
+        SetBottom("ê²°ê³¼ê°€ <color=" + C5Kit.PinkHex + ">START</color>ê°€ ì•„ë‹™ë‹ˆë‹¤. ê²½ë¡œë¥¼ ë‹¤ì‹œ ê³ ì¹˜ì„¸ìš”.");
+        StartCoroutine(C5Kit.Shake(panel, 0.4f, 12f));
+        yield return C5Kit.Glitch(panel, ladder, 0.4f, 1.1f);
+        yield return new WaitForSeconds(Mathf.Max(0f, errorDisplayTime - 0.4f));
 
-        errorText.text =
-            "ERROR\nINVALID ROUTE";
-
-        errorText.gameObject.SetActive(true);
-
-        Debug.Log(
-            "MG29: Àß¸øµÈ °æ·Î - " + wrongWord
-        );
-
-        yield return new WaitForSecondsRealtime(
-            errorDisplayTime
-        );
-
-        if (!isGameActive)
+        if (!isGameActive || finished)
             yield break;
 
-        errorText.gameObject.SetActive(false);
-
-        // ¼öÁ¤µÈ °¡·Î¼±Àº À¯Áö
-        // ¹®ÀÚ¿Í °á°ú ½½·Ô¸¸ ÃÊ±âÈ­
-        ResetLetterPositions();
-        ResetSlotTexts();
+        C5Kit.HideBanner(banner);
+        SetHiddenVisible(false);
+        yield return MoveLettersTo(i => new Vector2(LaneX(i), LetterY), 0.3f);
 
         phase = Phase.Editing;
-
+        UpdateHintLevel();
+        SetHiddenVisible(false);
         runButton.interactable = true;
-
-        statusText.text =
-            "°æ·Î ¿À·ù! °¡·Î¼±À» ¼öÁ¤ÇÑ µÚ " +
-            "RUNÀ» ´Ù½Ã ´©¸£¼¼¿ä.";
+        glitchTimer = Mathf.Min(glitchTimer, 2.5f);
+        SetBottom(DefaultGuide());
     }
 
-    private void ResetLetterPositions()
-    {
-        for (int i = 0; i < LaneCount; i++)
-        {
-            if (letters[i] == null)
-                continue;
-
-            letters[i].anchoredPosition =
-                new Vector2(
-                    LaneX(i),
-                    topY
-                );
-
-            letters[i].gameObject.SetActive(true);
-        }
-    }
-
-    private void ResetSlotTexts()
-    {
-        for (int i = 0; i < LaneCount; i++)
-        {
-            if (slotTexts[i] != null)
-                slotTexts[i].text = "_";
-        }
-    }
-
-    // =======================================
-    // START º¹±¸ ¼º°ø
-    // =======================================
-
-    private void ShowSuccess()
+    private IEnumerator SuccessRoutine()
     {
         phase = Phase.StartReady;
+        SetHiddenVisible(false);
+        GameSfx.Play("correct_ding", 0.6f);
+        SetBottom("<color=" + C5Kit.GreenHex + ">ROUTE OK</color>");
 
-        statusText.text =
-            "START º¹±¸ ¼º°ø!";
+        for (int i = 0; i < Lanes; i++)
+            StartCoroutine(C5Kit.Pop(slotImages[i].transform, 1.2f));
+        yield return new WaitForSeconds(0.45f);
 
-        Debug.Log("MG29: START °æ·Î º¹±¸ ¼º°ø");
+        // ì‚¬ë‹¤ë¦¬ë¥¼ ì¹˜ìš°ê³  ë¬¸ìë¥¼ ê°€ìš´ë°ì—ì„œ ê²°í•©
+        Vector3[] fromPos = new Vector3[Lanes];
+        for (int i = 0; i < Lanes; i++)
+            fromPos[i] = letters[i].position;
+        ladder.gameObject.SetActive(false);
+        runButton.gameObject.SetActive(false);
 
-        playArea.SetActive(false);
+        Transform[] anchors = new Transform[Lanes];
+        for (int i = 0; i < Lanes; i++)
+        {
+            RectTransform a = C5Kit.Rect(screen, "RT_MergeFrom" + i, Vector2.zero, Vector2.zero);
+            a.position = fromPos[i];
+            anchors[i] = a;
+        }
 
-        resultText.text = "S T A R T";
-        resultText.gameObject.SetActive(true);
+        yield return C5Kit.MergeLetters(screen, letterSprites, font, new Vector2(0f, 20f), LetterSize, anchors);
+        foreach (Transform a in anchors)
+            if (a != null) Destroy(a.gameObject);
 
         finalStartButton.gameObject.SetActive(true);
         finalStartButton.transform.SetAsLastSibling();
+        StartCoroutine(C5Kit.Pop(finalStartButton.transform, 1.25f, 0.3f));
+        SetBottom("<color=" + C5Kit.YellowHex + ">START</color>ë¥¼ ëˆŒëŸ¬ ê²€ì‚¬ë¥¼ ì™„ë£Œí•˜ì„¸ìš”.");
+    }
+
+    // =========================================
+    // ì•ˆë‚´ ë¬¸êµ¬
+    // =========================================
+    private void SetBottom(string text)
+    {
+        if (bottomText != null)
+            bottomText.text = text;
+    }
+
+    private void ShowMessage(string text)
+    {
+        StopMessage();
+        messageRoutine = StartCoroutine(MessageRoutine(text));
+    }
+
+    private void StopMessage()
+    {
+        if (messageRoutine != null)
+            StopCoroutine(messageRoutine);
+        messageRoutine = null;
+    }
+
+    private IEnumerator MessageRoutine(string text)
+    {
+        SetBottom(text);
+        yield return new WaitForSeconds(1.8f);
+        if (phase == Phase.Editing)
+            SetBottom(DefaultGuide());
+        messageRoutine = null;
     }
 
     private void OnFinalStartClicked()
     {
-        if (phase != Phase.StartReady ||
-            !isGameActive ||
-            completed)
-        {
+        if (!isGameActive || finished || phase != Phase.StartReady)
             return;
-        }
 
-        completed = true;
+        finished = true;
         phase = Phase.Completed;
-
-        Debug.Log("MG29: °Ë»ç ¿Ï·á!");
-
         Success();
     }
-
-    // =======================================
-    // ÈùÆ® ¹× Àç½ÃÀÛ
-    // =======================================
 
     protected override void GiveHint()
     {
         if (phase == Phase.Editing)
-        {
-            statusText.text =
-                "ÈùÆ®: ³ë¶õ»ö ¼ûÀº °¡·Î¼±µµ " +
-                "½ÇÁ¦ ÀÌµ¿ °æ·Î¿¡ Æ÷ÇÔµË´Ï´Ù.";
-        }
+            ShowMessage("íŒíŠ¸: ì§€ìš¸ ìˆ˜ ì—†ëŠ” ìˆ¨ì€ ê°€ë¡œì„ ì€ ë°”ë¡œ ì•„ë˜Â·ìœ„ì— ê°™ì€ ê°€ë¡œì„ ì„ ë†“ìœ¼ë©´ ìƒì‡„ë©ë‹ˆë‹¤.");
     }
 
     protected override void RestartGame()
@@ -1202,4 +731,3 @@ public class Minigame29_DamagedStartRoute : MinigameBase
         StartMinigame();
     }
 }
-

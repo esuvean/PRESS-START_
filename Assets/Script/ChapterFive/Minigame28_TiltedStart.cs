@@ -1,1410 +1,585 @@
-
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
+/// <summary>
+/// MG28 ê¸°ìš¸ì–´ì§„ START (ë¬¸ì ì¤‘ë ¥ ì´ë™ ê²€ì‚¬) - MG08 ê¸°ìš¸ì–´ì§„ ì°½ ë°©ì‹
+///  - ê²Œì„íŒì„ ë§ˆìš°ìŠ¤ë¡œ ëŒë©´(ë˜ëŠ” ë°©í–¥í‚¤/WASD) íŒì´ ê¸°ìš¸ê³ , ë¬¸ìê°€ ê¸°ìš´ ìª½ìœ¼ë¡œ ë¯¸ë„ëŸ¬ì§
+///  - X ì¥ì• ë¬¼ì€ ë²½ (ë§‰í˜). íŒ ë°–ìœ¼ë¡œ ë–¨ì–´ì§€ë©´ ì´ë²ˆ íŒë§Œ ì²˜ìŒë¶€í„°
+///  - S â†’ T â†’ A â†’ R â†’ T ì´ 5íŒ, íŒë§ˆë‹¤ ê¸¸ì´ ì–´ë ¤ì›Œì§ (4íŒ: í”ë“¤ë¦¼ / 5íŒ: ë…¸ì´ì¦ˆ, ê¸¸ì€ ê·¸ëŒ€ë¡œ)
+///  - 5íŒì„ ëª¨ë‘ ë„£ìœ¼ë©´ SÂ·TÂ·AÂ·RÂ·T â†’ START ê²°í•© â†’ START í´ë¦­
+/// </summary>
 public class Minigame28_TiltedStart : MinigameBase
 {
-    [Header("Main UI")]
-    public RectTransform gameArea;
-    public RectTransform tiltBoard;
-    public RectTransform mazeWallsLayer;
-    public RectTransform letterLayer;
-    public RectTransform goalZone;
+    [Header("ì±•í„°5 ê·¸ë¦¼ (ì—ë””í„° ë„êµ¬ê°€ ìë™ìœ¼ë¡œ ë„£ìŒ)")]
+    public TMP_FontAsset uiFont;
+    public Sprite panelSprite;          // 23_line_back (ê²Œì„íŒ)
+    public Sprite plateSprite;          // 26_upline
+    public Sprite startButtonSprite;    // normal_button
+    public Sprite slotFrameSprite;      // 26_miniline
+    public Sprite slotEmptySprite;      // 26_blueblank
+    public Sprite slotArrowLeft;
+    public Sprite slotArrowRight;
+    public Sprite[] slotLetterSprites = new Sprite[5];  // 26_pink_S/T/A/R/T
+    public Sprite[] letterSprites = new Sprite[5];      // MG26ê³¼ ê°™ì€ ì•ŒíŒŒë²³ ë¸”ë¡ (alpabet/block_S/T/A/R/T)
+    public Sprite obstacleSprite;       // 08_Xwall (MG08 ì¥ì• ë¬¼)
+    public Sprite goalSprite;           // 08_goal (MG08 ê³¨)
 
-    public TMP_Text roundText;
-    public TMP_Text collectedText;
-    public TMP_Text stageStatusText;
-    public TMP_Text failText;
-    public TMP_Text resultText;
+    [Header("ê·œì¹™")]
+    [Tooltip("ë–¨ì–´ì§€ê±°ë‚˜ ì¥ì• ë¬¼ì— ë‹¿ìœ¼ë©´ ì±•í„°5 ì˜¤ë¥˜ íšŸìˆ˜ì— í¬í•¨ (ê¸°íš: ì´ë²ˆ íŒë§Œ ë‹¤ì‹œ ì‹œì‘)")]
+    public bool countMistakes = true;
 
-    public Button finalStartButton;
-    public Image noiseOverlay;
-
-    [Header("ART - Letter Sprites")]
-    public Sprite letterS;
-    public Sprite letterT;
-    public Sprite letterA;
-    public Sprite letterR;
-
-    [Header("ART - Other Sprites")]
-    public Sprite boardSprite;
-    public Sprite wallSprite;
-    public Sprite goalSprite;
-    public Sprite noiseSprite;
-    public Sprite finalStartSprite;
-
-    [Header("ART - Options")]
-    public bool hideFinalTextWhenSpriteExists = true;
-
-    [Header("Tilt Movement")]
-    public float acceleration = 1400f;
-    public float maxMoveSpeed = 340f;
-    public float friction = 4f;
-    public float maxTiltAngle = 9f;
-    public float tiltSmoothness = 7f;
-
-    [Header("Letter Settings")]
-    public Vector2 letterSize = new Vector2(46f, 46f);
-    public float collisionPadding = 2f;
-    public float collisionStep = 3f;
-
-    [Header("Maze Settings")]
-    public float wallThickness = 9f;
-    public Color wallColor =
-        new Color32(105, 174, 219, 255);
-
-    [Header("Timing")]
-    public float failDisplayTime = 1f;
-    public float roundClearDelay = 0.8f;
+    [Header("ì¡°ì‘ (MG08ê³¼ ê°™ì€ ê°’)")]
+    public float dragRange = 250f;          // MG08 í”„ë¦¬íŒ¹ê³¼ ê°™ì€ ê°’
+    public float deadZone = 0.1f;
+    public float moveSpeed = 300f;          // MG08(350)ë³´ë‹¤ ì‚´ì§ ëŠë¦¬ê²Œ - íŒì´ ë” ì¢ì•„ì„œ
+    public float movementSmooth = 6f;       // MG08ê³¼ ê°™ìŒ
+    public float brakeSmooth = 6f;          // MG08ê³¼ ê°™ìŒ (ë©ˆì¶œ ë•Œë„ ê°™ì€ ëŠë‚Œ)
+    public float tiltSmoothTime = 0.18f;
+    public float maxVisualAngle = 7f;     // BoardTiltVisual(MG08)ê³¼ ê°™ìŒ
 
     private const string Word = "START";
 
-    // ¶ó¿îµå°¡ ÁøÇàµÉ¼ö·Ï ¹Ì·Î°¡ º¹ÀâÇØÁü
-    private readonly int[] gridColumns =
+    // ---- ë°°ì¹˜ ----
+    private static readonly Vector2 PanelPos = new Vector2(0f, 30f);
+    private static readonly Vector2 PanelSize = new Vector2(1480f, 580f);
+    private static readonly Vector2 PlatePos = new Vector2(0f, 300f);
+    private static readonly Vector2 BoardPos = new Vector2(0f, 18f);
+    private const int Cols = 13;
+    private const int Rows = 5;
+    private const float CellW = 100f;
+    private const float CellH = 92f;
+    private static readonly Vector2 BoardSize = new Vector2(Cols * CellW, Rows * CellH);
+    private static readonly Vector2 SlotRowPos = new Vector2(0f, -338f);
+    private static readonly Vector2 LetterSize = new Vector2(58f, 56f);
+    private const float ObstacleSize = 66f;
+
+    // S ì‹œì‘, G ê³¨, # ì¥ì• ë¬¼ (ëª¨ë“  íŒ ê¸¸ ìˆìŒ í™•ì¸í•¨)
+    private static readonly string[][] Maps =
     {
-        6, 7, 8, 10, 12
+        new[]
+        {
+            ".............",
+            "......#......",
+            ".S....#....G.",
+            "......#......",
+            ".............",
+        },
+        new[]
+        {
+            "....#........",
+            "....#...#....",
+            ".S......#..G.",
+            "....#...#....",
+            "....#........",
+        },
+        new[]
+        {
+            "...#.........",
+            "...#...#.....",
+            ".S.#...#...G.",
+            ".......#.....",
+            ".....#.......",
+        },
+        new[]
+        {
+            "...#.....#...",
+            "...#..#..#...",
+            ".S....#....G.",
+            "...#..#..#...",
+            "...#.....#...",
+        },
+        new[]
+        {
+            "..#...#......",
+            "..#...#..#...",
+            ".S..#....#.G.",
+            "....#.#..#...",
+            "..#...#......",
+        },
     };
 
-    private readonly int[] gridRows =
+    private static readonly string[] StageNames =
     {
-        3, 4, 4, 5, 6
-    };
-
-    // Ãß°¡ Åë·ÎÀÇ ºñÀ².
-    // °ªÀÌ ³·À»¼ö·Ï ¸·Èù ±æÀÌ ¸¹¾ÆÁü.
-    private readonly float[] extraPassageChance =
-    {
-        0.75f, 0.52f, 0.32f, 0.16f, 0.04f
-    };
-
-    private readonly string[] roundDescriptions =
-    {
-        "1ÆÇ - S | ±âº» Àå¾Ö¹°°ú º®",
-        "2ÆÇ - T | ´õ Á¼¾ÆÁø ±æ",
-        "3ÆÇ - A | Áõ°¡ÇÑ Àå¾Ö¹°",
-        "4ÆÇ - R | º¹ÀâÇÑ ±¼°î°ú Á¼Àº Åë·Î",
-        "5ÆÇ - T | ÃÖÁ¾ ¹Ì·Î¿Í CRT ³ëÀÌÁî"
+        "ê¸°ë³¸ ì¥ì• ë¬¼", "ë‘ ê°ˆë˜ ê¸¸", "ëŠ˜ì–´ë‚œ ì¥ì• ë¬¼", "ì§€ê·¸ì¬ê·¸ + í”ë“¤ë¦¼", "ìµœì¢… íŒ + ë…¸ì´ì¦ˆ"
     };
 
     private enum Phase
     {
         Playing,
-        Failed,
+        Falling,
         RoundClear,
         StartReady,
         Completed
     }
 
     private Phase phase;
+    private int stage;
+    private bool finished;
 
-    private int currentRound;
-    private int collectedCount;
-
-    private int columns;
-    private int rows;
-
-    private float cellWidth;
-    private float cellHeight;
-
-    private bool[,,] passages;
-
-    private Vector2 startPosition;
+    private bool dragging;
+    private Vector2 dragStart;
+    private Vector2 targetTilt;
+    private Vector2 currentTilt;
+    private Vector2 tiltVelocity;
     private Vector2 velocity;
+    private Vector2 visualTilt;
+    private Vector2 startPos;
 
-    private RectTransform movingLetter;
+    private readonly List<Rect> obstacles = new List<Rect>();
+    private Rect goalRect;
+    private float fxTimer;
 
-    private readonly List<GameObject> generatedWalls =
-        new List<GameObject>();
-
-    private readonly List<Rect> wallBounds =
-        new List<Rect>();
-
-    private readonly List<GameObject> generatedNoiseLines =
-        new List<GameObject>();
-
-    private Coroutine noiseRoutine;
-
-    private readonly Vector2Int[] directions =
-    {
-        new Vector2Int(1, 0),
-        new Vector2Int(0, 1),
-        new Vector2Int(-1, 0),
-        new Vector2Int(0, -1)
-    };
+    // ---- ë§Œë“  UI ----
+    private TMP_FontAsset font;
+    private RectTransform screen;
+    private RectTransform dragZone;      // ëˆ„ë¥´ê³  ëŒ ìˆ˜ ìˆëŠ” ì˜ì—­
+    private RectTransform boardHolder;   // ê¸°ìš¸ì–´ì§€ëŠ” ìª½ (ë³´ì´ëŠ” ê²ƒë§Œ)
+    private RectTransform board;         // íŒì • ê¸°ì¤€
+    private RectTransform mapLayer;
+    private RectTransform letter;
+    private Image letterImage;
+    private TextMeshProUGUI plateText;
+    private TextMeshProUGUI bottomText;
+    private CanvasGroup banner;
+    private TextMeshProUGUI bannerText;
+    private C5SlotRow slotRow;
+    private Button finalStartButton;
 
     private void Start()
     {
         if (!isGameActive)
-        {
             StartMinigame();
-        }
     }
-
-    // =========================================
-    // °ÔÀÓ ½ÃÀÛ
-    // =========================================
 
     public override void StartMinigame()
     {
-        gameName = "±â¿ï¾îÁø START";
-
-        instruction =
-            "°ÔÀÓÆÇÀ» ±â¿ï¿© ¹®ÀÚ¸¦ GOAL±îÁö ÀÌµ¿½ÃÅ°½Ê½Ã¿À.";
-
-        timeLimit = 999999f;
+        gameName = "ë¬¸ì ì¤‘ë ¥ ì´ë™ ê²€ì‚¬";
+        instruction = "íŒì„ ê¸°ìš¸ì—¬ ë¬¸ìë¥¼ GOALê¹Œì§€ ì´ë™ì‹œí‚¤ì„¸ìš”.";
 
         base.StartMinigame();
-
         StopAllCoroutines();
-        noiseRoutine = null;
 
-        if (!FindReferences())
-        {
-            Debug.LogError(
-                "MG28: ÇÊ¿äÇÑ UI°¡ ¾ø½À´Ï´Ù. " +
-                "Hierarchy ÀÌ¸§ ¶Ç´Â Inspector ¿¬°áÀ» È®ÀÎÇÏ¼¼¿ä.",
-                this
-            );
+        finished = false;
+        stage = 0;
 
-            isGameActive = false;
-            return;
-        }
+        BuildScreen();
+        C5Kit.PrepareNoise(transform);
+        slotRow.SetCount(0);
+        BeginStage();
+    }
 
-        ClearGeneratedObjects();
+    // =========================================
+    // í™”ë©´ ë§Œë“¤ê¸°
+    // =========================================
+    private void BuildScreen()
+    {
+        font = C5Kit.ResolveFont(transform, uiFont);
+        C5Kit.HideLegacy(transform);
+        screen = C5Kit.NewScreen(transform, "RT_MG28");
+        letter = null;
+        letterImage = null;
 
-        currentRound = 0;
-        collectedCount = 0;
+        // ë°”ê¹¥ ë„¤ì˜¨ í…Œë‘ë¦¬ íŒ (ê³ ì •) - ì´ ì•ˆì„ ëˆ„ë¥´ê³  ëŒë©´ íŒì´ ê¸°ìš¸ì–´ì§
+        Image frame = C5Kit.Panel(screen, panelSprite, PanelPos, PanelSize);
+        frame.color = new Color(1f, 1f, 1f, 0.55f);
+        dragZone = frame.rectTransform;
 
-        ApplyArtwork();
-        SetupButtons();
+        // ê¸°ìš¸ì–´ì§€ëŠ” ê²Œì„íŒ (MG08ì²˜ëŸ¼ íŒ ìì²´ê°€ ê¸°ìš¸ì–´ ë³´ì„)
+        boardHolder = C5Kit.Rect(screen, "RT_BoardHolder", BoardPos, BoardSize);
+        Image boardBg = C5Kit.Img(boardHolder, "RT_Board", null, new Color32(10, 22, 52, 255), Vector2.zero,
+            BoardSize + new Vector2(24f, 24f));
+        C5Kit.AddOutline(boardBg, C5Kit.Cyan, 4f);
+        board = boardBg.rectTransform;
 
-        resultText.gameObject.SetActive(false);
+
+        mapLayer = C5Kit.Rect(board, "RT_Map", Vector2.zero, BoardSize);
+
+        plateText = C5Kit.Plate(screen, plateSprite, font, PlatePos, new Vector2(560f, 80f), "");
+        slotRow = new C5SlotRow(screen, SlotRowPos, slotFrameSprite, slotEmptySprite, slotLetterSprites,
+            slotArrowLeft, slotArrowRight, font);
+        bottomText = C5Kit.BottomText(screen, font,
+            "ë¬¸ìë¥¼ <color=" + C5Kit.YellowHex + ">ë–¨ì–´ëœ¨ë¦¬ì§€</color> ë§ê³  GOALê¹Œì§€ ì´ë™í•˜ì„¸ìš”.");
+        banner = C5Kit.Banner(screen, font, new Vector2(0f, 40f), new Vector2(760f, 160f), out bannerText);
+
+        finalStartButton = C5Kit.StartButton(screen, startButtonSprite, font, new Vector2(0f, 40f),
+            new Vector2(360f, 84f), OnFinalStartClicked);
         finalStartButton.gameObject.SetActive(false);
-
-        roundText.gameObject.SetActive(true);
-        collectedText.gameObject.SetActive(true);
-
-        BeginRound();
     }
 
     // =========================================
-    // UI ÀÚµ¿ °Ë»ö
+    // íŒ ì‹œì‘
     // =========================================
-
-    private Transform FindDeep(
-        Transform parent,
-        string objectName)
-    {
-        if (parent == null)
-            return null;
-
-        if (parent.name == objectName)
-            return parent;
-
-        foreach (Transform child in parent)
-        {
-            Transform found =
-                FindDeep(child, objectName);
-
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
-    private T FindUI<T>(string objectName)
-        where T : Component
-    {
-        Transform found =
-            FindDeep(transform, objectName);
-
-        return found == null
-            ? null
-            : found.GetComponent<T>();
-    }
-
-    private bool FindReferences()
-    {
-        if (gameArea == null)
-            gameArea = FindUI<RectTransform>("GameArea");
-
-        if (tiltBoard == null)
-            tiltBoard = FindUI<RectTransform>("TiltBoard");
-
-        if (mazeWallsLayer == null)
-            mazeWallsLayer =
-                FindUI<RectTransform>("MazeWallsLayer");
-
-        if (letterLayer == null)
-            letterLayer =
-                FindUI<RectTransform>("LetterLayer");
-
-        if (goalZone == null)
-            goalZone = FindUI<RectTransform>("GoalZone");
-
-        if (roundText == null)
-            roundText = FindUI<TMP_Text>("RoundText");
-
-        if (collectedText == null)
-            collectedText = FindUI<TMP_Text>("CollectedText");
-
-        if (stageStatusText == null)
-            stageStatusText =
-                FindUI<TMP_Text>("StageStatusText");
-
-        if (failText == null)
-            failText = FindUI<TMP_Text>("FailText");
-
-        if (resultText == null)
-            resultText = FindUI<TMP_Text>("ResultText");
-
-        if (finalStartButton == null)
-            finalStartButton =
-                FindUI<Button>("FinalStartButton");
-
-        if (noiseOverlay == null)
-            noiseOverlay = FindUI<Image>("NoiseOverlay");
-
-        return
-            gameArea != null &&
-            tiltBoard != null &&
-            mazeWallsLayer != null &&
-            letterLayer != null &&
-            goalZone != null &&
-            roundText != null &&
-            collectedText != null &&
-            stageStatusText != null &&
-            failText != null &&
-            resultText != null &&
-            finalStartButton != null &&
-            noiseOverlay != null;
-    }
-
-    // =========================================
-    // ¾ÆÆ® ÀÌ¹ÌÁö Àû¿ë
-    // =========================================
-
-    private void ApplyArtwork()
-    {
-        ApplySprite(
-            tiltBoard.GetComponent<Image>(),
-            boardSprite,
-            false
-        );
-
-        ApplySprite(
-            goalZone.GetComponent<Image>(),
-            goalSprite,
-            true
-        );
-
-        ApplySprite(
-            noiseOverlay,
-            noiseSprite,
-            false
-        );
-
-        ApplySprite(
-            finalStartButton.GetComponent<Image>(),
-            finalStartSprite,
-            true
-        );
-
-        TMP_Text[] buttonLabels =
-            finalStartButton.GetComponentsInChildren<
-                TMP_Text>(true);
-
-        foreach (TMP_Text label in buttonLabels)
-        {
-            bool hide =
-                finalStartSprite != null &&
-                hideFinalTextWhenSpriteExists;
-
-            label.gameObject.SetActive(!hide);
-            label.raycastTarget = false;
-        }
-
-        noiseOverlay.raycastTarget = false;
-    }
-
-    private void ApplySprite(
-        Image image,
-        Sprite sprite,
-        bool preserveAspect)
-    {
-        if (image == null || sprite == null)
-            return;
-
-        image.sprite = sprite;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = preserveAspect;
-        image.color = Color.white;
-    }
-
-    private Sprite GetLetterSprite(char letter)
-    {
-        switch (letter)
-        {
-            case 'S': return letterS;
-            case 'T': return letterT;
-            case 'A': return letterA;
-            case 'R': return letterR;
-        }
-
-        return null;
-    }
-
-    // =========================================
-    // ¹öÆ° ¿¬°á
-    // =========================================
-
-    private void SetupButtons()
-    {
-        finalStartButton.onClick.RemoveAllListeners();
-
-        finalStartButton.onClick.AddListener(
-            OnFinalStartClicked
-        );
-
-        finalStartButton.interactable = true;
-    }
-
-    // =========================================
-    // ¶ó¿îµå ½ÃÀÛ
-    // =========================================
-
-    private void BeginRound()
+    private void BeginStage()
     {
         phase = Phase.Playing;
+        C5Kit.HideBanner(banner);
+        BuildMap(Maps[stage]);
+        ResetMotion();
+        letter.anchoredPosition = startPos;
+        letter.localScale = Vector3.one;
+        letter.localRotation = Quaternion.identity;
+        letterImage.color = C5Kit.White;
+        fxTimer = Random.Range(2.5f, 4f);
 
-        StopNoiseEffect();
-        ClearGeneratedObjects();
+        plateText.text = "CURRENT : <color=" + C5Kit.YellowHex + "><size=44>" + Word[stage] + "</size></color>" +
+                         "   |   STAGE <color=" + C5Kit.YellowHex + ">" + (stage + 1) + "</color> / 5";
+        bottomText.text = "íŒì„ <color=" + C5Kit.YellowHex + ">ë“œë˜ê·¸</color>í•´ ê¸°ìš¸ì´ì„¸ìš” Â· " + StageNames[stage];
+    }
 
-        gameArea.gameObject.SetActive(true);
-        failText.gameObject.SetActive(false);
+    private void BuildMap(string[] map)
+    {
+        foreach (Transform c in mapLayer)
+            Destroy(c.gameObject);
+        obstacles.Clear();
 
-        tiltBoard.localRotation = Quaternion.identity;
+        // ì  ë¬´ëŠ¬ ë°”ë‹¥
+        for (int r = 0; r < Rows; r++)
+        for (int c = 0; c < Cols; c++)
+            C5Kit.Img(mapLayer, "Dot", null, new Color(0.35f, 0.75f, 1f, 0.22f), CellCenter(r, c), new Vector2(4f, 4f));
 
+        for (int r = 0; r < Rows; r++)
+        {
+            for (int c = 0; c < Cols; c++)
+            {
+                char ch = map[r][c];
+                Vector2 p = CellCenter(r, c);
+                if (ch == '#')
+                {
+                    // ì¥ì• ë¬¼ = ë¹¨ê°•
+                    Image o = C5Kit.Img(mapLayer, "Obstacle", obstacleSprite,
+                        new Color32(255, 60, 80, 255), p, new Vector2(ObstacleSize, ObstacleSize), true);
+                    if (obstacleSprite == null)
+                        C5Kit.AddOutline(o, C5Kit.White, 3f);
+                    obstacles.Add(new Rect(p.x - ObstacleSize * 0.5f, p.y - ObstacleSize * 0.5f, ObstacleSize,
+                        ObstacleSize));
+                }
+                else if (ch == 'G')
+                {
+                    // ê³¨ = ë…¸ë‘
+                    Image g = C5Kit.Img(mapLayer, "Goal", goalSprite, goalSprite != null ? C5Kit.Yellow : C5Kit.Navy, p,
+                        new Vector2(92f, 82f), true);
+                    if (goalSprite == null)
+                    {
+                        C5Kit.AddOutline(g, C5Kit.Yellow, 3f);
+                        C5Kit.Txt(g.transform, "Text", "GOAL", 24f, C5Kit.Yellow, TextAlignmentOptions.Center,
+                            Vector2.zero, new Vector2(92f, 82f), font);
+                    }
+                    goalRect = new Rect(p.x - 40f, p.y - 36f, 80f, 72f);
+                }
+                else if (ch == 'S')
+                {
+                    startPos = p;
+                }
+            }
+        }
+
+        // ë¬¸ì (ë§¨ ìœ„)
+        if (letter == null)
+        {
+            letterImage = C5Kit.Img(board, "RT_Letter", null, C5Kit.White, startPos, LetterSize, true);
+            letter = letterImage.rectTransform;
+        }
+        Sprite art = letterSprites != null && stage < letterSprites.Length ? letterSprites[stage] : null;
+        letterImage.sprite = art;
+        letterImage.color = C5Kit.White;
+        foreach (Transform c in letter)
+            Destroy(c.gameObject);
+        if (art == null)
+            C5Kit.Txt(letter, "L", Word[stage].ToString(), 54f, C5Kit.Pink, TextAlignmentOptions.Center,
+                Vector2.zero, LetterSize, font);
+        letter.SetAsLastSibling();
+    }
+
+    private static Vector2 CellCenter(int row, int col)
+    {
+        float x = -BoardSize.x * 0.5f + CellW * (col + 0.5f);
+        float y = BoardSize.y * 0.5f - CellH * (row + 0.5f);
+        return new Vector2(x, y);
+    }
+
+    private void ResetMotion()
+    {
+        dragging = false;
+        targetTilt = Vector2.zero;
+        currentTilt = Vector2.zero;
+        tiltVelocity = Vector2.zero;
         velocity = Vector2.zero;
-
-        Canvas.ForceUpdateCanvases();
-
-        columns = gridColumns[currentRound];
-        rows = gridRows[currentRound];
-
-        cellWidth = tiltBoard.rect.width / columns;
-        cellHeight = tiltBoard.rect.height / rows;
-
-        GenerateMaze();
-
-        startPosition = CellCenter(0, rows / 2);
-
-        goalZone.anchoredPosition =
-            CellCenter(columns - 1, rows / 2);
-
-        CreateMovingLetter();
-
-        UpdateProgressTexts();
-
-        stageStatusText.text =
-            roundDescriptions[currentRound] +
-            "\nWASD ¶Ç´Â ¹æÇâÅ°·Î °ÔÀÓÆÇÀ» ±â¿ïÀÌ¼¼¿ä.";
-
-        if (currentRound == 4)
-        {
-            CreateNoiseLines();
-
-            noiseRoutine = StartCoroutine(
-                CRTNoiseRoutine()
-            );
-        }
-        else
-        {
-            noiseOverlay.gameObject.SetActive(false);
-        }
-
-        Debug.Log(
-            "MG28: " + (currentRound + 1) +
-            "ÆÇ ½ÃÀÛ - " + Word[currentRound]
-        );
+        visualTilt = Vector2.zero;
+        ApplyTiltVisual();
     }
 
     // =========================================
-    // ÁøÇàµµ Ç¥½Ã
+    // ë§¤ í”„ë ˆì„
     // =========================================
-
-    private void UpdateProgressTexts()
+    protected override void Update()
     {
-        roundText.text =
-            "ROUND " + (currentRound + 1) +
-            " / 5 : " + Word[currentRound];
+        // ê¸€ìë¥¼ ë‹¤ ëª¨ì•„ START ë²„íŠ¼ë§Œ ë‚¨ì•˜ìœ¼ë©´ ì‹œê°„ì€ ë©ˆì¶¤ (ë‹¤ í•´ ë†“ê³  ì‹œê°„ ì´ˆê³¼ë¡œ ì‹¤íŒ¨í•˜ì§€ ì•Šê²Œ)
+        bool timerFrozen = phase == Phase.StartReady || phase == Phase.Completed;
+        if (!timerFrozen)
+            base.Update();
+        if (!isGameActive || finished || phase != Phase.Playing)
+            return;
 
-        string result = "";
+        HandleInput();
+        currentTilt = Vector2.SmoothDamp(currentTilt, targetTilt, ref tiltVelocity, tiltSmoothTime);
+        ApplyTiltVisual();
+        MoveLetter();
+        StageEffects();
+        if (phase != Phase.Playing)
+            return;
 
-        for (int i = 0; i < Word.Length; i++)
-        {
-            result += i < collectedCount
-                ? Word[i].ToString()
-                : "_";
-
-            if (i < Word.Length - 1)
-                result += "  ";
-        }
-
-        collectedText.text =
-            "COLLECTED : " + result;
+        // MG08ì²˜ëŸ¼ ë¬¸ìê°€ GOALì— ê²¹ì¹˜ê¸°ë§Œ í•˜ë©´ ì„±ê³µ
+        if (goalRect.Overlaps(LetterRect(letter.anchoredPosition, 0.8f)))
+            StartCoroutine(StageClear());
     }
 
-    // =========================================
-    // ¼¿ Áß¾Ó ÁÂÇ¥
-    // =========================================
-
-    private Vector2 CellCenter(int x, int y)
+    private void HandleInput()
     {
-        return new Vector2(
-            -tiltBoard.rect.width * 0.5f +
-            (x + 0.5f) * cellWidth,
+        Vector2 keys = C5Kit.KeyAxis();
 
-            -tiltBoard.rect.height * 0.5f +
-            (y + 0.5f) * cellHeight
-        );
-    }
-
-    // =========================================
-    // ¹Ì·Î »ı¼º
-    // ¸ğµç Ä­ÀÌ ¿¬°áµÇ¹Ç·Î Å¬¸®¾î °¡´ÉÇÑ ±æ Á¸Àç
-    // =========================================
-
-    private void GenerateMaze()
-    {
-        passages = new bool[columns, rows, 4];
-
-        bool[,] visited =
-            new bool[columns, rows];
-
-        Stack<Vector2Int> stack =
-            new Stack<Vector2Int>();
-
-        System.Random random =
-            new System.Random(2800 + currentRound * 521);
-
-        Vector2Int first =
-            new Vector2Int(0, rows / 2);
-
-        visited[first.x, first.y] = true;
-        stack.Push(first);
-
-        while (stack.Count > 0)
+        if (C5Kit.TryMouse(out Vector2 mouse))
         {
-            Vector2Int cell = stack.Peek();
-
-            List<int> available =
-                new List<int>();
-
-            for (int dir = 0; dir < 4; dir++)
+            Camera cam = C5Kit.UiCamera(boardHolder);
+            if (C5Kit.MousePressedThisFrame())
             {
-                Vector2Int next =
-                    cell + directions[dir];
-
-                if (next.x >= 0 &&
-                    next.x < columns &&
-                    next.y >= 0 &&
-                    next.y < rows &&
-                    !visited[next.x, next.y])
+                if (RectTransformUtility.RectangleContainsScreenPoint(dragZone, mouse, cam))
                 {
-                    available.Add(dir);
+                    dragging = true;
+                    dragStart = mouse;
                 }
             }
 
-            if (available.Count == 0)
+            if (dragging && C5Kit.MouseHeld())
             {
-                stack.Pop();
-                continue;
+                // MG08ê³¼ ë˜‘ê°™ì´: ë§ˆìš°ìŠ¤ë¥¼ ëˆ ê±°ë¦¬(í™”ë©´ í”½ì…€) / dragRange
+                Vector2 raw = (mouse - dragStart) / dragRange;
+                raw = Vector2.ClampMagnitude(raw, 1f);
+                if (Mathf.Abs(raw.x) < deadZone) raw.x = 0f;
+                if (Mathf.Abs(raw.y) < deadZone) raw.y = 0f;
+                targetTilt = raw;
             }
-
-            int chosen =
-                available[random.Next(available.Count)];
-
-            Vector2Int destination =
-                cell + directions[chosen];
-
-            passages[
-                cell.x,
-                cell.y,
-                chosen
-            ] = true;
-
-            passages[
-                destination.x,
-                destination.y,
-                (chosen + 2) % 4
-            ] = true;
-
-            visited[
-                destination.x,
-                destination.y
-            ] = true;
-
-            stack.Push(destination);
-        }
-
-        // ÃÊ¹İ ¶ó¿îµå¿¡¼­´Â ±æÀ» ´õ ¸¹ÀÌ °³¹æ
-        // ÈÄ¹İ ¶ó¿îµå¿¡¼­´Â Á¼°í º¹ÀâÇÏ°Ô À¯Áö
-        float chance =
-            extraPassageChance[currentRound];
-
-        for (int x = 0; x < columns; x++)
-        {
-            for (int y = 0; y < rows; y++)
+            else if (dragging)
             {
-                if (x < columns - 1 &&
-                    !passages[x, y, 0] &&
-                    random.NextDouble() < chance)
-                {
-                    passages[x, y, 0] = true;
-                    passages[x + 1, y, 2] = true;
-                }
-
-                if (y < rows - 1 &&
-                    !passages[x, y, 1] &&
-                    random.NextDouble() < chance)
-                {
-                    passages[x, y, 1] = true;
-                    passages[x, y + 1, 3] = true;
-                }
+                dragging = false;
+                targetTilt = Vector2.zero;
             }
         }
 
-        float thickness =
-            Mathf.Max(3f, wallThickness);
-
-        // ¸·Èù ¼¿ °æ°è¿¡¸¸ º® »ı¼º
-        for (int x = 0; x < columns; x++)
-        {
-            for (int y = 0; y < rows; y++)
-            {
-                Vector2 center = CellCenter(x, y);
-
-                // ¿À¸¥ÂÊ ¹æÇâ ¸·Èû
-                if (x < columns - 1 &&
-                    !passages[x, y, 0])
-                {
-                    CreateWall(
-                        "Wall_V",
-                        new Vector2(
-                            center.x + cellWidth * 0.5f,
-                            center.y
-                        ),
-                        new Vector2(
-                            thickness,
-                            cellHeight + thickness
-                        )
-                    );
-                }
-
-                // À§ÂÊ ¹æÇâ ¸·Èû
-                if (y < rows - 1 &&
-                    !passages[x, y, 1])
-                {
-                    CreateWall(
-                        "Wall_H",
-                        new Vector2(
-                            center.x,
-                            center.y + cellHeight * 0.5f
-                        ),
-                        new Vector2(
-                            cellWidth + thickness,
-                            thickness
-                        )
-                    );
-                }
-            }
-        }
+        if (!dragging)
+            targetTilt = keys.sqrMagnitude > 0.01f ? keys.normalized : Vector2.zero;
     }
 
-    // =========================================
-    // ¹Ì·Î º® »ı¼º ¹× Ãæµ¹ ¿µ¿ª µî·Ï
-    // =========================================
-
-    private void CreateWall(
-        string objectName,
-        Vector2 position,
-        Vector2 size)
+    private void ApplyTiltVisual()
     {
-        GameObject go = new GameObject(
-            objectName,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
+        if (boardHolder == null)
+            return;
 
-        go.transform.SetParent(
-            mazeWallsLayer,
-            false
-        );
+        // MG08 BoardTiltVisual ê³¼ ê°™ì€ ì—°ì¶œ: ë”°ë¡œ ë¶€ë“œëŸ½ê²Œ ë”°ë¼ê°€ë©° ê¸°ìš¸ê¸°/ëˆŒë¦¼/ì‚´ì§ ë°€ë¦¼
+        visualTilt = Vector2.Lerp(visualTilt, Vector2.ClampMagnitude(currentTilt, 1f),
+            1f - Mathf.Exp(-8f * Time.deltaTime));
 
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        rect.sizeDelta = size;
-        rect.anchoredPosition = position;
-
-        Image image = go.GetComponent<Image>();
-
-        if (wallSprite != null)
-        {
-            image.sprite = wallSprite;
-            image.type = Image.Type.Simple;
-            image.color = Color.white;
-        }
-        else
-        {
-            image.color = wallColor;
-        }
-
-        image.raycastTarget = false;
-
-        generatedWalls.Add(go);
-
-        wallBounds.Add(
-            new Rect(
-                position.x - size.x * 0.5f,
-                position.y - size.y * 0.5f,
-                size.x,
-                size.y
-            )
-        );
+        boardHolder.localRotation = Quaternion.Euler(0f, 0f, -visualTilt.x * maxVisualAngle);
+        float sx = 1f - Mathf.Abs(visualTilt.x) * 0.06f;
+        float sy = 1f - Mathf.Abs(visualTilt.y) * 0.10f;
+        boardHolder.localScale = new Vector3(sx, sy, 1f);
+        boardHolder.anchoredPosition = BoardPos + visualTilt * 12f;
     }
 
-    // =========================================
-    // ÇöÀç ¶ó¿îµå ¹®ÀÚ »ı¼º
-    // =========================================
-
-    private void CreateMovingLetter()
+    private void MoveLetter()
     {
-        char letter = Word[currentRound];
+        Vector2 desired = currentTilt * moveSpeed;
+        // ì†ë„ë¥¼ ì¤„ì´ëŠ” ì¤‘ì´ë©´(ì†ì„ ë—ê±°ë‚˜ ë°˜ëŒ€ë¡œ ê¸°ìš¸ì„) ë” ë¹¨ë¦¬ ë©ˆì¶¤ â†’ ì–¼ìŒì²˜ëŸ¼ ë¯¸ë„ëŸ¬ì§€ì§€ ì•Šê²Œ
+        bool braking = desired.sqrMagnitude < velocity.sqrMagnitude || Vector2.Dot(desired, velocity) < 0f;
+        float smooth = braking ? brakeSmooth : movementSmooth;
+        velocity = Vector2.Lerp(velocity, desired, 1f - Mathf.Exp(-smooth * Time.deltaTime));
 
-        GameObject go = new GameObject(
-            "MovingLetter_" + letter,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
+        Vector2 pos = letter.anchoredPosition + velocity * Time.deltaTime;
+        letter.anchoredPosition = pos;
 
-        go.transform.SetParent(
-            letterLayer,
-            false
-        );
-
-        movingLetter =
-            go.GetComponent<RectTransform>();
-
-        movingLetter.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        movingLetter.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        movingLetter.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        movingLetter.sizeDelta = letterSize;
-        movingLetter.anchoredPosition = startPosition;
-
-        Image image = go.GetComponent<Image>();
-
-        Sprite artwork = GetLetterSprite(letter);
-
-        if (artwork != null)
+        // ì¥ì• ë¬¼ì— ë‹¿ìœ¼ë©´ ì´ë²ˆ íŒ ì²˜ìŒë¶€í„° (MG08ê³¼ ê°™ìŒ)
+        if (HitsObstacle(pos))
         {
-            image.sprite = artwork;
-            image.type = Image.Type.Simple;
-            image.preserveAspect = true;
-            image.color = Color.white;
-        }
-        else
-        {
-            image.color =
-                new Color32(22, 160, 133, 255);
-
-            GameObject labelObject = new GameObject(
-                "LetterText",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI)
-            );
-
-            labelObject.transform.SetParent(
-                go.transform,
-                false
-            );
-
-            RectTransform labelRect =
-                labelObject.GetComponent<RectTransform>();
-
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-
-            TextMeshProUGUI label =
-                labelObject.GetComponent<TextMeshProUGUI>();
-
-            label.text = letter.ToString();
-            label.fontSize = 32f;
-            label.fontStyle = FontStyles.Bold;
-            label.alignment =
-                TextAlignmentOptions.Center;
-
-            label.color = Color.white;
-            label.raycastTarget = false;
-        }
-
-        image.raycastTarget = false;
-    }
-
-    // =========================================
-    // ¸ŞÀÎ ¾÷µ¥ÀÌÆ®
-    // =========================================
-
-    private void LateUpdate()
-    {
-        if (!isGameActive ||
-            phase != Phase.Playing ||
-            movingLetter == null)
-        {
+            StartCoroutine(ResetRoutine(false));
             return;
         }
 
-        float dt = Mathf.Min(
-            Time.deltaTime,
-            0.05f
-        );
-
-        if (dt <= 0f)
-            return;
-
-        Vector2 input = ReadTiltInput();
-
-        UpdateBoardTilt(input, dt);
-        UpdateLetterMovement(input, dt);
+        // íŒ ë°–ìœ¼ë¡œ ë‚˜ê°€ë©´ ë–¨ì–´ì§ (ë¬¸ì ê°€ìš´ë° ê¸°ì¤€)
+        float hx = BoardSize.x * 0.5f + 4f;
+        float hy = BoardSize.y * 0.5f + 4f;
+        if (pos.x < -hx || pos.x > hx || pos.y < -hy || pos.y > hy)
+            StartCoroutine(ResetRoutine(true));
     }
 
-    // =========================================
-    // WASD / ¹æÇâÅ°
-    // =========================================
-
-    private Vector2 ReadTiltInput()
+    private static Rect LetterRect(Vector2 center, float scale)
     {
-        Vector2 input = Vector2.zero;
+        return new Rect(center.x - LetterSize.x * 0.5f * scale, center.y - LetterSize.y * 0.5f * scale,
+            LetterSize.x * scale, LetterSize.y * scale);
+    }
 
-#if ENABLE_LEGACY_INPUT_MANAGER
-        if (Input.GetKey(KeyCode.A) ||
-            Input.GetKey(KeyCode.LeftArrow))
-            input.x -= 1f;
-
-        if (Input.GetKey(KeyCode.D) ||
-            Input.GetKey(KeyCode.RightArrow))
-            input.x += 1f;
-
-        if (Input.GetKey(KeyCode.W) ||
-            Input.GetKey(KeyCode.UpArrow))
-            input.y += 1f;
-
-        if (Input.GetKey(KeyCode.S) ||
-            Input.GetKey(KeyCode.DownArrow))
-            input.y -= 1f;
-#endif
-
-#if ENABLE_INPUT_SYSTEM
-        var keyboard =
-            UnityEngine.InputSystem.Keyboard.current;
-
-        if (keyboard != null)
+    private bool HitsObstacle(Vector2 center)
+    {
+        // ê·¸ë¦¼ê³¼ ê±°ì˜ ê°™ì€ í¬ê¸°ë¡œ íŒì • (ì‚´ì§ë§Œ ì—¬ìœ )
+        Rect me = LetterRect(center, 0.82f);
+        foreach (Rect o in obstacles)
         {
-            if (keyboard.aKey.isPressed ||
-                keyboard.leftArrowKey.isPressed)
-                input.x -= 1f;
-
-            if (keyboard.dKey.isPressed ||
-                keyboard.rightArrowKey.isPressed)
-                input.x += 1f;
-
-            if (keyboard.wKey.isPressed ||
-                keyboard.upArrowKey.isPressed)
-                input.y += 1f;
-
-            if (keyboard.sKey.isPressed ||
-                keyboard.downArrowKey.isPressed)
-                input.y -= 1f;
-        }
-#endif
-
-        // Active Input Handling = BothÀÎ °æ¿ì¿¡µµ
-        // ÀÔ·ÂÀÌ °úÇÏ°Ô Áßº¹µÇÁö ¾Êµµ·Ï Á¦ÇÑ
-        return Vector2.ClampMagnitude(input, 1f);
-    }
-
-    // =========================================
-    // °ÔÀÓÆÇ ±â¿ïÀÌ±â ¿¬Ãâ
-    // =========================================
-
-    private void UpdateBoardTilt(
-        Vector2 input,
-        float dt)
-    {
-        Quaternion targetRotation =
-            Quaternion.Euler(
-                -input.y * maxTiltAngle * 0.45f,
-                 input.x * maxTiltAngle * 0.45f,
-                -input.x * maxTiltAngle * 0.75f
-            );
-
-        float blend =
-            1f - Mathf.Exp(
-                -tiltSmoothness * dt
-            );
-
-        tiltBoard.localRotation =
-            Quaternion.Slerp(
-                tiltBoard.localRotation,
-                targetRotation,
-                blend
-            );
-    }
-
-    // =========================================
-    // ¹®ÀÚ °¡¼Ó / ¸¶Âû / ÀÌµ¿
-    // =========================================
-
-    private void UpdateLetterMovement(
-        Vector2 input,
-        float dt)
-    {
-        velocity += input * acceleration * dt;
-
-        velocity = Vector2.ClampMagnitude(
-            velocity,
-            maxMoveSpeed
-        );
-
-        velocity *= 1f /
-            (1f + Mathf.Max(0f, friction) * dt);
-
-        Vector2 movement = velocity * dt;
-
-        // ºü¸£°Ô ÀÌµ¿ÇØµµ º®À» Åë°úÇÏÁö ¸øÇÏ°Ô
-        // ÂªÀº °Å¸®·Î ³ª´©¾î Ãæµ¹ °Ë»ç
-        float step = Mathf.Clamp(
-            collisionStep,
-            1f,
-            8f
-        );
-
-        int steps = Mathf.Max(
-            1,
-            Mathf.CeilToInt(
-                movement.magnitude / step
-            )
-        );
-
-        Vector2 portion = movement / steps;
-
-        for (int i = 0; i < steps; i++)
-        {
-            if (phase != Phase.Playing)
-                return;
-
-            Vector2 current =
-                movingLetter.anchoredPosition;
-
-            // XÃà ÀÌµ¿ °Ë»ç
-            Vector2 nextX = new Vector2(
-                current.x + portion.x,
-                current.y
-            );
-
-            if (IsOutsideBoard(nextX))
-            {
-                TriggerRoundFailure();
-                return;
-            }
-
-            if (!TouchesWall(nextX))
-            {
-                current = nextX;
-            }
-            else
-            {
-                velocity.x = 0f;
-            }
-
-            // YÃà ÀÌµ¿ °Ë»ç
-            Vector2 nextY = new Vector2(
-                current.x,
-                current.y + portion.y
-            );
-
-            if (IsOutsideBoard(nextY))
-            {
-                TriggerRoundFailure();
-                return;
-            }
-
-            if (!TouchesWall(nextY))
-            {
-                current = nextY;
-            }
-            else
-            {
-                velocity.y = 0f;
-            }
-
-            movingLetter.anchoredPosition = current;
-
-            if (HasReachedGoal(current))
-            {
-                CompleteCurrentRound();
-                return;
-            }
-        }
-    }
-
-    // =========================================
-    // ¹®ÀÚ Å©±â ¹İ¿µ
-    // =========================================
-
-    private float LetterRadius()
-    {
-        return Mathf.Min(
-            letterSize.x,
-            letterSize.y
-        ) * 0.5f +
-        Mathf.Max(0f, collisionPadding);
-    }
-
-    // =========================================
-    // °ÔÀÓÆÇ ¹Û ÀÌÅ» °Ë»ç
-    // =========================================
-
-    private bool IsOutsideBoard(Vector2 position)
-    {
-        float radius = LetterRadius();
-
-        float limitX =
-            tiltBoard.rect.width * 0.5f;
-
-        float limitY =
-            tiltBoard.rect.height * 0.5f;
-
-        return
-            position.x - radius < -limitX ||
-            position.x + radius > limitX ||
-            position.y - radius < -limitY ||
-            position.y + radius > limitY;
-    }
-
-    // =========================================
-    // ¹®ÀÚ¿Í ¹Ì·Î º® Ãæµ¹
-    // »ç°¢Çü º® ´ë ¿øÇü ±Ù»ç Ãæµ¹
-    // =========================================
-
-    private bool TouchesWall(Vector2 position)
-    {
-        float radius = LetterRadius();
-        float radiusSquared = radius * radius;
-
-        foreach (Rect wall in wallBounds)
-        {
-            float nearestX = Mathf.Clamp(
-                position.x,
-                wall.xMin,
-                wall.xMax
-            );
-
-            float nearestY = Mathf.Clamp(
-                position.y,
-                wall.yMin,
-                wall.yMax
-            );
-
-            float dx = position.x - nearestX;
-            float dy = position.y - nearestY;
-
-            if (dx * dx + dy * dy <= radiusSquared)
-            {
+            Rect shrunk = new Rect(o.x + 4f, o.y + 4f, o.width - 8f, o.height - 8f);
+            if (shrunk.Overlaps(me))
                 return true;
-            }
         }
-
         return false;
     }
 
-    // =========================================
-    // GOAL µµÂø È®ÀÎ
-    // =========================================
-
-    private bool HasReachedGoal(Vector2 position)
+    private void StageEffects()
     {
-        Vector2 goal =
-            goalZone.anchoredPosition;
-
-        float allowedX = Mathf.Max(
-            20f,
-            goalZone.rect.width * 0.3f
-        );
-
-        float allowedY = Mathf.Max(
-            20f,
-            goalZone.rect.height * 0.3f
-        );
-
-        return
-            Mathf.Abs(position.x - goal.x) <= allowedX &&
-            Mathf.Abs(position.y - goal.y) <= allowedY;
-    }
-
-    // =========================================
-    // ¶ó¿îµå ½ÇÆĞ
-    // =========================================
-
-    private void TriggerRoundFailure()
-    {
-        if (phase != Phase.Playing)
+        if (stage < 3)
             return;
 
-        phase = Phase.Failed;
-        velocity = Vector2.zero;
-
-        StartCoroutine(
-            RoundFailureRoutine()
-        );
-    }
-
-    private IEnumerator RoundFailureRoutine()
-    {
-        failText.text =
-            "¹®ÀÚ°¡ ¶³¾îÁ³½À´Ï´Ù!\nÇöÀç ¶ó¿îµå¸¦ ´Ù½Ã ½ÃÀÛÇÕ´Ï´Ù.";
-
-        failText.gameObject.SetActive(true);
-
-        stageStatusText.text =
-            "½ÇÆĞ! ÀÌÀü¿¡ ¼öÁıÇÑ ¹®ÀÚ´Â À¯ÁöµË´Ï´Ù.";
-
-        Debug.Log(
-            "MG28: " + (currentRound + 1) +
-            "ÆÇ ½ÇÆĞ - ÇöÀç ÆÇ Àç½ÃÀÛ"
-        );
-
-        yield return new WaitForSecondsRealtime(
-            failDisplayTime
-        );
-
-        if (!isGameActive)
-            yield break;
-
-        // currentRound¿Í collectedCount´Â À¯Áö
-        BeginRound();
-    }
-
-    // =========================================
-    // ÇöÀç ¶ó¿îµå ¼º°ø
-    // =========================================
-
-    private void CompleteCurrentRound()
-    {
-        if (phase != Phase.Playing)
+        fxTimer -= Time.deltaTime;
+        if (fxTimer > 0f)
             return;
 
-        phase = Phase.RoundClear;
-        velocity = Vector2.zero;
-
-        collectedCount++;
-
-        UpdateProgressTexts();
-
-        stageStatusText.text =
-            Word[currentRound] +
-            " È¹µæ ¼º°ø!";
-
-        Debug.Log(
-            "MG28: ¹®ÀÚ " +
-            Word[currentRound] +
-            " È¹µæ (" +
-            collectedCount + "/5)"
-        );
-
-        StartCoroutine(
-            RoundClearRoutine()
-        );
-    }
-
-    private IEnumerator RoundClearRoutine()
-    {
-        yield return new WaitForSecondsRealtime(
-            roundClearDelay
-        );
-
-        if (!isGameActive)
-            yield break;
-
-        if (collectedCount >= Word.Length)
+        if (stage == 3)
         {
-            ShowFinalResult();
+            // 4íŒ: ê°€ë” ì§§ì€ í”ë“¤ë¦¼ + ê¸€ë¦¬ì¹˜
+            fxTimer = Random.Range(3f, 5f);
+            StartCoroutine(C5Kit.Shake(board, 0.3f, 7f));
+            StartCoroutine(C5Kit.Glitch(board, null, 0.2f, 0.6f, false));
         }
         else
         {
-            currentRound++;
-            BeginRound();
+            // 5íŒ: ê°„í—ì  CRT ë…¸ì´ì¦ˆ (ê¸¸ì€ ê·¸ëŒ€ë¡œ)
+            fxTimer = Random.Range(2.5f, 4f);
+            StartCoroutine(C5Kit.Glitch(board, null, 0.3f, 0.9f));
+            C5Kit.TryCrtNoise(this);
         }
     }
 
     // =========================================
-    // CRT ³ëÀÌÁî¿ë °¡·ÎÁÙ ÀÚµ¿ »ı¼º
+    // ë–¨ì–´ì§ / íŒ ì„±ê³µ
     // =========================================
-
-    private void CreateNoiseLines()
+    private IEnumerator ResetRoutine(bool fell)
     {
-        ClearNoiseLines();
+        phase = Phase.Falling;
+        dragging = false;
+        if (countMistakes)
+            ReportMistake();
+        GameSfx.Play("wrong_buzz", 0.5f);
 
-        RectTransform overlayRect =
-            noiseOverlay.GetComponent<RectTransform>();
-
-        for (int i = 0; i < 9; i++)
+        Vector2 dir = velocity.normalized;
+        float e = 0f;
+        Vector2 from = letter.anchoredPosition;
+        while (e < 0.4f)
         {
-            GameObject go = new GameObject(
-                "CRT_Scanline_" + i,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image)
-            );
-
-            go.transform.SetParent(
-                noiseOverlay.transform,
-                false
-            );
-
-            RectTransform rect =
-                go.GetComponent<RectTransform>();
-
-            rect.anchorMin =
-                new Vector2(0.5f, 0.5f);
-
-            rect.anchorMax =
-                new Vector2(0.5f, 0.5f);
-
-            rect.pivot =
-                new Vector2(0.5f, 0.5f);
-
-            rect.sizeDelta = new Vector2(
-                overlayRect.rect.width,
-                Random.Range(2f, 6f)
-            );
-
-            rect.anchoredPosition = new Vector2(
-                0f,
-                Random.Range(
-                    -overlayRect.rect.height * 0.5f,
-                     overlayRect.rect.height * 0.5f
-                )
-            );
-
-            Image image = go.GetComponent<Image>();
-
-            image.color = new Color(
-                1f,
-                1f,
-                1f,
-                Random.Range(0.15f, 0.4f)
-            );
-
-            image.raycastTarget = false;
-
-            generatedNoiseLines.Add(go);
-        }
-    }
-
-    // =========================================
-    // 5ÆÇ CRT ³ëÀÌÁî ¹İº¹
-    // =========================================
-
-    private IEnumerator CRTNoiseRoutine()
-    {
-        noiseOverlay.gameObject.SetActive(false);
-
-        while (isGameActive &&
-               phase == Phase.Playing &&
-               currentRound == 4)
-        {
-            yield return new WaitForSecondsRealtime(
-                Random.Range(0.8f, 2.1f)
-            );
-
-            if (!isGameActive ||
-                phase != Phase.Playing ||
-                currentRound != 4)
+            e += Time.deltaTime;
+            float k = e / 0.4f;
+            if (fell)
             {
-                break;
+                letter.anchoredPosition = from + dir * 50f * k;
+                letter.localScale = Vector3.one * Mathf.Lerp(1f, 0.2f, k);
+                letter.localRotation = Quaternion.Euler(0f, 0f, k * 220f);
             }
-
-            noiseOverlay.gameObject.SetActive(true);
-
-            noiseOverlay.color = new Color(
-                1f, 1f, 1f,
-                noiseSprite != null ? 0.3f : 0.05f
-            );
-
-            foreach (GameObject line in generatedNoiseLines)
+            else
             {
-                if (line == null)
-                    continue;
-
-                RectTransform rect =
-                    line.GetComponent<RectTransform>();
-
-                rect.anchoredPosition = new Vector2(
-                    0f,
-                    Random.Range(
-                        -tiltBoard.rect.height * 0.5f,
-                         tiltBoard.rect.height * 0.5f
-                    )
-                );
+                letter.anchoredPosition = from + Random.insideUnitCircle * 6f * (1f - k);
             }
-
-            yield return new WaitForSecondsRealtime(
-                Random.Range(0.07f, 0.17f)
-            );
-
-            noiseOverlay.gameObject.SetActive(false);
+            letterImage.color = fell ? new Color(1f, 1f, 1f, 1f - k) : new Color(1f, 0.4f, 0.6f, 1f - k * 0.5f);
+            yield return null;
         }
 
-        noiseOverlay.gameObject.SetActive(false);
-        noiseRoutine = null;
+        C5Kit.SetBanner(banner, bannerText,
+            (fell ? "FALL" : "CRASH") + "\n<size=30>ì´ë²ˆ íŒì„ ë‹¤ì‹œ ì‹œì‘í•©ë‹ˆë‹¤</size>", C5Kit.Pink);
+        ResetMotion();
+        yield return new WaitForSeconds(0.7f);
+
+        if (!isGameActive || finished)
+            yield break;
+
+        C5Kit.HideBanner(banner);
+        letter.anchoredPosition = startPos;
+        letter.localScale = Vector3.one;
+        letter.localRotation = Quaternion.identity;
+        letterImage.color = C5Kit.White;
+        phase = Phase.Playing;
     }
 
-    private void StopNoiseEffect()
+    private IEnumerator StageClear()
     {
-        if (noiseRoutine != null)
+        phase = Phase.RoundClear;
+        dragging = false;
+        targetTilt = Vector2.zero;
+        GameSfx.Play("correct_ding", 0.55f);
+
+        // ê³¨ë¡œ ì™ ë“¤ì–´ê°„ ë’¤ ìŠ¬ë¡¯ìœ¼ë¡œ ë‚ ì•„ê°
+        Vector2 from = letter.anchoredPosition;
+        float e = 0f;
+        while (e < 0.18f)
         {
-            StopCoroutine(noiseRoutine);
-            noiseRoutine = null;
+            e += Time.deltaTime;
+            letter.anchoredPosition = Vector2.Lerp(from, goalRect.center, e / 0.18f);
+            currentTilt = Vector2.Lerp(currentTilt, Vector2.zero, e / 0.18f);
+            ApplyTiltVisual();
+            yield return null;
+        }
+        ResetMotion();
+
+        RectTransform fly = C5Kit.Img(screen, "RT_Fly", letterImage.sprite, C5Kit.White, Vector2.zero, LetterSize,
+            true).rectTransform;
+        fly.position = letter.position;
+        letterImage.color = C5Kit.Clear;
+        yield return C5Kit.FlyTo(fly, slotRow.Slot(stage).position, 0.35f, 1.2f);
+        Destroy(fly.gameObject);
+
+        slotRow.SetSlot(stage, true);
+        yield return C5Kit.Pop(slotRow.Slot(stage), 1.25f);
+
+        stage++;
+        if (stage >= Word.Length)
+        {
+            StartCoroutine(AllClear());
+            yield break;
         }
 
-        if (noiseOverlay != null)
-        {
-            noiseOverlay.gameObject.SetActive(false);
-        }
+        // ì§§ì€ ê¸€ë¦¬ì¹˜ í›„ ë‹¤ìŒ íŒ
+        yield return C5Kit.Glitch(board, board, 0.3f, 0.8f);
+        BeginStage();
     }
 
-    private void ClearNoiseLines()
-    {
-        foreach (GameObject go in generatedNoiseLines)
-        {
-            if (go != null)
-            {
-                go.SetActive(false);
-                Destroy(go);
-            }
-        }
-
-        generatedNoiseLines.Clear();
-    }
-
-    // =========================================
-    // ÀÚµ¿ »ı¼º ¿ÀºêÁ§Æ® Á¤¸®
-    // =========================================
-
-    private void ClearGeneratedObjects()
-    {
-        if (movingLetter != null)
-        {
-            movingLetter.gameObject.SetActive(false);
-            Destroy(movingLetter.gameObject);
-
-            movingLetter = null;
-        }
-
-        foreach (GameObject wall in generatedWalls)
-        {
-            if (wall != null)
-            {
-                wall.SetActive(false);
-                Destroy(wall);
-            }
-        }
-
-        generatedWalls.Clear();
-        wallBounds.Clear();
-
-        ClearNoiseLines();
-    }
-
-    // =========================================
-    // 5±ÛÀÚ È¹µæ ÈÄ ÃÖÁ¾ È­¸é
-    // =========================================
-
-    private void ShowFinalResult()
+    private IEnumerator AllClear()
     {
         phase = Phase.StartReady;
+        plateText.text = "STAGE <color=" + C5Kit.GreenHex + ">COMPLETE</color>";
+        bottomText.text = "";
 
-        StopNoiseEffect();
+        boardHolder.gameObject.SetActive(false);
 
-        gameArea.gameObject.SetActive(false);
-
-        roundText.gameObject.SetActive(false);
-        collectedText.gameObject.SetActive(false);
-
-        resultText.text = "S - T - A - R - T";
-        resultText.gameObject.SetActive(true);
+        Transform[] from = new Transform[5];
+        for (int i = 0; i < 5; i++)
+            from[i] = slotRow.Slot(i);
+        yield return C5Kit.MergeLetters(screen, letterSprites, font, new Vector2(0f, 40f), new Vector2(84f, 81f), from);
 
         finalStartButton.gameObject.SetActive(true);
         finalStartButton.transform.SetAsLastSibling();
-
-        Debug.Log(
-            "MG28: START ¿Ï¼º! ÃÖÁ¾ ¹öÆ° È°¼ºÈ­"
-        );
+        StartCoroutine(C5Kit.Pop(finalStartButton.transform, 1.25f, 0.3f));
+        bottomText.text = "<color=" + C5Kit.YellowHex + ">START</color>ë¥¼ ëˆŒëŸ¬ ê²€ì‚¬ë¥¼ ì™„ë£Œí•˜ì„¸ìš”.";
     }
-
-    // =========================================
-    // ÃÖÁ¾ Å¬¸®¾î
-    // =========================================
 
     private void OnFinalStartClicked()
     {
-        if (!isGameActive ||
-            phase != Phase.StartReady)
-        {
+        if (!isGameActive || finished || phase != Phase.StartReady)
             return;
-        }
 
+        finished = true;
         phase = Phase.Completed;
-
-        Debug.Log("MG28: °Ë»ç ¿Ï·á");
-
         Success();
     }
 
     protected override void GiveHint()
     {
-        if (phase == Phase.Playing)
-        {
-            stageStatusText.text =
-                "ÈùÆ®: WASD ¶Ç´Â ¹æÇâÅ°·Î ±â¿ïÀÌ°í, " +
-                "º®À» µû¶ó Åë·Î¸¦ Ã£¾Æº¸¼¼¿ä.";
-        }
+        if (bottomText != null && phase == Phase.Playing)
+            bottomText.text = "íŒíŠ¸: ë§ˆìš°ìŠ¤ë¥¼ ë©€ë¦¬ ëŒìˆ˜ë¡ ë¹¨ë¦¬ ì›€ì§ì…ë‹ˆë‹¤. ì‚´ì§ë§Œ ëŒì–´ ì²œì²œíˆ ì´ë™í•˜ì„¸ìš”.";
     }
 
     protected override void RestartGame()

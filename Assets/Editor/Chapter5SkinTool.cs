@@ -435,6 +435,12 @@ public static class Chapter5SkinTool
             // BACK 버튼: 모양만 (미니게임 안에서는 눌러도 아무 일 없음)
             Button back = c.GetComponent<Button>();
             if (back != null) back.onClick = new Button.ButtonClickedEvent();
+            // BACK 버튼은 글자 칸과 겹치지 않게 조금 아래로
+            if (copyName == "BackButton")
+            {
+                RectTransform backRt = c as RectTransform;
+                if (backRt != null) backRt.anchoredPosition = new Vector2(backRt.anchoredPosition.x, -340f);
+            }
         }
 
         // 모은 글자 칸: 탭과 상관없이 항상 보이는 한 줄 (구분선과 BACK 사이)
@@ -450,7 +456,7 @@ public static class Chapter5SkinTool
             if (slotText != null) Object.DestroyImmediate(slotText);
         }
 
-        RectTransform row = NewRect(root, Prefix + "LetterRow", new Vector2(0f, -253f), new Vector2(400f, 52f));
+        RectTransform row = NewRect(root, Prefix + "LetterRow", new Vector2(0f, -272f), new Vector2(400f, 52f));
         if (pages != null) row.SetSiblingIndex(pages.GetSiblingIndex() + 1);
         string[] rowArts = { ArtSYellow, ArtTYellow, ArtAYellow, ArtRYellow, ArtTYellow };
         for (int i = 0; i < 5; i++)

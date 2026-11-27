@@ -77,6 +77,9 @@ public class Minigame22_ScatteredStart : MinigameBase
     private GameObject assemblyPanel;
     private Canvas rootCanvas;
 
+    // INFO 탭 숨은 A 위에 겹쳐 두는 투명 클릭 영역 (다른 UI에 가려도 A를 누를 수 있게)
+    private RectTransform hiddenAHitbox;
+
     private readonly bool[] found = new bool[5];
 
     private readonly char[] answer =
@@ -959,6 +962,112 @@ public class Minigame22_ScatteredStart : MinigameBase
         );
     }
 
+    // =====================================
+    // 숨은 A 클릭 영역
+    //  - 글자 'A' 위치를 매 프레임 따라가는 투명 버튼
+    //  - 미니게임 맨 위에 있어서 다른 UI에 가려지지 않음
+    // =====================================
+    private void LateUpdate()
+    {
+        bool show =
+            isGameActive &&
+            !assemblyShowing &&
+            !found[2] &&
+            infoPage != null &&
+            infoPage.activeInHierarchy &&
+            aboutValue != null &&
+            aboutValue.gameObject.activeInHierarchy;
+
+        if (!show)
+        {
+            if (hiddenAHitbox != null && hiddenAHitbox.gameObject.activeSelf)
+                hiddenAHitbox.gameObject.SetActive(false);
+            return;
+        }
+
+        if (!TryGetLinkBounds(aboutValue, "hidden_a", out Vector3 worldCenter, out Vector2 localSize))
+            return;
+
+        if (hiddenAHitbox == null)
+            CreateHiddenAHitbox();
+
+        hiddenAHitbox.gameObject.SetActive(true);
+        hiddenAHitbox.SetAsLastSibling();
+        hiddenAHitbox.position = worldCenter;
+
+        // 글자 크기 + 여유 (조금 빗나가도 눌리게)
+        Vector3 s = aboutValue.rectTransform.lossyScale;
+        Vector3 h = hiddenAHitbox.parent.lossyScale;
+        float sx = h.x != 0f ? s.x / h.x : 1f;
+        float sy = h.y != 0f ? s.y / h.y : 1f;
+        hiddenAHitbox.sizeDelta = new Vector2(localSize.x * sx + 26f, localSize.y * sy + 26f);
+    }
+
+    private void CreateHiddenAHitbox()
+    {
+        GameObject go = new GameObject("HiddenAHitbox", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        go.layer = gameObject.layer;
+        go.transform.SetParent(transform, false);
+
+        hiddenAHitbox = (RectTransform)go.transform;
+        hiddenAHitbox.anchorMin = hiddenAHitbox.anchorMax = new Vector2(0.5f, 0.5f);
+        hiddenAHitbox.pivot = new Vector2(0.5f, 0.5f);
+
+        Image img = go.GetComponent<Image>();
+        img.color = new Color(1f, 1f, 1f, 0f);   // 보이지 않지만 클릭은 받음
+        img.raycastTarget = true;
+
+        Button b = go.GetComponent<Button>();
+        b.transition = Selectable.Transition.None;
+        b.onClick.AddListener(() => OnLinkClicked("hidden_a"));
+    }
+
+    // 링크 글자의 화면 위치(가운데)와 크기(글자 상자 기준)
+    private bool TryGetLinkBounds(TMP_Text text, string id, out Vector3 worldCenter, out Vector2 localSize)
+    {
+        worldCenter = Vector3.zero;
+        localSize = Vector2.zero;
+
+        TMP_TextInfo info = text.textInfo;
+        if (info == null || info.linkCount == 0)
+        {
+            text.ForceMeshUpdate();
+            info = text.textInfo;
+        }
+        if (info == null)
+            return false;
+
+        for (int k = 0; k < info.linkCount; k++)
+        {
+            TMP_LinkInfo link = info.linkInfo[k];
+            if (link.GetLinkID() != id)
+                continue;
+
+            bool any = false;
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+            Vector2 max = new Vector2(float.MinValue, float.MinValue);
+            int end = link.linkTextfirstCharacterIndex + link.linkTextLength;
+            for (int i = link.linkTextfirstCharacterIndex; i < end && i < info.characterCount; i++)
+            {
+                TMP_CharacterInfo ch = info.characterInfo[i];
+                if (!ch.isVisible) continue;
+                any = true;
+                min = Vector2.Min(min, new Vector2(ch.bottomLeft.x, ch.descender));
+                max = Vector2.Max(max, new Vector2(ch.topRight.x, ch.ascender));
+            }
+
+            if (!any)
+                return false;
+
+            Vector3 localCenter = (min + max) * 0.5f;
+            worldCenter = text.rectTransform.TransformPoint(localCenter);
+            localSize = max - min;
+            return true;
+        }
+
+        return false;
+    }
+
     // 아래 안내 문구: 처음엔 기본 문구 → hintStartTime 이후 아직 못 찾은 글자 위치를 알려 줌
     private void UpdateHint()
     {
@@ -1167,6 +1276,21 @@ public class Minigame22_ScatteredStart : MinigameBase
                         Time.unscaledTime * 18f + i
                     ) * 1.3f
                     : 0f;
+
+                // 숨은 A: 가만히 있을 때도 가끔 1~2픽셀 어긋나며 살짝 깜빡임 (기획서: 미세하게 흔들림)
+                if (!hovering && !acquired && id == "hidden_a")
+                {
+                    float cycle = Time.unscaledTime % 1.6f;
+                    if (cycle < 0.18f)
+                    {
+                        wave = (Mathf.FloorToInt(Time.unscaledTime * 30f) % 2 == 0) ? 2f : -1f;
+                        color = new Color32(255, 244, 170, 255);
+                    }
+                    else if (cycle < 0.5f)
+                    {
+                        color.a = 190;
+                    }
+                }
 
                 for (int v = 0; v < 4; v++)
                 {

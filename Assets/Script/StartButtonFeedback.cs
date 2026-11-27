@@ -21,6 +21,9 @@ using UnityEngine.InputSystem;
 ///  3) "START!" 글자가 튀어나와 위로 떠오름
 ///  4) 화면이 아주 짧게 하얗게 번쩍
 ///  5) 소리: 딸깍 + 8비트 성공음 "띠-리-링↑"
+///  0) (맨 먼저) S · T · A · R · T 글자가 버튼에서 튀어나와 한 줄로 섰다가 다시 모이는 연출
+///     - MG26~30 처럼 미니게임 안에서 이미 이 연출을 한 게임은 건너뜀
+///     - 글자 그림은 Resources/C5StartMergeArt (에디터 도구가 자동으로 만듦), 없으면 글자로 표시
 ///
 /// 소리 크기는 설정 화면의 볼륨(AudioListener.volume)을 그대로 따라갑니다.
 /// </summary>
@@ -92,6 +95,13 @@ public class StartButtonFeedback : MonoBehaviour
         // 연출 중에는 다른 걸 클릭하지 못하게 막기
         inputBlocker.gameObject.SetActive(true);
 
+        // 0) S·T·A·R·T 모이는 연출 (미니게임 안에서 이미 한 경우는 건너뜀)
+        if (!HasOwnMergeEffect(minigameRoot))
+        {
+            PlaySound(clickClip, 0.6f);
+            yield return LetterMerge(ScreenToLocal(screenPos));
+        }
+
         PlaySound(clickClip, 0.8f);
         PlaySound(successClip, 1f);
 
@@ -110,6 +120,126 @@ public class StartButtonFeedback : MonoBehaviour
         inputBlocker.gameObject.SetActive(false);
 
         onFinished?.Invoke();
+    }
+
+    // ==============================
+    // 0) S · T · A · R · T → 한 줄 → 모임
+    // ==============================
+
+    private static readonly string[] OwnMergeGames =
+    {
+        "Minigame26_FallingLetters", "Minigame27_DamagedCircuit", "Minigame28_TiltedStart",
+        "Minigame29_DamagedStartRoute", "Minigame30_SequenceBreakout"
+    };
+
+    private static bool HasOwnMergeEffect(Transform minigameRoot)
+    {
+        if (minigameRoot == null) return false;
+        MinigameBase game = minigameRoot.GetComponent<MinigameBase>();
+        if (game == null) return false;
+        return Array.IndexOf(OwnMergeGames, game.GetType().Name) >= 0;
+    }
+
+    private Sprite[] mergeLetterSprites;
+    private bool mergeArtLoaded;
+
+    private Sprite[] MergeLetterSprites()
+    {
+        if (!mergeArtLoaded)
+        {
+            mergeArtLoaded = true;
+            C5StartMergeArt art = Resources.Load<C5StartMergeArt>("C5StartMergeArt");
+            if (art != null) mergeLetterSprites = art.letters;
+        }
+        return mergeLetterSprites;
+    }
+
+    private IEnumerator LetterMerge(Vector2 center)
+    {
+        const string Word = "START";
+        Vector2 size = new Vector2(72f, 66f);
+        float spread = 96f;
+
+        // 글자 줄은 버튼 위쪽 (화면 위로 넘치면 아래쪽)
+        float halfH = canvasRect.rect.height * 0.5f;
+        float halfW = canvasRect.rect.width * 0.5f;
+        float lineY = center.y + 120f;
+        if (lineY + size.y > halfH) lineY = center.y - 120f;
+        float lineX = Mathf.Clamp(center.x, -halfW + spread * 2.6f, halfW - spread * 2.6f);
+
+        Sprite[] sprites = MergeLetterSprites();
+        RectTransform[] letters = new RectTransform[5];
+        for (int i = 0; i < 5; i++)
+        {
+            Sprite sp = sprites != null && i < sprites.Length ? sprites[i] : null;
+            Image img = CreateImage("MergeLetter" + i, sp, sp != null ? White : new Color(1f, 1f, 1f, 0f));
+            img.preserveAspect = true;
+            letters[i] = img.rectTransform;
+            letters[i].sizeDelta = size;
+            letters[i].anchoredPosition = center;
+            letters[i].localScale = Vector3.one * 0.3f;
+            if (sp == null)
+            {
+                GameObject t = new GameObject("L", typeof(RectTransform));
+                t.transform.SetParent(img.transform, false);
+                TextMeshProUGUI tmp = t.AddComponent<TextMeshProUGUI>();
+                tmp.text = Word[i].ToString();
+                tmp.fontSize = 56f;
+                tmp.color = Yellow;
+                tmp.alignment = TextAlignmentOptions.Center;
+                tmp.raycastTarget = false;
+                ((RectTransform)t.transform).sizeDelta = size;
+            }
+        }
+
+        // 1) 버튼에서 튀어나와 한 줄로 (S · T · A · R · T)
+        float t0 = 0f;
+        const float Out = 0.28f;
+        while (t0 < Out)
+        {
+            t0 += Time.unscaledDeltaTime;
+            float k = EaseOut(t0 / Out);
+            for (int i = 0; i < 5; i++)
+            {
+                Vector2 to = new Vector2(lineX + (i - 2) * spread, lineY);
+                letters[i].anchoredPosition = Vector2.LerpUnclamped(center, to, k) +
+                                              Vector2.up * Mathf.Sin(k * Mathf.PI) * 30f;
+                letters[i].localScale = Vector3.one * Mathf.Lerp(0.3f, 1f, k);
+            }
+            yield return null;
+        }
+
+        // 하나씩 톡톡
+        for (int i = 0; i < 5; i++)
+        {
+            StartCoroutine(ScaleTo(letters[i], Vector3.one, Vector3.one * 1.2f, 0.06f));
+            PlaySound(clickClip, 0.35f);
+            yield return new WaitForSecondsRealtime(0.05f);
+            StartCoroutine(ScaleTo(letters[i], letters[i].localScale, Vector3.one, 0.08f));
+        }
+        yield return new WaitForSecondsRealtime(0.12f);
+
+        // 2) 다시 버튼 자리로 모이면서 하나로
+        Vector2[] from = new Vector2[5];
+        for (int i = 0; i < 5; i++) from[i] = letters[i].anchoredPosition;
+        t0 = 0f;
+        const float In = 0.22f;
+        while (t0 < In)
+        {
+            t0 += Time.unscaledDeltaTime;
+            float k = t0 / In;
+            k = k * k;
+            for (int i = 0; i < 5; i++)
+            {
+                Vector2 to = center + new Vector2((i - 2) * size.x * 0.45f, 0f);
+                letters[i].anchoredPosition = Vector2.Lerp(from[i], to, k);
+                letters[i].localScale = Vector3.one * Mathf.Lerp(1f, 0.55f, k);
+            }
+            yield return null;
+        }
+
+        for (int i = 0; i < 5; i++)
+            if (letters[i] != null) Destroy(letters[i].gameObject);
     }
 
     // ==============================

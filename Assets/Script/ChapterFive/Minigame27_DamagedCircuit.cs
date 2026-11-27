@@ -1,78 +1,53 @@
-
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
+/// <summary>
+/// MG27 ì†ìƒëœ ì‹¤í–‰ íšŒë¡œ (ì‹¤í–‰ ì¥ì¹˜ ë³µêµ¬ ê²€ì‚¬)
+///  â‘  ì»¨ë² ì´ì–´ë²¨íŠ¸ì—ì„œ ë¶€í’ˆì„ í´ë¦­í•´ ì¡°ë¦½ ìŠ¬ë¡¯ì— ë„£ëŠ”ë‹¤ (POWER / INPUT / DISPLAY / START)
+///  â‘¡ ì •ìƒ ë¶€í’ˆ 4ê°œë¥¼ ëª¨ìœ¼ë©´ START ë²„íŠ¼ ì™„ì„± â†’ í´ë¦­
+///  - í•¨ì •(BROKEN POWER / WRONG INPUT / BROKEN DISPLAY)ë„ ìŠ¬ë¡¯ì— ë“¤ì–´ê°€ 'SYSTEM READY'ê°€ ì ê¹ ëœ¨ì§€ë§Œ
+///    ê³§ ê¸€ë¦¬ì¹˜ì™€ í•¨ê»˜ 'SYSTEM ERROR' â†’ ë¶ˆëŸ‰ ë¶€í’ˆë§Œ ë¹ ì ¸ë‚˜ê° (ê°€ì§œ ì„±ê³µ, ì—…ì  29ë²ˆ)
+///  - EXIT ì€ ë¶€í’ˆì´ ì•„ë‹˜ (ë„£ì„ ìˆ˜ ì—†ìŒ)
+/// í™”ë©´ì€ ìŠ¤í¬ë¦½íŠ¸ê°€ ì§ì ‘ ë§Œë“¦. ê·¸ë¦¼ì€ ì—ë””í„° ë„êµ¬(Chapter5SkinTool2630)ê°€ ë„£ì–´ ì¤Œ.
+/// </summary>
 public class Minigame27_DamagedCircuit : MinigameBase
 {
-    [Header("Stage 1 - Conveyor UI")]
-    public GameObject conveyorPanel;
-    public RectTransform partSpawnLayer;
-    public Image conveyorTrack;
-    public TMP_Text selectedPartsText;
-    public TMP_Text partStatusText;
+    [Header("ì±•í„°5 ê·¸ë¦¼ (ì—ë””í„° ë„êµ¬ê°€ ìë™ìœ¼ë¡œ ë„£ìŒ)")]
+    public TMP_FontAsset uiFont;
+    public Sprite panelSprite;           // 23_line_back
+    public Sprite labelSprite;           // 26_upline
+    public Sprite railSprite;            // 27_rail
+    public Sprite assemblyPlateSprite;   // 27_assembly_line
+    public Sprite slotSprite;            // 27_big_blank
+    public Sprite arrowSprite;           // 26_arrow_left (>>)
+    public Sprite powerSprite;           // 27_power
+    public Sprite inputSprite;           // 27_input
+    public Sprite displaySprite;         // 27_display
+    public Sprite startSprite;           // 27_start
+    public Sprite brokenPowerSprite;     // 27_brokenpower
+    public Sprite wrongInputSprite;      // 27_wronginput
+    public Sprite brokenDisplaySprite;   // 27_brokendisplay
+    public Sprite exitSprite;            // 27_exit
 
-    [Header("Stage 2 - Circuit UI")]
-    public GameObject circuitPanel;
-    public Image circuitBoard;
-    public RectTransform circuitLineLayer;
+    [Header("ê·œì¹™")]
+    [Tooltip("ê°€ì§œ ì„±ê³µ(ë¶ˆëŸ‰ ë¶€í’ˆ ì¡°ë¦½)ì´ ë‚˜ë©´ ì±•í„°5 ì˜¤ë¥˜ íšŸìˆ˜ì— í¬í•¨")]
+    public bool countMistakes = true;
 
-    public Button powerNode;
-    public Button inputNode;
-    public Button displayNode;
-    public Button startNode;
-
-    public TMP_Text circuitStatusText;
-    public Button finalStartButton;
-
-    [Header("ART - Conveyor Parts")]
-    public Sprite powerSprite;
-    public Sprite brokenPowerSprite;
-    public Sprite startSprite;
-    public Sprite exitSprite;
-    public Sprite normalCableSprite;
-    public Sprite brokenCableSprite;
-    public Sprite displaySprite;
-    public Sprite errorPortSprite;
-    public Sprite inputSprite;
-
-    [Header("ART - Circuit Nodes")]
-    public Sprite powerNodeSprite;
-    public Sprite inputNodeSprite;
-    public Sprite displayNodeSprite;
-    public Sprite startNodeSprite;
-
-    [Header("ART - Other")]
-    public Sprite conveyorTrackSprite;
-    public Sprite circuitBoardSprite;
-    public Sprite circuitLineSprite;
-    public Sprite finalStartSprite;
-
-    [Header("ART - Options")]
-    public bool hidePartTextWhenSpriteExists = false;
-    public bool hideNodeTextWhenSpriteExists = false;
-    public bool hideFinalTextWhenSpriteExists = true;
-
-    [Header("Conveyor Settings")]
-    public Vector2 partSize = new Vector2(185f, 58f);
-    public float spawnInterval = 0.8f;
-    public float minMoveSpeed = 130f;
-    public float maxMoveSpeed = 190f;
-    public int maxVisibleParts = 12;
-
-    [Header("Circuit Settings")]
-    public float circuitLineThickness = 12f;
-    public float readyDisplayTime = 1f;
-    public float errorDisplayTime = 1.4f;
+    [Header("ì»¨ë² ì´ì–´")]
+    public float partSize = 124f;
+    public float beltSpeed = 120f;
+    public float spawnInterval = 1.6f;
+    [Tooltip("ë²¨íŠ¸ ìœ„ ë¶€í’ˆ ì‚¬ì´ ìµœì†Œ ë¹ˆ ê³µê°„")]
+    public float minPartGap = 70f;
+    [Range(0f, 1f)] public float neededPartChance = 0.4f;   // ì •ë‹µ 4 : ì˜¤ë‹µ 6
 
     private enum GamePhase
     {
         Selecting,
-        Connecting,
         Verifying,
-        Error,
         StartReady,
         Completed
     }
@@ -80,66 +55,60 @@ public class Minigame27_DamagedCircuit : MinigameBase
     private enum PartType
     {
         Power,
-        BrokenPower,
-        Start,
-        Exit,
-        NormalCable,
-        BrokenCable,
+        Input,
         Display,
-        ErrorPort,
-        Input
+        Start,
+        BrokenPower,
+        WrongInput,
+        BrokenDisplay,
+        Exit
     }
-
-    private readonly PartType[] requiredParts =
-    {
-        PartType.Power,
-        PartType.Input,
-        PartType.Display,
-        PartType.Start,
-        PartType.NormalCable
-    };
-
-    private readonly PartType[] allParts =
-    {
-        PartType.Power,
-        PartType.BrokenPower,
-        PartType.Start,
-        PartType.Exit,
-        PartType.NormalCable,
-        PartType.BrokenCable,
-        PartType.Display,
-        PartType.ErrorPort,
-        PartType.Input
-    };
 
     private class MovingPart
     {
-        public GameObject obj;
         public RectTransform rect;
         public PartType type;
-        public float speed;
+        public bool taken;
     }
 
+    private class Slot
+    {
+        public RectTransform rect;
+        public Image content;
+        public bool filled;
+        public bool trap;
+    }
+
+    // ---- ë°°ì¹˜ (1920x1080 ê¸°ì¤€) ----
+    private static readonly Vector2 PanelPos = new Vector2(0f, 25f);
+    private static readonly Vector2 PanelSize = new Vector2(1500f, 600f);
+    private static readonly Vector2 BeltPos = new Vector2(0f, 128f);
+    private static readonly Vector2 BeltSize = new Vector2(1400f, 210f);
+    private const float PartY = 22f;          // ë²¨íŠ¸ ì˜ì—­ ì•ˆì—ì„œ ë¶€í’ˆ ë†’ì´
+    private const float SlotY = -180f;
+    private static readonly float[] SlotX = { -375f, -225f, -75f, 75f };
+    private static readonly Vector2 StartSpotPos = new Vector2(390f, -180f);
+
     private GamePhase phase;
-
-    private readonly List<MovingPart> movingParts =
-        new List<MovingPart>();
-
-    private readonly List<PartType> selectedParts =
-        new List<PartType>();
-
-    private readonly List<GameObject> generatedLines =
-        new List<GameObject>();
-
-    private float spawnTimer;
-    private int spawnSerial;
-    private int nextNodeIndex;
-
     private bool finished;
+    private float spawnTimer;
+    private int filledCount;
 
-    // ======================================
-    // ½ÃÀÛ
-    // ======================================
+    private readonly List<MovingPart> parts = new List<MovingPart>();
+    private readonly Slot[] slots = new Slot[4];
+
+    // ---- ë§Œë“  UI ----
+    private TMP_FontAsset font;
+    private RectTransform screen;
+    private RectTransform panel;
+    private RectTransform belt;
+    private TextMeshProUGUI assemblyText;
+    private TMP_Text circuitStatusText;     // ì—…ì (MG27FakeReadyAchievement)ì´ ì´ ê¸€ìë¥¼ ì§€ì¼œë´„
+    private CanvasGroup banner;
+    private TextMeshProUGUI bannerText;
+    private Image startSpot;
+    private Button finalStartButton;
+    private Coroutine messageRoutine;
 
     private void Start()
     {
@@ -149,1045 +118,527 @@ public class Minigame27_DamagedCircuit : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "¼Õ»óµÈ ½ÇÇà È¸·Î";
-
-        instruction =
-            "¿Ã¹Ù¸¥ ºÎÇ°À» ¼öÁıÇÑ µÚ È¸·Î¸¦ ¿¬°áÇÏ½Ê½Ã¿À.";
-
-        timeLimit = 999999f;
+        gameName = "ì‹¤í–‰ ì¥ì¹˜ ë³µêµ¬ ê²€ì‚¬";
+        instruction = "ì •ìƒ ë¶€í’ˆ 4ê°œë¥¼ ê³¨ë¼ START ë²„íŠ¼ì„ ì™„ì„±í•˜ì„¸ìš”.";
 
         base.StartMinigame();
-
         StopAllCoroutines();
+        messageRoutine = null;
 
         finished = false;
+        filledCount = 0;
+        spawnTimer = 0f;
+        parts.Clear();
 
-        if (!FindReferences())
-        {
-            Debug.LogError(
-                "MG27: ÇÊ¿äÇÑ UI°¡ ¾ø½À´Ï´Ù. " +
-                "Hierarchy¿Í Inspector ¿¬°áÀ» È®ÀÎÇÏ¼¼¿ä.",
-                this
-            );
+        BuildScreen();
+        C5Kit.PrepareNoise(transform);
 
-            isGameActive = false;
-            return;
-        }
-
-        ClearMovingParts();
-        ClearCircuitLines();
-
-        selectedParts.Clear();
-
-        ApplyArtwork();
-        SetupButtons();
-
-        BeginSelectionStage();
-    }
-
-    // ======================================
-    // UI ¿ÀºêÁ§Æ® ÀÚµ¿ Ã£±â
-    // ======================================
-
-    private Transform FindDeep(
-        Transform parent,
-        string objectName)
-    {
-        if (parent == null)
-            return null;
-
-        if (parent.name == objectName)
-            return parent;
-
-        foreach (Transform child in parent)
-        {
-            Transform found = FindDeep(
-                child,
-                objectName
-            );
-
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
-    private T FindUI<T>(string objectName)
-        where T : Component
-    {
-        Transform found = FindDeep(
-            transform,
-            objectName
-        );
-
-        return found == null
-            ? null
-            : found.GetComponent<T>();
-    }
-
-    private GameObject FindObject(string objectName)
-    {
-        Transform found = FindDeep(
-            transform,
-            objectName
-        );
-
-        return found == null
-            ? null
-            : found.gameObject;
-    }
-
-    private bool FindReferences()
-    {
-        if (conveyorPanel == null)
-            conveyorPanel = FindObject("ConveyorPanel");
-
-        if (partSpawnLayer == null)
-            partSpawnLayer =
-                FindUI<RectTransform>("PartSpawnLayer");
-
-        if (conveyorTrack == null)
-            conveyorTrack =
-                FindUI<Image>("ConveyorTrack");
-
-        if (selectedPartsText == null)
-            selectedPartsText =
-                FindUI<TMP_Text>("SelectedPartsText");
-
-        if (partStatusText == null)
-            partStatusText =
-                FindUI<TMP_Text>("PartStatusText");
-
-        if (circuitPanel == null)
-            circuitPanel = FindObject("CircuitPanel");
-
-        if (circuitBoard == null)
-            circuitBoard = FindUI<Image>("CircuitBoard");
-
-        if (circuitLineLayer == null)
-            circuitLineLayer =
-                FindUI<RectTransform>("CircuitLineLayer");
-
-        if (powerNode == null)
-            powerNode = FindUI<Button>("PowerNode");
-
-        if (inputNode == null)
-            inputNode = FindUI<Button>("InputNode");
-
-        if (displayNode == null)
-            displayNode = FindUI<Button>("DisplayNode");
-
-        if (startNode == null)
-            startNode = FindUI<Button>("StartNode");
-
-        if (circuitStatusText == null)
-            circuitStatusText =
-                FindUI<TMP_Text>("CircuitStatusText");
-
-        if (finalStartButton == null)
-            finalStartButton =
-                FindUI<Button>("FinalStartButton");
-
-        return
-            conveyorPanel != null &&
-            partSpawnLayer != null &&
-            conveyorTrack != null &&
-            selectedPartsText != null &&
-            partStatusText != null &&
-            circuitPanel != null &&
-            circuitBoard != null &&
-            circuitLineLayer != null &&
-            powerNode != null &&
-            inputNode != null &&
-            displayNode != null &&
-            startNode != null &&
-            circuitStatusText != null &&
-            finalStartButton != null;
-    }
-
-    // ======================================
-    // ¾ÆÆ®ÆÀ ÀÌ¹ÌÁö Àû¿ë
-    // ======================================
-
-    private void ApplyArtwork()
-    {
-        ApplySprite(
-            conveyorTrack,
-            conveyorTrackSprite,
-            false
-        );
-
-        ApplySprite(
-            circuitBoard,
-            circuitBoardSprite,
-            false
-        );
-
-        SetupNodeArtwork(powerNode, powerNodeSprite);
-        SetupNodeArtwork(inputNode, inputNodeSprite);
-        SetupNodeArtwork(displayNode, displayNodeSprite);
-        SetupNodeArtwork(startNode, startNodeSprite);
-
-        Image finalImage =
-            finalStartButton.GetComponent<Image>();
-
-        ApplySprite(
-            finalImage,
-            finalStartSprite,
-            true
-        );
-
-        TMP_Text[] finalLabels =
-            finalStartButton.GetComponentsInChildren<
-                TMP_Text>(true);
-
-        foreach (TMP_Text label in finalLabels)
-        {
-            bool hide =
-                finalStartSprite != null &&
-                hideFinalTextWhenSpriteExists;
-
-            label.gameObject.SetActive(!hide);
-            label.raycastTarget = false;
-        }
-    }
-
-    private void ApplySprite(
-        Image image,
-        Sprite sprite,
-        bool preserveAspect)
-    {
-        if (image == null || sprite == null)
-            return;
-
-        image.sprite = sprite;
-        image.type = Image.Type.Simple;
-        image.color = Color.white;
-        image.preserveAspect = preserveAspect;
-    }
-
-    private void SetupNodeArtwork(
-        Button button,
-        Sprite sprite)
-    {
-        Image image = button.GetComponent<Image>();
-
-        ApplySprite(image, sprite, true);
-
-        foreach (TMP_Text text in
-            button.GetComponentsInChildren<TMP_Text>(true))
-        {
-            text.gameObject.SetActive(
-                sprite == null ||
-                !hideNodeTextWhenSpriteExists
-            );
-
-            text.raycastTarget = false;
-        }
-    }
-
-    private Sprite GetPartSprite(PartType part)
-    {
-        switch (part)
-        {
-            case PartType.Power: return powerSprite;
-            case PartType.BrokenPower: return brokenPowerSprite;
-            case PartType.Start: return startSprite;
-            case PartType.Exit: return exitSprite;
-            case PartType.NormalCable: return normalCableSprite;
-            case PartType.BrokenCable: return brokenCableSprite;
-            case PartType.Display: return displaySprite;
-            case PartType.ErrorPort: return errorPortSprite;
-            case PartType.Input: return inputSprite;
-        }
-
-        return null;
-    }
-
-    private string GetPartName(PartType part)
-    {
-        switch (part)
-        {
-            case PartType.Power: return "POWER";
-            case PartType.BrokenPower: return "BROKEN POWER";
-            case PartType.Start: return "START";
-            case PartType.Exit: return "EXIT";
-            case PartType.NormalCable: return "NORMAL CABLE";
-            case PartType.BrokenCable: return "BROKEN CABLE";
-            case PartType.Display: return "DISPLAY";
-            case PartType.ErrorPort: return "ERROR PORT";
-            case PartType.Input: return "INPUT";
-        }
-
-        return "UNKNOWN";
-    }
-
-    // ======================================
-    // ¹öÆ° ±â´É ¿¬°á
-    // ======================================
-
-    private void SetupButtons()
-    {
-        SetupNodeButton(powerNode, 0);
-        SetupNodeButton(inputNode, 1);
-        SetupNodeButton(displayNode, 2);
-        SetupNodeButton(startNode, 3);
-
-        finalStartButton.onClick.RemoveAllListeners();
-
-        finalStartButton.onClick.AddListener(
-            OnFinalStartClicked
-        );
-
-        finalStartButton.interactable = true;
-        finalStartButton.gameObject.SetActive(false);
-    }
-
-    private void SetupNodeButton(
-        Button button,
-        int nodeIndex)
-    {
-        button.onClick.RemoveAllListeners();
-
-        button.onClick.AddListener(
-            () => OnNodeClicked(nodeIndex)
-        );
-
-        button.interactable = true;
-
-        Image image = button.GetComponent<Image>();
-
-        if (image != null)
-            image.raycastTarget = true;
-    }
-
-    // ======================================
-    // 1´Ü°è: ÄÁº£ÀÌ¾îº§Æ® ½ÃÀÛ
-    // ======================================
-
-    private void BeginSelectionStage()
-    {
         phase = GamePhase.Selecting;
+        UpdateAssemblyText();
+        SetStatus("ì •ìƒ ë¶€í’ˆê³¼ íšŒë¡œë¥¼ <color=" + C5Kit.YellowHex + ">ë³µêµ¬</color>í•˜ì„¸ìš”.");
 
-        conveyorPanel.SetActive(true);
-        circuitPanel.SetActive(false);
-
-        finalStartButton.gameObject.SetActive(false);
-
-        ClearMovingParts();
-
-        spawnTimer = 0f;
-        spawnSerial = 0;
-
-        Canvas.ForceUpdateCanvases();
-
-        UpdateSelectionText();
-
-        if (selectedParts.Count > 0)
+        // ì²˜ìŒë¶€í„° ë²¨íŠ¸ê°€ ë¹„ì–´ ìˆì§€ ì•Šê²Œ ëª‡ ê°œ ì˜¬ë ¤ ë‘ 
+        float[] xs = { -560f, -365f, -170f, 25f, 220f, 415f };
+        PartType[] first =
         {
-            partStatusText.text =
-                "Á¤»ó ºÎÇ° " +
-                selectedParts.Count +
-                "°³ À¯Áö! ³ª¸ÓÁö ºÎÇ°À» ¼±ÅÃÇÏ½Ê½Ã¿À.";
-        }
-        else
-        {
-            partStatusText.text =
-                "ÇÊ¿äÇÑ ºÎÇ° 5°³¸¦ ¼±ÅÃÇÏ½Ê½Ã¿À.";
-        }
-
-        // ½ÃÀÛ ½Ã ÄÁº£ÀÌ¾î¿¡ ºÎÇ° 3°³ ¹èÄ¡
-        SpawnSpecificPart(
-            PartType.Power,
-            -400f,
-            -65f
-        );
-
-        SpawnSpecificPart(
-            PartType.BrokenPower,
-            0f,
-            0f
-        );
-
-        SpawnSpecificPart(
-            PartType.Input,
-            400f,
-            65f
-        );
-
-        Debug.Log("MG27: ºÎÇ° ¼±ÅÃ ½ÃÀÛ");
+            PartType.BrokenPower, PartType.Power, PartType.Exit, PartType.WrongInput,
+            PartType.Input, PartType.BrokenDisplay
+        };
+        for (int i = 0; i < xs.Length; i++)
+            SpawnPart(first[i], xs[i]);
     }
 
-    // ======================================
-    // ÄÁº£ÀÌ¾î ÀÌµ¿ / »ı¼º
-    // ======================================
-
-    private void LateUpdate()
+    // =========================================
+    // í™”ë©´ ë§Œë“¤ê¸°
+    // =========================================
+    private void BuildScreen()
     {
-        if (!isGameActive ||
-            finished ||
-            phase != GamePhase.Selecting)
-        {
-            return;
-        }
+        font = C5Kit.ResolveFont(transform, uiFont);
 
-        UpdateConveyor();
-        UpdatePartSpawning();
-    }
+        // ì—…ì ì´ ì§€ì¼œë³´ëŠ” ê¸€ì(CircuitStatusText)ëŠ” í”„ë¦¬íŒ¹ ê²ƒì„ ê·¸ëŒ€ë¡œ ì˜®ê²¨ ì”€
+        if (circuitStatusText == null)
+            circuitStatusText = FindText("CircuitStatusText");
+        if (circuitStatusText != null)
+            circuitStatusText.transform.SetParent(transform, false);
 
-    private void UpdateConveyor()
-    {
-        float disappearX =
-            -partSpawnLayer.rect.width * 0.5f - 130f;
+        C5Kit.HideLegacy(transform);
+        screen = C5Kit.NewScreen(transform, "RT_MG27");
 
-        for (int i = movingParts.Count - 1;
-             i >= 0; i--)
-        {
-            MovingPart part = movingParts[i];
+        panel = C5Kit.Panel(screen, panelSprite, PanelPos, PanelSize).rectTransform;
 
-            if (part.obj == null)
-            {
-                movingParts.RemoveAt(i);
-                continue;
-            }
+        // â‘  ë¶€í’ˆ ì„ íƒ
+        C5Kit.Plate(screen, labelSprite, font, new Vector2(-520f, 300f), new Vector2(340f, 62f),
+            "â‘  ë¶€í’ˆ ì„ íƒ", 30f);
 
-            Vector2 position =
-                part.rect.anchoredPosition;
+        Image rail = C5Kit.Img(screen, "RT_Rail", railSprite, railSprite != null ? C5Kit.White : C5Kit.Navy,
+            new Vector2(0f, 40f), new Vector2(1380f, 120f));
+        if (railSprite == null)
+            C5Kit.AddOutline(rail, C5Kit.Cyan, 3f);
 
-            position.x -=
-                part.speed * Time.deltaTime;
+        belt = C5Kit.Rect(screen, "RT_Belt", BeltPos, BeltSize);
+        belt.gameObject.AddComponent<RectMask2D>();
 
-            part.rect.anchoredPosition = position;
+        // â‘¡ ì¡°ë¦½ ìŠ¬ë¡¯
+        C5Kit.Plate(screen, labelSprite, font, new Vector2(-520f, -62f), new Vector2(340f, 62f),
+            "â‘¡ ì¡°ë¦½ ìŠ¬ë¡¯", 30f);
 
-            if (position.x < disappearX)
-            {
-                part.obj.SetActive(false);
-                Destroy(part.obj);
-                movingParts.RemoveAt(i);
-            }
-        }
-    }
+        Image plate = C5Kit.Img(screen, "RT_AssemblyPlate", assemblyPlateSprite,
+            assemblyPlateSprite != null ? C5Kit.White : C5Kit.DeepNavy, new Vector2(0f, -62f),
+            new Vector2(340f, 70f));
+        assemblyText = C5Kit.Txt(plate.transform, "Text", "", 34f, C5Kit.White, TextAlignmentOptions.Center,
+            new Vector2(0f, 2f), new Vector2(340f, 70f), font);
 
-    private void UpdatePartSpawning()
-    {
-        spawnTimer += Time.deltaTime;
-
-        if (spawnTimer < spawnInterval)
-            return;
-
-        spawnTimer = 0f;
-
-        if (movingParts.Count >= maxVisibleParts)
-            return;
-
-        PartType next = GetNextSpawnType();
-
-        int lane = Random.Range(0, 3);
-
-        float y = (lane - 1) * 65f;
-
-        float x =
-            partSpawnLayer.rect.width * 0.5f + 110f;
-
-        SpawnSpecificPart(next, x, y);
-    }
-
-    private PartType GetNextSpawnType()
-    {
-        // ¾ÆÁ÷ ¼±ÅÃÇÏÁö ¾ÊÀº Á¤»ó ºÎÇ°ÀÌ
-        // ºñ±³Àû ÀÚÁÖ µîÀåÇÏµµ·Ï Á¶Àı
-        List<PartType> missing =
-            new List<PartType>();
-
-        foreach (PartType required in requiredParts)
-        {
-            if (!selectedParts.Contains(required))
-                missing.Add(required);
-        }
-
-        if (missing.Count > 0 &&
-            Random.value < 0.6f)
-        {
-            return missing[
-                Random.Range(0, missing.Count)
-            ];
-        }
-
-        return allParts[
-            Random.Range(0, allParts.Length)
-        ];
-    }
-
-    // ======================================
-    // ÄÁº£ÀÌ¾î ºÎÇ° »ı¼º
-    // ======================================
-
-    private void SpawnSpecificPart(
-        PartType type,
-        float x,
-        float y)
-    {
-        GameObject go = new GameObject(
-            "Part_" + type + "_" + (++spawnSerial),
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image),
-            typeof(Button)
-        );
-
-        go.transform.SetParent(
-            partSpawnLayer,
-            false
-        );
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-
-        rect.sizeDelta = partSize;
-        rect.anchoredPosition = new Vector2(x, y);
-
-        Image image = go.GetComponent<Image>();
-
-        Sprite sprite = GetPartSprite(type);
-
-        if (sprite != null)
-        {
-            image.sprite = sprite;
-            image.type = Image.Type.Simple;
-            image.color = Color.white;
-            image.preserveAspect = true;
-        }
-        else
-        {
-            image.color =
-                new Color32(49, 91, 124, 255);
-        }
-
-        image.raycastTarget = true;
-
-        // ÀÌ¹ÌÁö°¡ ¾ø°Å³ª ±ÛÀÚ¸¦ Ç¥½ÃÇÏµµ·Ï
-        // ¼³Á¤ÇßÀ» ¶§ ±âº» TMP ±ÛÀÚ Ç¥½Ã
-        if (sprite == null ||
-            !hidePartTextWhenSpriteExists)
-        {
-            GameObject textObject = new GameObject(
-                "PartLabel",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI)
-            );
-
-            textObject.transform.SetParent(
-                go.transform,
-                false
-            );
-
-            RectTransform textRect =
-                textObject.GetComponent<RectTransform>();
-
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(4f, 2f);
-            textRect.offsetMax = new Vector2(-4f, -2f);
-
-            TextMeshProUGUI text =
-                textObject.GetComponent<TextMeshProUGUI>();
-
-            text.text = GetPartName(type);
-            text.fontSize = 23f;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment =
-                TextAlignmentOptions.Center;
-
-            text.color = Color.white;
-            text.raycastTarget = false;
-        }
-
-        MovingPart part = new MovingPart();
-
-        part.obj = go;
-        part.rect = rect;
-        part.type = type;
-        part.speed = Random.Range(
-            Mathf.Max(10f, minMoveSpeed),
-            Mathf.Max(minMoveSpeed + 1f, maxMoveSpeed)
-        );
-
-        Button button = go.GetComponent<Button>();
-
-        button.onClick.AddListener(
-            () => SelectPart(part)
-        );
-
-        movingParts.Add(part);
-    }
-
-    // ======================================
-    // ºÎÇ° ¼±ÅÃ
-    // ======================================
-
-    private void SelectPart(MovingPart part)
-    {
-        if (phase != GamePhase.Selecting ||
-            !isGameActive ||
-            finished ||
-            part == null)
-        {
-            return;
-        }
-
-        if (!movingParts.Contains(part))
-            return;
-
-        selectedParts.Add(part.type);
-
-        string nameOfPart =
-            GetPartName(part.type);
-
-        movingParts.Remove(part);
-
-        part.obj.SetActive(false);
-        Destroy(part.obj);
-
-        UpdateSelectionText();
-
-        partStatusText.text =
-            nameOfPart + " ¼±ÅÃ ¿Ï·á";
-
-        Debug.Log(
-            "MG27: " + nameOfPart +
-            " ¼±ÅÃ (" +
-            selectedParts.Count + "/5)"
-        );
-
-        if (selectedParts.Count >= 5)
-        {
-            EnterCircuitStage();
-        }
-    }
-
-    private void UpdateSelectionText()
-    {
-        selectedPartsText.text =
-            "SELECTED : " +
-            selectedParts.Count +
-            " / 5";
-    }
-
-    private void ClearMovingParts()
-    {
-        foreach (MovingPart part in movingParts)
-        {
-            if (part.obj != null)
-            {
-                part.obj.SetActive(false);
-                Destroy(part.obj);
-            }
-        }
-
-        movingParts.Clear();
-    }
-
-    // ======================================
-    // 2´Ü°è: È¸·Î ¿¬°á ½ÃÀÛ
-    // ======================================
-
-    private void EnterCircuitStage()
-    {
-        phase = GamePhase.Connecting;
-
-        ClearMovingParts();
-
-        conveyorPanel.SetActive(false);
-        circuitPanel.SetActive(true);
-
-        finalStartButton.gameObject.SetActive(false);
-
-        Canvas.ForceUpdateCanvases();
-
-        ResetCircuitConnections();
-
-        circuitStatusText.text =
-            "POWERºÎÅÍ ¼ø¼­´ë·Î ¿¬°áÇÏ½Ê½Ã¿À.";
-
-        Debug.Log("MG27: È¸·Î ¿¬°á ½ÃÀÛ");
-    }
-
-    private Button GetNode(int index)
-    {
-        switch (index)
-        {
-            case 0: return powerNode;
-            case 1: return inputNode;
-            case 2: return displayNode;
-            case 3: return startNode;
-        }
-
-        return null;
-    }
-
-    // ======================================
-    // È¸·Î ³ëµå Å¬¸¯
-    // ======================================
-
-    private void OnNodeClicked(int nodeIndex)
-    {
-        if (phase != GamePhase.Connecting ||
-            !isGameActive ||
-            finished)
-        {
-            return;
-        }
-
-        if (nodeIndex != nextNodeIndex)
-        {
-            // ¼ø¼­°¡ Æ²¸®¸é È¸·Î¸¸ ´Ù½Ã ¿¬°á
-            ResetCircuitConnections();
-
-            circuitStatusText.text =
-                "¿¬°á ¼ø¼­ ¿À·ù! POWERºÎÅÍ ´Ù½Ã ¿¬°áÇÏ½Ê½Ã¿À.";
-
-            Debug.Log(
-                "MG27: Àß¸øµÈ È¸·Î ¿¬°á ¼ø¼­"
-            );
-
-            return;
-        }
-
-        nextNodeIndex++;
-
-        RefreshNodeAppearance();
-
-        if (nextNodeIndex >= 2)
-        {
-            Button previous =
-                GetNode(nextNodeIndex - 2);
-
-            Button current =
-                GetNode(nextNodeIndex - 1);
-
-            CreateCircuitLine(
-                previous.GetComponent<RectTransform>(),
-                current.GetComponent<RectTransform>()
-            );
-        }
-
-        if (nextNodeIndex >= 4)
-        {
-            StartCoroutine(VerifyCircuitRoutine());
-            return;
-        }
-
-        Button next = GetNode(nextNodeIndex);
-
-        circuitStatusText.text =
-            "´ÙÀ½ ¿¬°á : " +
-            next.name.Replace("Node", "").ToUpper();
-    }
-
-    // ======================================
-    // È¸·Î ¿¬°á¼± ÀÚµ¿ »ı¼º
-    // ======================================
-
-    private void CreateCircuitLine(
-        RectTransform fromNode,
-        RectTransform toNode)
-    {
-        Vector2 from =
-            circuitLineLayer.InverseTransformPoint(
-                fromNode.position
-            );
-
-        Vector2 to =
-            circuitLineLayer.InverseTransformPoint(
-                toNode.position
-            );
-
-        Vector2 difference = to - from;
-
-        GameObject go = new GameObject(
-            "CircuitLine",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        go.transform.SetParent(
-            circuitLineLayer,
-            false
-        );
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition =
-            (from + to) * 0.5f;
-
-        rect.sizeDelta = new Vector2(
-            difference.magnitude,
-            circuitLineThickness
-        );
-
-        float angle =
-            Mathf.Atan2(
-                difference.y,
-                difference.x
-            ) * Mathf.Rad2Deg;
-
-        rect.localRotation =
-            Quaternion.Euler(0f, 0f, angle);
-
-        Image image = go.GetComponent<Image>();
-
-        image.color =
-            new Color32(77, 225, 195, 255);
-
-        if (circuitLineSprite != null)
-        {
-            image.sprite = circuitLineSprite;
-            image.type = Image.Type.Simple;
-            image.color = Color.white;
-        }
-
-        image.raycastTarget = false;
-
-        generatedLines.Add(go);
-    }
-
-    private void ClearCircuitLines()
-    {
-        foreach (GameObject line in generatedLines)
-        {
-            if (line != null)
-            {
-                line.SetActive(false);
-                Destroy(line);
-            }
-        }
-
-        generatedLines.Clear();
-    }
-
-    private void ResetCircuitConnections()
-    {
-        nextNodeIndex = 0;
-
-        ClearCircuitLines();
-        RefreshNodeAppearance();
-    }
-
-    private void RefreshNodeAppearance()
-    {
+        Sprite[] ghosts = { powerSprite, inputSprite, displaySprite, startSprite };
         for (int i = 0; i < 4; i++)
         {
-            Button node = GetNode(i);
-
-            if (node == null)
-                continue;
-
-            Image image = node.GetComponent<Image>();
-
-            if (image != null)
-            {
-                // ¾ÆÆ® ÀÌ¹ÌÁö°¡ ÀÖÀ¸¸é ¿øº» »ö À¯Áö
-                if (image.sprite != null)
-                {
-                    image.color = Color.white;
-                }
-                else
-                {
-                    image.color = i < nextNodeIndex
-                        ? new Color32(22, 160, 133, 255)
-                        : new Color32(40, 76, 104, 255);
-                }
-            }
-
-            foreach (TMP_Text text in
-                node.GetComponentsInChildren<TMP_Text>(
-                    true
-                ))
-            {
-                text.color = i < nextNodeIndex
-                    ? new Color32(113, 255, 213, 255)
-                    : Color.white;
-            }
+            Image box = C5Kit.Img(screen, "RT_Slot" + i, slotSprite, slotSprite != null ? C5Kit.White : C5Kit.Navy,
+                new Vector2(SlotX[i], SlotY), new Vector2(128f, 128f), true);
+            if (slotSprite == null)
+                C5Kit.AddOutline(box, C5Kit.Cyan, 3f);
+            Image content = C5Kit.Img(box.transform, "Content", ghosts[i], new Color(1f, 1f, 1f, 0.16f),
+                Vector2.zero, new Vector2(108f, 108f), true);
+            slots[i] = new Slot { rect = box.rectTransform, content = content };
         }
+
+        if (arrowSprite != null)
+            C5Kit.Img(screen, "RT_Arrow", arrowSprite, C5Kit.White, new Vector2(228f, SlotY), new Vector2(72f, 56f), true);
+
+        // â‘¢ START ìë¦¬: ì²˜ìŒì—” íë¦¿í•˜ê²Œ, ì •ìƒ ë¶€í’ˆ 4ê°œê°€ ëª¨ì´ë©´ ì¼œì ¸ì„œ ëˆ„ë¥¼ ìˆ˜ ìˆìŒ
+        Image spotBox = C5Kit.Img(screen, "RT_StartSpot", slotSprite, slotSprite != null ? C5Kit.White : C5Kit.Navy,
+            StartSpotPos, new Vector2(150f, 150f), true);
+        startSpot = C5Kit.Img(spotBox.transform, "StartArt", startSprite, new Color(1f, 1f, 1f, 0.2f), Vector2.zero,
+            new Vector2(130f, 130f), true);
+        finalStartButton = C5Kit.MakeButton(startSpot, OnFinalStartClicked);
+        finalStartButton.transition = Selectable.Transition.None;   // ë°ê¸°ëŠ” ìŠ¤í¬ë¦½íŠ¸ê°€ ì§ì ‘ ë°”ê¿ˆ
+        finalStartButton.interactable = false;
+
+        // ì•„ë˜ ì•ˆë‚´ ë¬¸êµ¬ = CircuitStatusText
+        if (circuitStatusText == null)
+        {
+            circuitStatusText = C5Kit.BottomText(screen, font, "");
+            circuitStatusText.name = "CircuitStatusText";
+        }
+        else
+        {
+            circuitStatusText.transform.SetParent(screen, false);
+            circuitStatusText.gameObject.SetActive(true);
+            RectTransform rt = circuitStatusText.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = C5Kit.BottomTextPos;
+            rt.sizeDelta = new Vector2(1500f, 60f);
+            rt.localScale = Vector3.one;
+            circuitStatusText.font = font;
+            circuitStatusText.fontSize = 32f;
+            circuitStatusText.enableAutoSizing = false;
+            circuitStatusText.color = C5Kit.White;
+            circuitStatusText.alignment = TextAlignmentOptions.Center;
+            circuitStatusText.richText = true;
+            circuitStatusText.textWrappingMode = TextWrappingModes.NoWrap;
+            circuitStatusText.overflowMode = TextOverflowModes.Overflow;
+            circuitStatusText.raycastTarget = false;
+        }
+
+        banner = C5Kit.Banner(screen, font, new Vector2(0f, 120f), new Vector2(760f, 170f), out bannerText);
     }
 
-    // ======================================
-    // ºÎÇ° °ËÁõ
-    // ======================================
-
-    private bool HasAllCorrectParts()
+    private TMP_Text FindText(string objectName)
     {
-        if (selectedParts.Count != requiredParts.Length)
-            return false;
+        foreach (TMP_Text t in GetComponentsInChildren<TMP_Text>(true))
+            if (t.name == objectName)
+                return t;
+        return null;
+    }
 
-        HashSet<PartType> distinct =
-            new HashSet<PartType>(selectedParts);
+    private void SetStatus(string text)
+    {
+        if (circuitStatusText != null)
+            circuitStatusText.text = text;
+    }
 
-        if (distinct.Count != requiredParts.Length)
-            return false;
+    private void UpdateAssemblyText()
+    {
+        assemblyText.text = "ASSEMBLY  <color=" + C5Kit.YellowHex + "><size=40>" + filledCount + "</size></color> / 4";
+    }
 
-        foreach (PartType required in requiredParts)
+    // =========================================
+    // ë§¤ í”„ë ˆì„
+    // =========================================
+    protected override void Update()
+    {
+        // ê¸€ìë¥¼ ë‹¤ ëª¨ì•„ START ë²„íŠ¼ë§Œ ë‚¨ì•˜ìœ¼ë©´ ì‹œê°„ì€ ë©ˆì¶¤ (ë‹¤ í•´ ë†“ê³  ì‹œê°„ ì´ˆê³¼ë¡œ ì‹¤íŒ¨í•˜ì§€ ì•Šê²Œ)
+        bool timerFrozen = phase == GamePhase.StartReady || phase == GamePhase.Completed;
+        if (!timerFrozen)
+            base.Update();
+        if (!isGameActive || finished)
+            return;
+
+        // í”Œë ˆì´ ì¤‘ì— ìŠ¤í¬ë¦½íŠ¸ê°€ ë‹¤ì‹œ ì½íˆë©´(ì½”ë“œ ìˆ˜ì •) ìŠ¬ë¡¯ ì •ë³´ê°€ ì‚¬ë¼ì§ â†’ ë©ˆì¶° ìˆê¸°
+        if (slots[0] == null || belt == null)
+            return;
+
+        MoveParts();
+
+        if (phase == GamePhase.Selecting)
         {
-            if (!distinct.Contains(required))
-                return false;
+            // ë§¨ ë’¤ ë¶€í’ˆì´ í•œ ì¹¸ë§Œí¼ ë‚˜ì•„ê°€ë©´ ë°”ë¡œ ë‹¤ìŒ ë¶€í’ˆ (í•­ìƒ ê°™ì€ ê°„ê²©)
+            float spawnX = -BeltSize.x * 0.5f - partSize * 0.6f;
+            if (HasRoomAt(spawnX))
+                SpawnPart(PickPart(), LastPartX() - (partSize + minPartGap));
         }
 
+
+    }
+
+    private float LastPartX()
+    {
+        float min = float.MaxValue;
+        foreach (MovingPart p in parts)
+            if (p.rect != null && !p.taken)
+                min = Mathf.Min(min, p.rect.anchoredPosition.x);
+        float spawnX = -BeltSize.x * 0.5f - partSize * 0.6f;
+        return min == float.MaxValue ? spawnX + partSize + minPartGap : Mathf.Max(min, spawnX + partSize + minPartGap);
+    }
+
+    // ìƒˆ ë¶€í’ˆì´ ë‚˜ì˜¬ ìë¦¬ ê·¼ì²˜ì— ë‹¤ë¥¸ ë¶€í’ˆì´ ìˆìœ¼ë©´ ê¸°ë‹¤ë¦¼ (ì´˜ì´˜í•˜ì§€ ì•Šê²Œ)
+    private bool HasRoomAt(float x)
+    {
+        foreach (MovingPart p in parts)
+        {
+            if (p.rect == null || p.taken) continue;
+            if (p.rect.anchoredPosition.x - x < partSize + minPartGap)
+                return false;
+        }
         return true;
     }
 
-    private IEnumerator VerifyCircuitRoutine()
+    private PartType PickPart()
     {
-        phase = GamePhase.Verifying;
+        List<PartType> needed = new List<PartType>();
+        for (int i = 0; i < 4; i++)
+            if (!slots[i].filled || slots[i].trap)
+                needed.Add((PartType)i);
 
-        // ¿Ã¹Ù¸£Áö ¾ÊÀº ºÎÇ°ÀÌ¾îµµ
-        // ¸ÕÀú °¡Â¥ ¼º°ø È­¸é Ç¥½Ã
-        circuitStatusText.text = "SYSTEM READY";
-        circuitStatusText.color =
-            new Color32(90, 255, 181, 255);
+        if (needed.Count > 0 && Random.value < neededPartChance)
+            return needed[Random.Range(0, needed.Count)];
 
-        Debug.Log("MG27: SYSTEM READY");
-
-        yield return new WaitForSeconds(
-            readyDisplayTime
-        );
-
-        if (!isGameActive || finished)
-            yield break;
-
-        if (HasAllCorrectParts())
+        // ë‚˜ë¨¸ì§€(ì•½ 60%)ëŠ” ë¶ˆëŸ‰ ë¶€í’ˆ / EXIT
+        PartType[] others =
         {
-            ShowFinalStartButton();
-        }
-        else
-        {
-            phase = GamePhase.Error;
-
-            circuitStatusText.text =
-                "SYSTEM ERROR\nÀß¸øµÈ ºÎÇ°ÀÌ ¹ß°ßµÇ¾ú½À´Ï´Ù.";
-
-            circuitStatusText.color =
-                new Color32(255, 109, 109, 255);
-
-            Debug.Log(
-                "MG27: SYSTEM ERROR - Àß¸øµÈ ºÎÇ°"
-            );
-
-            yield return new WaitForSeconds(
-                errorDisplayTime
-            );
-
-            if (!isGameActive || finished)
-                yield break;
-
-            KeepCorrectPartsOnly();
-            BeginSelectionStage();
-        }
+            PartType.BrokenPower, PartType.WrongInput, PartType.BrokenDisplay, PartType.Exit
+        };
+        return others[Random.Range(0, others.Length)];
     }
 
-    // ======================================
-    // Àß¸øµÈ ºÎÇ°¸¸ ´Ù½Ã ¼±ÅÃ
-    // ======================================
-
-    private void KeepCorrectPartsOnly()
+    private void SpawnPart(PartType type, float x)
     {
-        List<PartType> correct =
-            new List<PartType>();
-
-        foreach (PartType part in selectedParts)
+        Sprite art = PartSprite(type);
+        Image img = C5Kit.Img(belt, "Part_" + type, art, art != null ? C5Kit.White : C5Kit.Navy,
+            new Vector2(x, PartY), new Vector2(partSize, partSize), true);
+        if (art == null)
         {
-            bool required = false;
+            C5Kit.AddOutline(img, IsTrap(type) ? C5Kit.Pink : C5Kit.Cyan, 3f);
+            C5Kit.Txt(img.transform, "Label", PartName(type), 20f, C5Kit.White, TextAlignmentOptions.Center,
+                Vector2.zero, new Vector2(partSize, partSize), font);
+        }
 
-            foreach (PartType needed in requiredParts)
+        MovingPart part = new MovingPart { rect = img.rectTransform, type = type };
+        C5Kit.MakeButton(img, () => OnPartClicked(part));
+        parts.Add(part);
+    }
+
+    // ë²¨íŠ¸: ëª¨ë“  ë¶€í’ˆì´ ê°™ì€ ê°„ê²©ìœ¼ë¡œ ì¤„ì§€ì–´ ì´ë™.
+    // ë¶€í’ˆì„ í•˜ë‚˜ ì§‘ì–´ ê°€ì„œ ë¹ˆìë¦¬ê°€ ìƒê¸°ë©´, ë’¤(ì™¼ìª½) ë¶€í’ˆë“¤ì´ ì¡°ê¸ˆ ë¹¨ë¦¬ ë”°ë¼ì™€ì„œ ë¹ˆìë¦¬ë¥¼ ë©”ì›€
+    private void MoveParts()
+    {
+        parts.RemoveAll(p => p.rect == null || p.taken);
+        parts.Sort((a, b) => b.rect.anchoredPosition.x.CompareTo(a.rect.anchoredPosition.x));   // ì˜¤ë¥¸ìª½(ì•)ë¶€í„°
+
+        float spacing = partSize + minPartGap;
+        float limit = BeltSize.x * 0.5f + partSize;
+        float catchUpSpeed = beltSpeed * 3f;
+
+        for (int i = 0; i < parts.Count; i++)
+        {
+            RectTransform rt = parts[i].rect;
+            Vector2 pos = rt.anchoredPosition;
+            float speed = beltSpeed;
+
+            if (i > 0)
             {
-                if (part == needed)
-                {
-                    required = true;
-                    break;
-                }
+                float aheadX = parts[i - 1].rect.anchoredPosition.x;
+                float gap = aheadX - pos.x;
+                if (gap > spacing + 2f)
+                    speed = catchUpSpeed;                       // ë¹ˆìë¦¬ ë©”ìš°ê¸°
+                pos.x = Mathf.Min(pos.x + speed * Time.deltaTime, aheadX - spacing);
+            }
+            else
+            {
+                pos.x += speed * Time.deltaTime;
             }
 
-            // °°Àº Á¤»ó ºÎÇ°À» Áßº¹ ¼±ÅÃÇßÀ¸¸é
-            // ÇÏ³ª¸¸ º¸Á¸
-            if (required && !correct.Contains(part))
-            {
-                correct.Add(part);
-            }
+            rt.anchoredPosition = pos;
         }
 
-        selectedParts.Clear();
-        selectedParts.AddRange(correct);
-
-        Debug.Log(
-            "MG27: Á¤»ó ºÎÇ° " +
-            correct.Count +
-            "°³ À¯Áö, Àß¸øµÈ ºÎÇ° Á¦°Å"
-        );
-    }
-
-    // ======================================
-    // ÃÖÁ¾ START È°¼ºÈ­
-    // ======================================
-
-    private void ShowFinalStartButton()
-    {
-        phase = GamePhase.StartReady;
-
-        circuitStatusText.text =
-            "SYSTEM READY\nÈ¸·Î º¹±¸ ¿Ï·á! START¸¦ ´©¸£½Ê½Ã¿À.";
-
-        circuitStatusText.color =
-            new Color32(90, 255, 181, 255);
-
-        finalStartButton.gameObject.SetActive(true);
-        finalStartButton.transform.SetAsLastSibling();
-
-        Debug.Log(
-            "MG27: ÃÖÁ¾ START È°¼ºÈ­"
-        );
-    }
-
-    private void OnFinalStartClicked()
-    {
-        if (phase != GamePhase.StartReady ||
-            !isGameActive ||
-            finished)
+        for (int i = parts.Count - 1; i >= 0; i--)
         {
+            if (parts[i].rect.anchoredPosition.x > limit)
+            {
+                Destroy(parts[i].rect.gameObject);
+                parts.RemoveAt(i);
+            }
+        }
+    }
+
+    // =========================================
+    // ë¶€í’ˆ í´ë¦­
+    // =========================================
+    private void OnPartClicked(MovingPart part)
+    {
+        if (!isGameActive || finished || phase != GamePhase.Selecting || part.taken || part.rect == null)
+            return;
+
+        if (part.type == PartType.Exit)
+        {
+            part.taken = true;
+            GameSfx.Play("wrong_buzz", 0.5f);
+            StartCoroutine(BreakAway(part.rect));
+            ShowMessage("EXIT ì€ ì‹¤í–‰ ì¥ì¹˜ ë¶€í’ˆì´ ì•„ë‹™ë‹ˆë‹¤.");
             return;
         }
 
+        int slotIndex = SlotOf(part.type);
+        Slot slot = slots[slotIndex];
+
+        // ì •ìƒ ë¶€í’ˆì´ ì´ë¯¸ ë“¤ì–´ ìˆìœ¼ë©´ ë˜ ë„£ì„ í•„ìš” ì—†ìŒ
+        if (slot.filled && !slot.trap)
+        {
+            StartCoroutine(C5Kit.Shake(part.rect, 0.2f, 6f));
+            ShowMessage(PartName((PartType)slotIndex) + " ìë¦¬ì—ëŠ” ì´ë¯¸ ì •ìƒ ë¶€í’ˆì´ ìˆìŠµë‹ˆë‹¤.");
+            return;
+        }
+
+        bool wasFilled = slot.filled;
+        part.taken = true;
+        slot.filled = true;
+        slot.trap = IsTrap(part.type);
+        if (!wasFilled)
+            filledCount++;
+
+        StartCoroutine(InstallRoutine(part, slotIndex));
+    }
+
+    private IEnumerator InstallRoutine(MovingPart part, int slotIndex)
+    {
+        Slot slot = slots[slotIndex];
+        Sprite art = PartSprite(part.type);
+
+        // í´ë¦­ ë§‰ê¸° + íŒ ë°–ìœ¼ë¡œ êº¼ë‚´ì„œ ìŠ¬ë¡¯ê¹Œì§€ ë‚ ì•„ê°
+        Button b = part.rect.GetComponent<Button>();
+        if (b != null) b.interactable = false;
+        part.rect.SetParent(screen, true);
+        part.rect.SetAsLastSibling();
+
+        GameSfx.Play("piece_place", 0.6f);
+        yield return C5Kit.FlyTo(part.rect, slot.rect.position, 0.3f, 0.82f);
+        if (part.rect != null)
+            Destroy(part.rect.gameObject);
+
+        slot.content.sprite = art;
+        slot.content.color = C5Kit.White;
+        StartCoroutine(C5Kit.Pop(slot.rect, 1.15f));
+
+        UpdateAssemblyText();
+
+        if (phase == GamePhase.Selecting && filledCount >= 4)
+            StartCoroutine(VerifyRoutine());
+    }
+
+    // =========================================
+    // 4ê°œê°€ ëª¨ì´ë©´ ê²€ì‚¬
+    // =========================================
+    private IEnumerator VerifyRoutine()
+    {
+        phase = GamePhase.Verifying;
+        HideMessage();
+
+        bool anyTrap = false;
+        foreach (Slot s in slots)
+            if (s.trap) anyTrap = true;
+
+        SetStatus("SYSTEM CHECK...");
+        yield return new WaitForSeconds(0.45f);
+
+        // ì¼ë‹¨ì€ ëª¨ë‘ ì„±ê³µí•œ ê²ƒì²˜ëŸ¼ ë³´ì„
+        SetStatus("<color=" + C5Kit.GreenHex + ">SYSTEM READY</color>");
+        C5Kit.SetBanner(banner, bannerText, "SYSTEM READY", C5Kit.Green);
+        startSpot.color = C5Kit.White;
+        GameSfx.Play("correct_ding", 0.55f);
+        StartCoroutine(C5Kit.Pop(startSpot.transform.parent, 1.15f));
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (!anyTrap)
+        {
+            C5Kit.HideBanner(banner);
+            phase = GamePhase.StartReady;
+            finalStartButton.interactable = true;
+            SetStatus("START ë²„íŠ¼ì´ ì™„ì„±ë˜ì—ˆìŠµë‹ˆë‹¤. <color=" + C5Kit.YellowHex + ">START</color>ë¥¼ ëˆ„ë¥´ì„¸ìš”.");
+            yield break;
+        }
+
+        // ê°€ì§œ ì„±ê³µ â†’ ê¸€ë¦¬ì¹˜ â†’ SYSTEM ERROR
+        bannerText.text = "SYSTEM ERR0R";
+        C5Kit.SetBanner(banner, bannerText, "SYSTEM ERR0R\n<size=30>ë¶ˆëŸ‰ ë¶€í’ˆì´ ê°ì§€ë˜ì—ˆìŠµë‹ˆë‹¤</size>", C5Kit.Pink);
+        SetStatus("<color=" + C5Kit.PinkHex + ">SYSTEM ERROR</color> - ë¶ˆëŸ‰ ë¶€í’ˆì´ ì„ì—¬ ìˆìŠµë‹ˆë‹¤.");
+        if (countMistakes)
+            ReportMistake();
+        GameSfx.Play("spark", 0.6f);
+        C5Kit.TryCrtNoise(this);
+        StartCoroutine(C5Kit.Shake(panel, 0.5f, 14f));
+        yield return C5Kit.Glitch(panel, null, 0.55f, 1.3f);
+
+        startSpot.color = new Color(1f, 1f, 1f, 0.2f);
+
+        // ë¶ˆëŸ‰ ë¶€í’ˆë§Œ ë¹ ì ¸ë‚˜ê°
+        Sprite[] ghosts = { powerSprite, inputSprite, displaySprite, startSprite };
+        for (int i = 0; i < 4; i++)
+        {
+            if (!slots[i].trap) continue;
+            StartCoroutine(C5Kit.Shake(slots[i].rect, 0.35f, 10f));
+            slots[i].content.sprite = ghosts[i];
+            slots[i].content.color = new Color(1f, 0.4f, 0.6f, 0.35f);
+            slots[i].filled = false;
+            slots[i].trap = false;
+            filledCount--;
+        }
+        UpdateAssemblyText();
+
+        yield return new WaitForSeconds(0.9f);
+        for (int i = 0; i < 4; i++)
+            if (!slots[i].filled)
+                slots[i].content.color = new Color(1f, 1f, 1f, 0.16f);
+
+        C5Kit.HideBanner(banner);
+        phase = GamePhase.Selecting;
+        SetStatus("ë¶ˆëŸ‰ ë¶€í’ˆì„ ë¹¼ëƒˆìŠµë‹ˆë‹¤. <color=" + C5Kit.YellowHex + ">ì •ìƒ ë¶€í’ˆ</color>ì„ ë‹¤ì‹œ ì°¾ìœ¼ì„¸ìš”.");
+    }
+
+    private IEnumerator BreakAway(RectTransform rect)
+    {
+        if (rect == null) yield break;
+        Image img = rect.GetComponent<Image>();
+        Vector2 from = rect.anchoredPosition;
+        float e = 0f;
+        while (e < 0.35f && rect != null)
+        {
+            e += Time.deltaTime;
+            float k = e / 0.35f;
+            rect.anchoredPosition = from + new Vector2(Random.Range(-6f, 6f), -k * 60f);
+            rect.localScale = Vector3.one * (1f - k * 0.4f);
+            if (img != null) img.color = new Color(1f, 0.4f, 0.6f, 1f - k);
+            yield return null;
+        }
+        if (rect != null)
+            Destroy(rect.gameObject);
+    }
+
+    private void ShowMessage(string text)
+    {
+        if (messageRoutine != null)
+            StopCoroutine(messageRoutine);
+        messageRoutine = StartCoroutine(MessageRoutine(text));
+    }
+
+    private IEnumerator MessageRoutine(string text)
+    {
+        SetStatus("<color=" + C5Kit.PinkHex + ">" + text + "</color>");
+        yield return new WaitForSeconds(1.6f);
+        if (phase == GamePhase.Selecting)
+            SetStatus("ì •ìƒ ë¶€í’ˆê³¼ íšŒë¡œë¥¼ <color=" + C5Kit.YellowHex + ">ë³µêµ¬</color>í•˜ì„¸ìš”.");
+        messageRoutine = null;
+    }
+
+    private void HideMessage()
+    {
+        if (messageRoutine != null)
+            StopCoroutine(messageRoutine);
+        messageRoutine = null;
+    }
+
+    // =========================================
+    // ë¶€í’ˆ ì •ë³´
+    // =========================================
+    private static bool IsTrap(PartType t)
+    {
+        return t == PartType.BrokenPower || t == PartType.WrongInput || t == PartType.BrokenDisplay ||
+               t == PartType.Exit;
+    }
+
+    // ë¶€í’ˆì´ ë“¤ì–´ê°ˆ ìŠ¬ë¡¯ (ë¶ˆëŸ‰ ë¶€í’ˆì€ ì •ìƒ ë¶€í’ˆ ìë¦¬ë¡œ ë“¤ì–´ê°)
+    private static int SlotOf(PartType t)
+    {
+        switch (t)
+        {
+            case PartType.Power:
+            case PartType.BrokenPower: return 0;
+            case PartType.Input:
+            case PartType.WrongInput: return 1;
+            case PartType.Display:
+            case PartType.BrokenDisplay: return 2;
+            default: return 3;
+        }
+    }
+
+    private Sprite PartSprite(PartType t)
+    {
+        switch (t)
+        {
+            case PartType.Power: return powerSprite;
+            case PartType.Input: return inputSprite;
+            case PartType.Display: return displaySprite;
+            case PartType.Start: return startSprite;
+            case PartType.BrokenPower: return brokenPowerSprite;
+            case PartType.WrongInput: return wrongInputSprite;
+            case PartType.BrokenDisplay: return brokenDisplaySprite;
+            case PartType.Exit: return exitSprite;
+        }
+        return null;
+    }
+
+    private static string PartName(PartType t)
+    {
+        switch (t)
+        {
+            case PartType.Power: return "POWER";
+            case PartType.Input: return "INPUT";
+            case PartType.Display: return "DISPLAY";
+            case PartType.Start: return "START";
+            case PartType.BrokenPower: return "BROKEN\nPOWER";
+            case PartType.WrongInput: return "WRONG\nINPUT";
+            case PartType.BrokenDisplay: return "BROKEN\nDISPLAY";
+            case PartType.Exit: return "EXIT";
+        }
+        return "?";
+    }
+
+    // =========================================
+    // ì™„ë£Œ
+    // =========================================
+    private void OnFinalStartClicked()
+    {
+        if (!isGameActive || finished || phase != GamePhase.StartReady)
+            return;
+
         finished = true;
         phase = GamePhase.Completed;
-
-        Debug.Log("MG27: °Ë»ç ¿Ï·á");
-
         Success();
     }
 
     protected override void GiveHint()
     {
         if (phase == GamePhase.Selecting)
-        {
-            partStatusText.text =
-                "Á¤»ó ºÎÇ°: POWER, INPUT, DISPLAY, " +
-                "START, NORMAL CABLE";
-        }
-        else if (phase == GamePhase.Connecting)
-        {
-            circuitStatusText.text =
-                "¿¬°á ¼ø¼­: POWER ¡æ INPUT ¡æ DISPLAY ¡æ START";
-        }
+            SetStatus("íŒíŠ¸: íšŒìƒ‰Â·ë¹¨ê°„ ë¶€í’ˆì€ ë¶ˆëŸ‰í’ˆì…ë‹ˆë‹¤. ë°ì€ ìƒ‰ ì •ìƒ ë¶€í’ˆë§Œ ê³ ë¥´ì„¸ìš”.");
     }
 
     protected override void RestartGame()

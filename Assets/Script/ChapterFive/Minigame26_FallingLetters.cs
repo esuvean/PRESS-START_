@@ -1,77 +1,64 @@
-
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
+/// <summary>
+/// MG26 ë–¨ì–´ì§€ëŠ” ë¬¸ì ë³µêµ¬ (ì‹¤í–‰ ë¬¸ì ìˆ˜ì‹  ê²€ì‚¬)
+///  ë°›ì¹¨ëŒ€ë¡œ ë–¨ì–´ì§€ëŠ” ë¬¸ì ì¤‘ S, T, A, R, T ë§Œ ë°›ê¸° (ìˆœì„œ ìƒê´€ì—†ìŒ, ë‹¤ë¥¸ ë¬¸ìë¥¼ ë°›ìœ¼ë©´ ì²˜ìŒë¶€í„°)
+///  ë‹¤ ë°›ìœ¼ë©´ SÂ·TÂ·AÂ·RÂ·T â†’ START ê²°í•© â†’ START í´ë¦­ (íƒ‘ ìŒ“ê¸° ë‹¨ê³„ëŠ” ëºŒ)
+/// í™”ë©´(ë„¤ì˜¨ íŒ/ìŠ¬ë¡¯/ë°›ì¹¨ëŒ€)ì€ ìŠ¤í¬ë¦½íŠ¸ê°€ ì§ì ‘ ë§Œë“¦. ê·¸ë¦¼ì€ ì—ë””í„° ë„êµ¬(Chapter5SkinTool2630)ê°€ ë„£ì–´ ì¤Œ.
+/// </summary>
 public class Minigame26_FallingLetters : MinigameBase
 {
-    [Header("Stage 1 - Catch")]
-    public RectTransform dropArea;
-    public RectTransform fallingLettersLayer;
-    public RectTransform catchPaddle;
-    public TMP_Text currentText;
-    public TMP_Text collectedText;
-    public TMP_Text errorText;
-
-    [Header("Stage 2 - Stack")]
-    public RectTransform stackArea;
-    public RectTransform stackBase;
-    public TMP_Text stackStatusText;
-    public Button finalStartButton;
-
-    [Header("ART - Falling Letter Sprites")]
-    public Sprite fallingS;
-    public Sprite fallingT;
-    public Sprite fallingA;
-    public Sprite fallingR;
-    public Sprite fallingE;
-    public Sprite fallingN;
-    public Sprite fallingD;
-    public Sprite fallingX;
-    public Sprite fallingI;
-    public Sprite fallingP;
-    public Sprite fallingL;
-    public Sprite fallingY;
-
-    [Header("ART - Stack Block Sprites")]
-    public Sprite blockS;
-    public Sprite blockT;
-    public Sprite blockA;
-    public Sprite blockR;
-
-    [Header("ART - Other Sprites")]
-    public Sprite paddleSprite;
+    [Header("ì±•í„°5 ê·¸ë¦¼ (ì—ë””í„° ë„êµ¬ê°€ ìë™ìœ¼ë¡œ ë„£ìŒ)")]
+    public TMP_FontAsset uiFont;
+    public Sprite panelSprite;          // 23_line_back
+    public Sprite plateSprite;          // 26_upline
+    public Sprite startButtonSprite;    // normal_button
+    public Sprite slotFrameSprite;      // 26_miniline
+    public Sprite slotEmptySprite;      // 26_blueblank
+    public Sprite slotArrowLeft;        // 26_arrow_left
+    public Sprite slotArrowRight;       // 26_arrow_right
+    public Sprite[] slotLetterSprites = new Sprite[5];   // 26_pink_S/T/A/R/T
+    public Sprite[] alphabetSprites = new Sprite[26];    // alpabet/block_A ~ block_Z
+    public Sprite[] stackBlockSprites = new Sprite[5];   // 30_block_S/T/A/R/T
     public Sprite stackBaseSprite;
-    public Sprite finalStartSprite;
 
-    [Tooltip("ÃÖÁ¾ ¹öÆ° ÀÌ¹ÌÁö¿¡ START ±ÛÀÚ°¡ Æ÷ÇÔµÇ¾î ÀÖÀ¸¸é Ã¼Å©")]
-    public bool hideFinalTextWhenUsingSprite = true;
+    [Header("ê·œì¹™")]
+    [Tooltip("í‹€ë¦° ë¬¸ìë¥¼ ë°›ìœ¼ë©´ ì±•í„°5 ì˜¤ë¥˜ íšŸìˆ˜(5ë²ˆì´ë©´ ì²˜ìŒë¶€í„°)ì— í¬í•¨")]
+    public bool countMistakes = true;
 
-    [Header("Falling Letter Settings")]
-    public Vector2 fallingLetterSize =
-        new Vector2(78f, 82f);
-
-    public float spawnInterval = 0.8f;
+    [Header("ë–¨ì–´ì§€ëŠ” ë¬¸ì")]
+    public Vector2 fallingLetterSize = new Vector2(84f, 81f);
+    public float spawnInterval = 0.4f;   // ë¬¸ìê°€ ë” ìì£¼ ë–¨ì–´ì§€ê²Œ
     public float minFallSpeed = 190f;
     public float maxFallSpeed = 270f;
-    public float paddleMoveSpeed = 850f;
+    [Range(0f, 1f)] public float targetChance = 0.35f;
+    public float paddleMoveSpeed = 900f;
     public float errorDisplaySeconds = 1.2f;
 
-    [Header("Stack Settings")]
-    public Vector2 blockSize =
-        new Vector2(150f, 54f);
-
+    [Header("íƒ‘ ìŒ“ê¸°")]
+    public Vector2 blockSize = new Vector2(176f, 62f);
     public float stackGap = 4f;
-    public float snapDistanceX = 65f;
-    public float snapDistanceY = 65f;
+    public float snapDistance = 70f;
     public float stableSeconds = 3f;
 
     private const string TargetWord = "START";
-    private const string LetterPool = "STARTENDXITPLAY";
+    private const string LetterPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";   // A~Z ë‹¤ì–‘í•˜ê²Œ
 
+    // ---- ë°°ì¹˜ (1920x1080 ê¸°ì¤€, ê°€ìš´ë° 0,0) ----
+    private static readonly Vector2 PanelPos = new Vector2(0f, 30f);
+    private static readonly Vector2 PanelSize = new Vector2(1480f, 580f);
+    private static readonly Vector2 PlatePos = new Vector2(0f, 300f);
+    private static readonly Vector2 PlayPos = new Vector2(0f, 25f);
+    private static readonly Vector2 PlaySize = new Vector2(1420f, 510f);
+    private static readonly Vector2 SlotRowPos = new Vector2(0f, -338f);
+    private const float PaddleY = -215f;
+
+    // ì—…ì (MG26_FirstCatchPerfectAchievement)ì´ ì´ë¦„ìœ¼ë¡œ ì½ëŠ” ê°’ë“¤: phase / collectedCount / activeLetters
     private enum Phase
     {
         Catching,
@@ -83,27 +70,12 @@ public class Minigame26_FallingLetters : MinigameBase
     }
 
     private Phase phase;
-
     private int collectedCount;
+    private readonly bool[] got = new bool[5];   // S T A R T ì¤‘ ë°›ì€ ì¹¸
     private int stackedCount;
-
     private float spawnTimer;
     private float stabilityTimer;
-
     private bool finished;
-
-    private readonly List<FallingLetter> activeLetters =
-        new List<FallingLetter>();
-
-    private readonly List<GameObject> createdBlocks =
-        new List<GameObject>();
-
-    private readonly List<Vector2> blockHomePositions =
-        new List<Vector2>();
-
-    private RectTransform stackGuide;
-
-    private readonly Vector3[] corners = new Vector3[4];
 
     private class FallingLetter
     {
@@ -111,7 +83,29 @@ public class Minigame26_FallingLetters : MinigameBase
         public RectTransform rect;
         public char character;
         public float speed;
+        public GameObject spark;
     }
+
+    private readonly List<FallingLetter> activeLetters = new List<FallingLetter>();
+    private readonly List<RectTransform> blocks = new List<RectTransform>();
+    private readonly List<Vector2> blockHomes = new List<Vector2>();
+
+    // ---- ë§Œë“  UI ----
+    private TMP_FontAsset font;
+    private RectTransform screen;
+    private RectTransform panel;
+    private RectTransform dropArea;
+    private RectTransform lettersLayer;
+    private RectTransform paddle;
+    private RectTransform stackArea;
+    private RectTransform stackBase;
+    private Image stackGuide;
+    private TextMeshProUGUI plateText;
+    private TextMeshProUGUI bottomText;
+    private CanvasGroup banner;
+    private TextMeshProUGUI bannerText;
+    private C5SlotRow slotRow;
+    private Button finalStartButton;
 
     private void Start()
     {
@@ -121,369 +115,93 @@ public class Minigame26_FallingLetters : MinigameBase
 
     public override void StartMinigame()
     {
-        gameName = "¶³¾îÁö´Â ¹®ÀÚ º¹±¸";
-        instruction =
-            "S-T-A-R-T¸¦ ¼ø¼­´ë·Î ¼öÁıÇÏ°í Å¾À» ½×À¸½Ê½Ã¿À.";
-
-        timeLimit = 999999f;
+        gameName = "ì‹¤í–‰ ë¬¸ì ìˆ˜ì‹  ê²€ì‚¬";
+        instruction = "S-T-A-R-T ìˆœì„œëŒ€ë¡œ ë¬¸ìë¥¼ ë°›ìœ¼ì„¸ìš”.";
 
         base.StartMinigame();
         StopAllCoroutines();
 
         finished = false;
+        collectedCount = 0;
+        stackedCount = 0;
+        activeLetters.Clear();
+        blocks.Clear();
+        blockHomes.Clear();
 
-        if (!FindReferences())
-        {
-            Debug.LogError(
-                "MG26: UI ¿¬°áÀÌ ´©¶ôµÇ¾ú½À´Ï´Ù.",
-                this
-            );
-
-            isGameActive = false;
-            return;
-        }
-
-        ClearGeneratedObjects();
-
-        Canvas.ForceUpdateCanvases();
-
-        ApplyStaticArtwork();
-        SetupFinalButton();
+        BuildScreen();
+        C5Kit.PrepareNoise(transform);
         BeginCatchStage();
     }
 
     // =========================================
-    // UI ÀÚµ¿ °Ë»ö
+    // í™”ë©´ ë§Œë“¤ê¸°
     // =========================================
-
-    private Transform FindDeep(
-        Transform parent,
-        string objectName)
+    private void BuildScreen()
     {
-        if (parent == null)
-            return null;
+        font = C5Kit.ResolveFont(transform, uiFont);
+        C5Kit.HideLegacy(transform);
+        screen = C5Kit.NewScreen(transform, "RT_MG26");
 
-        if (parent.name == objectName)
-            return parent;
+        panel = C5Kit.Panel(screen, panelSprite, PanelPos, PanelSize).rectTransform;
 
-        foreach (Transform child in parent)
-        {
-            Transform result =
-                FindDeep(child, objectName);
+        // ë¬¸ìê°€ ë–¨ì–´ì§€ëŠ” ì˜ì—­ (íŒ ë°–ìœ¼ë¡œëŠ” ì•ˆ ë³´ì´ê²Œ ì˜ë¼ ëƒ„)
+        dropArea = C5Kit.Rect(screen, "RT_DropArea", PlayPos, PlaySize);
+        dropArea.gameObject.AddComponent<RectMask2D>();
+        lettersLayer = C5Kit.Rect(dropArea, "RT_Letters", Vector2.zero, Vector2.zero);
+        C5Kit.Stretch(lettersLayer);
 
-            if (result != null)
-                return result;
-        }
+        // ë°›ì¹¨ëŒ€ (í•˜ëŠ˜ìƒ‰ íŒ + ìœ„ìª½ ë°ì€ ì¤„)
+        Image pad = C5Kit.Img(dropArea, "RT_CatchPaddle", null, C5Kit.Cyan, new Vector2(0f, PaddleY),
+            new Vector2(250f, 30f));
+        C5Kit.Img(pad.transform, "Shine", null, new Color(0.78f, 0.98f, 1f, 1f), new Vector2(0f, 9f),
+            new Vector2(236f, 6f));
+        C5Kit.Img(pad.transform, "Shade", null, new Color32(8, 120, 160, 255), new Vector2(0f, -11f),
+            new Vector2(250f, 8f));
+        paddle = pad.rectTransform;
 
-        return null;
-    }
+        // íƒ‘ ìŒ“ê¸° ì˜ì—­ (2ë‹¨ê³„ì—ì„œ ì¼œì§)
+        stackArea = C5Kit.Rect(screen, "RT_StackArea", PlayPos, PlaySize);
+        stackArea.gameObject.SetActive(false);
 
-    private T FindUI<T>(string objectName)
-        where T : Component
-    {
-        Transform found =
-            FindDeep(transform, objectName);
+        plateText = C5Kit.Plate(screen, plateSprite, font, PlatePos, new Vector2(540f, 80f), "");
 
-        return found == null
-            ? null
-            : found.GetComponent<T>();
-    }
+        slotRow = new C5SlotRow(screen, SlotRowPos, slotFrameSprite, slotEmptySprite, slotLetterSprites,
+            slotArrowLeft, slotArrowRight, font);
 
-    private bool FindReferences()
-    {
-        if (dropArea == null)
-            dropArea =
-                FindUI<RectTransform>("DropArea");
+        bottomText = C5Kit.BottomText(screen, font, "");
 
-        if (fallingLettersLayer == null)
-            fallingLettersLayer =
-                FindUI<RectTransform>("FallingLettersLayer");
+        banner = C5Kit.Banner(screen, font, new Vector2(0f, 40f), new Vector2(760f, 170f), out bannerText);
 
-        if (catchPaddle == null)
-            catchPaddle =
-                FindUI<RectTransform>("CatchPaddle");
-
-        if (currentText == null)
-            currentText = FindUI<TMP_Text>("CurrentText");
-
-        if (collectedText == null)
-            collectedText = FindUI<TMP_Text>("CollectedText");
-
-        if (errorText == null)
-            errorText = FindUI<TMP_Text>("ErrorText");
-
-        if (stackArea == null)
-            stackArea =
-                FindUI<RectTransform>("StackArea");
-
-        if (stackBase == null)
-            stackBase =
-                FindUI<RectTransform>("StackBase");
-
-        if (stackStatusText == null)
-            stackStatusText =
-                FindUI<TMP_Text>("StackStatusText");
-
-        if (finalStartButton == null)
-            finalStartButton =
-                FindUI<Button>("FinalStartButton");
-
-        return
-            dropArea != null &&
-            fallingLettersLayer != null &&
-            catchPaddle != null &&
-            currentText != null &&
-            collectedText != null &&
-            errorText != null &&
-            stackArea != null &&
-            stackBase != null &&
-            stackStatusText != null &&
-            finalStartButton != null;
+        finalStartButton = C5Kit.StartButton(screen, startButtonSprite, font, new Vector2(0f, 40f),
+            new Vector2(360f, 84f), OnFinalStartClicked);
+        finalStartButton.gameObject.SetActive(false);
     }
 
     // =========================================
-    // ¹®ÀÚº° ÀÌ¹ÌÁö ¼±ÅÃ
+    // ë§¤ í”„ë ˆì„
     // =========================================
-
-    private Sprite GetFallingSprite(char c)
+    protected override void Update()
     {
-        switch (c)
-        {
-            case 'S': return fallingS;
-            case 'T': return fallingT;
-            case 'A': return fallingA;
-            case 'R': return fallingR;
-            case 'E': return fallingE;
-            case 'N': return fallingN;
-            case 'D': return fallingD;
-            case 'X': return fallingX;
-            case 'I': return fallingI;
-            case 'P': return fallingP;
-            case 'L': return fallingL;
-            case 'Y': return fallingY;
-        }
+        // ê¸€ìë¥¼ ë‹¤ ëª¨ì•„ START ë²„íŠ¼ë§Œ ë‚¨ì•˜ìœ¼ë©´ ì‹œê°„ì€ ë©ˆì¶¤ (ë‹¤ í•´ ë†“ê³  ì‹œê°„ ì´ˆê³¼ë¡œ ì‹¤íŒ¨í•˜ì§€ ì•Šê²Œ)
+        bool timerFrozen = phase == Phase.Stacking || phase == Phase.StartReady || phase == Phase.Completed;
+        if (!timerFrozen)
+            base.Update();
 
-        return null;
-    }
-
-    private Sprite GetBlockSprite(char c)
-    {
-        switch (c)
-        {
-            case 'S': return blockS;
-            case 'T': return blockT;
-            case 'A': return blockA;
-            case 'R': return blockR;
-        }
-
-        return null;
-    }
-
-    // =========================================
-    // ±âÁ¸ UI¿¡ ¾ÆÆ® ÀÌ¹ÌÁö Àû¿ë
-    // =========================================
-
-    private void ApplyStaticArtwork()
-    {
-        ApplySpriteToUI(catchPaddle, paddleSprite);
-        ApplySpriteToUI(stackBase, stackBaseSprite);
-
-        ApplySpriteToUI(
-            finalStartButton.GetComponent<RectTransform>(),
-            finalStartSprite
-        );
-
-        if (finalStartSprite != null &&
-            hideFinalTextWhenUsingSprite)
-        {
-            TMP_Text[] labels =
-                finalStartButton.GetComponentsInChildren<
-                    TMP_Text>(true);
-
-            foreach (TMP_Text label in labels)
-                label.gameObject.SetActive(false);
-        }
-        else
-        {
-            TMP_Text[] labels =
-                finalStartButton.GetComponentsInChildren<
-                    TMP_Text>(true);
-
-            foreach (TMP_Text label in labels)
-                label.gameObject.SetActive(true);
-        }
-    }
-
-    private void ApplySpriteToUI(
-        RectTransform target,
-        Sprite sprite)
-    {
-        if (target == null || sprite == null)
-            return;
-
-        Image image = target.GetComponent<Image>();
-
-        if (image == null)
-            return;
-
-        image.sprite = sprite;
-        image.color = Color.white;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = true;
-    }
-
-    // =========================================
-    // ¹®ÀÚ ÀÌ¹ÌÁö ¶Ç´Â ±âº» TMP ÀÚµ¿ »ı¼º
-    // =========================================
-
-    private void CreateLetterVisual(
-        Transform parent,
-        char character,
-        Sprite sprite,
-        float fontSize)
-    {
-        if (sprite != null)
-        {
-            GameObject imageObject = new GameObject(
-                "LetterArt_" + character,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image)
-            );
-
-            imageObject.transform.SetParent(
-                parent,
-                false
-            );
-
-            RectTransform imageRect =
-                imageObject.GetComponent<RectTransform>();
-
-            StretchToParent(imageRect);
-
-            Image image =
-                imageObject.GetComponent<Image>();
-
-            image.sprite = sprite;
-            image.color = Color.white;
-            image.type = Image.Type.Simple;
-            image.preserveAspect = true;
-            image.raycastTarget = false;
-        }
-        else
-        {
-            GameObject textObject = new GameObject(
-                "FallbackText_" + character,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI)
-            );
-
-            textObject.transform.SetParent(
-                parent,
-                false
-            );
-
-            RectTransform textRect =
-                textObject.GetComponent<RectTransform>();
-
-            StretchToParent(textRect);
-
-            TextMeshProUGUI text =
-                textObject.GetComponent<TextMeshProUGUI>();
-
-            text.text = character.ToString();
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment =
-                TextAlignmentOptions.Center;
-
-            text.color = Color.white;
-            text.raycastTarget = false;
-        }
-    }
-
-    private void StretchToParent(RectTransform rect)
-    {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-    }
-
-    // =========================================
-    // »ı¼ºµÈ ¿ÀºêÁ§Æ® Á¤¸®
-    // =========================================
-
-    private void ClearGeneratedObjects()
-    {
-        ClearFallingLetters();
-
-        foreach (GameObject block in createdBlocks)
-        {
-            if (block != null)
-            {
-                block.SetActive(false);
-                Destroy(block);
-            }
-        }
-
-        createdBlocks.Clear();
-        blockHomePositions.Clear();
-
-        if (stackGuide != null)
-        {
-            stackGuide.gameObject.SetActive(false);
-            Destroy(stackGuide.gameObject);
-            stackGuide = null;
-        }
-    }
-
-    private void ClearFallingLetters()
-    {
-        foreach (FallingLetter item in activeLetters)
-        {
-            if (item.obj != null)
-            {
-                item.obj.SetActive(false);
-                Destroy(item.obj);
-            }
-        }
-
-        activeLetters.Clear();
-    }
-
-    // =========================================
-    // ÃÖÁ¾ ¹öÆ° ¼³Á¤
-    // =========================================
-
-    private void SetupFinalButton()
-    {
-        finalStartButton.onClick.RemoveAllListeners();
-
-        finalStartButton.onClick.AddListener(
-            OnFinalStartClicked
-        );
-
-        finalStartButton.interactable = true;
-    }
-
-    // =========================================
-    // ¸ŞÀÎ ¾÷µ¥ÀÌÆ®
-    // =========================================
-
-    private void LateUpdate()
-    {
         if (!isGameActive || finished)
             return;
 
-        if (phase == Phase.Catching)
+        // ì˜ëª» ë°›ì€ ì§í›„(Error)ì—ë„ ê²Œì„ì€ ê·¸ëŒ€ë¡œ ê³„ì†ë¨
+        if (phase == Phase.Catching || phase == Phase.Error)
         {
             UpdatePaddle();
             UpdateFallingLetters();
-
-            if (phase == Phase.Catching)
+            if (phase == Phase.Catching || phase == Phase.Error)
                 UpdateSpawning();
+            UpdateSparks();
+        }
+        else if (phase == Phase.Stacking)
+        {
+            PulseGuide();
         }
         else if (phase == Phase.Stability)
         {
@@ -492,187 +210,80 @@ public class Minigame26_FallingLetters : MinigameBase
     }
 
     // =========================================
-    // 1´Ü°è ½ÃÀÛ
+    // 1ë‹¨ê³„: ë¬¸ì ë°›ê¸°
     // =========================================
-
     private void BeginCatchStage()
     {
         phase = Phase.Catching;
-
         collectedCount = 0;
-        stackedCount = 0;
-
+        for (int i = 0; i < got.Length; i++)
+            got[i] = false;
         spawnTimer = 0f;
-        stabilityTimer = 0f;
 
         ClearFallingLetters();
+        C5Kit.HideBanner(banner);
 
         dropArea.gameObject.SetActive(true);
         stackArea.gameObject.SetActive(false);
+        paddle.anchoredPosition = new Vector2(0f, PaddleY);
 
-        currentText.gameObject.SetActive(true);
-        collectedText.gameObject.SetActive(true);
-        errorText.gameObject.SetActive(false);
-
-        finalStartButton.gameObject.SetActive(false);
-
-        catchPaddle.anchoredPosition =
-            new Vector2(
-                0f,
-                catchPaddle.anchoredPosition.y
-            );
-
-        Image paddleImage =
-            catchPaddle.GetComponent<Image>();
-
-        if (paddleImage != null)
-            paddleImage.raycastTarget = false;
-
+        slotRow.SetCount(0);
         UpdateCatchTexts();
+        bottomText.text = "<color=" + C5Kit.YellowHex + ">S Â· T Â· A Â· R Â· T</color> ë¬¸ìë§Œ ë°›ìœ¼ì„¸ìš”. (ìˆœì„œ ìƒê´€ì—†ìŒ)";
 
         SpawnLetter(true);
     }
 
-    // =========================================
-    // ¹ŞÄ§´ë ÀÌµ¿ - ¸¶¿ì½º / Å°º¸µå
-    // =========================================
+    private void UpdateCatchTexts()
+    {
+        // ì•„ì§ ëª» ë°›ì€ ê¸€ìëŠ” ë…¸ë‘, ë°›ì€ ê¸€ìëŠ” íšŒìƒ‰
+        string letters = "";
+        for (int i = 0; i < TargetWord.Length; i++)
+            letters += "<color=" + (got[i] ? "#5A6487" : C5Kit.YellowHex) + ">" + TargetWord[i] + "</color>" +
+                       (i < TargetWord.Length - 1 ? " " : "");
+        plateText.text = "NEED : <size=44>" + letters + "</size>";
+    }
 
     private void UpdatePaddle()
     {
-        bool moveLeft = false;
-        bool moveRight = false;
+        float nextX = paddle.anchoredPosition.x;
+        float key = C5Kit.KeyAxis().x;
 
-#if ENABLE_LEGACY_INPUT_MANAGER
-        moveLeft |=
-            Input.GetKey(KeyCode.A) ||
-            Input.GetKey(KeyCode.LeftArrow);
-
-        moveRight |=
-            Input.GetKey(KeyCode.D) ||
-            Input.GetKey(KeyCode.RightArrow);
-#endif
-
-#if ENABLE_INPUT_SYSTEM
-        var keyboard =
-            UnityEngine.InputSystem.Keyboard.current;
-
-        if (keyboard != null)
+        if (Mathf.Abs(key) > 0.01f)
         {
-            moveLeft |=
-                keyboard.aKey.isPressed ||
-                keyboard.leftArrowKey.isPressed;
-
-            moveRight |=
-                keyboard.dKey.isPressed ||
-                keyboard.rightArrowKey.isPressed;
+            nextX += key * paddleMoveSpeed * Time.deltaTime;
         }
-#endif
-
-        float direction =
-            (moveRight ? 1f : 0f) -
-            (moveLeft ? 1f : 0f);
-
-        float nextX = catchPaddle.anchoredPosition.x;
-
-        if (Mathf.Abs(direction) > 0.01f)
+        else if (C5Kit.TryMouse(out Vector2 mouse))
         {
-            nextX += direction *
-                paddleMoveSpeed * Time.deltaTime;
-        }
-        else
-        {
-            Vector2 mousePosition;
-
-            if (TryGetMousePosition(out mousePosition))
+            Camera cam = C5Kit.UiCamera(dropArea);
+            if (RectTransformUtility.RectangleContainsScreenPoint(dropArea, mouse, cam) &&
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(dropArea, mouse, cam, out Vector2 local))
             {
-                Canvas canvas =
-                    dropArea.GetComponentInParent<Canvas>();
-
-                Camera camera = null;
-
-                if (canvas != null &&
-                    canvas.renderMode !=
-                    RenderMode.ScreenSpaceOverlay)
-                {
-                    camera = canvas.worldCamera;
-                }
-
-                if (RectTransformUtility
-                    .RectangleContainsScreenPoint(
-                        dropArea,
-                        mousePosition,
-                        camera
-                    ))
-                {
-                    Vector2 local;
-
-                    if (RectTransformUtility
-                        .ScreenPointToLocalPointInRectangle(
-                            dropArea,
-                            mousePosition,
-                            camera,
-                            out local
-                        ))
-                    {
-                        nextX = local.x;
-                    }
-                }
+                nextX = Mathf.Lerp(nextX, local.x, 1f - Mathf.Exp(-22f * Time.deltaTime));
             }
         }
 
-        float halfWidth =
-            catchPaddle.rect.width *
-            Mathf.Abs(catchPaddle.localScale.x) * 0.5f;
-
-        float limit =
-            dropArea.rect.width * 0.5f -
-            halfWidth - 12f;
-
-        nextX = Mathf.Clamp(nextX, -limit, limit);
-
-        catchPaddle.anchoredPosition =
-            new Vector2(
-                nextX,
-                catchPaddle.anchoredPosition.y
-            );
+        float limit = dropArea.rect.width * 0.5f - paddle.rect.width * 0.5f - 14f;
+        paddle.anchoredPosition = new Vector2(Mathf.Clamp(nextX, -limit, limit), PaddleY);
     }
-
-    private bool TryGetMousePosition(out Vector2 position)
-    {
-#if ENABLE_INPUT_SYSTEM
-        var mouse = UnityEngine.InputSystem.Mouse.current;
-
-        if (mouse != null)
-        {
-            position = mouse.position.ReadValue();
-            return true;
-        }
-#endif
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-        position = Input.mousePosition;
-        return true;
-#else
-        position = Vector2.zero;
-        return false;
-#endif
-    }
-
-    // =========================================
-    // ¹®ÀÚ ³«ÇÏ »ı¼º
-    // =========================================
 
     private void UpdateSpawning()
     {
         spawnTimer += Time.deltaTime;
-
         if (spawnTimer < spawnInterval)
             return;
-
         spawnTimer = 0f;
-
-        if (activeLetters.Count < 16)
+        if (activeLetters.Count < 22)
             SpawnLetter(false);
+    }
+
+    // ì•„ì§ ë°›ì•„ì•¼ í•˜ëŠ” ê¸€ìë©´ ê·¸ ì¹¸ ë²ˆí˜¸, ì•„ë‹ˆë©´ -1 (TëŠ” ë¹„ì–´ ìˆëŠ” T ì¹¸)
+    private int NeededIndex(char c)
+    {
+        for (int i = 0; i < TargetWord.Length; i++)
+            if (TargetWord[i] == c && !got[i])
+                return i;
+        return -1;
     }
 
     private void SpawnLetter(bool forceTarget)
@@ -680,507 +291,410 @@ public class Minigame26_FallingLetters : MinigameBase
         if (collectedCount >= TargetWord.Length)
             return;
 
-        char target = TargetWord[collectedCount];
-        char letter = target;
+        // í•„ìš”í•œ ê¸€ì ì¤‘ í•˜ë‚˜ë¥¼ ê³ ë¥´ê±°ë‚˜, í•„ìš” ì—†ëŠ” ê¸€ìë¥¼ ê³ ë¦„
+        List<char> needed = new List<char>();
+        for (int i = 0; i < TargetWord.Length; i++)
+            if (!got[i]) needed.Add(TargetWord[i]);
+        char letter = needed[Random.Range(0, needed.Count)];
 
-        if (!forceTarget && Random.value > 0.45f)
+        if (!forceTarget && Random.value > targetChance)
         {
             do
             {
-                letter = LetterPool[
-                    Random.Range(0, LetterPool.Length)
-                ];
+                letter = LetterPool[Random.Range(0, LetterPool.Length)];
             }
-            while (letter == target);
+            while (NeededIndex(letter) >= 0);
         }
 
-        GameObject go = new GameObject(
-            "FallingLetter_" + letter,
-            typeof(RectTransform)
-        );
+        float limitX = dropArea.rect.width * 0.5f - fallingLetterSize.x;
+        float x = forceTarget ? Random.Range(-200f, 200f) : Random.Range(-limitX, limitX);
 
-        go.transform.SetParent(
-            fallingLettersLayer,
-            false
-        );
+        // ì´ë¯¸ ë–¨ì–´ì§€ëŠ” ë¬¸ìì™€ ë„ˆë¬´ ê²¹ì¹˜ì§€ ì•Šê²Œ ëª‡ ë²ˆ ë‹¤ì‹œ ë½‘ê¸°
+        for (int tries = 0; tries < 4; tries++)
+        {
+            bool crowded = false;
+            foreach (FallingLetter f in activeLetters)
+            {
+                if (Mathf.Abs(f.rect.anchoredPosition.x - x) < fallingLetterSize.x &&
+                    f.rect.anchoredPosition.y > dropArea.rect.height * 0.5f - 200f)
+                {
+                    crowded = true;
+                    break;
+                }
+            }
+            if (!crowded) break;
+            x = Random.Range(-limitX, limitX);
+        }
 
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
+        RectTransform rect = C5Kit.Rect(lettersLayer, "FallingLetter_" + letter,
+            new Vector2(x, dropArea.rect.height * 0.5f - 45f), fallingLetterSize);
 
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
+        // ìœ„ë¡œ ë‚¨ëŠ” ì ì„  ê¼¬ë¦¬
+        for (int i = 0; i < 4; i++)
+        {
+            C5Kit.Img(rect, "Trail", null, new Color(0.75f, 0.95f, 1f, 0.55f - i * 0.11f),
+                new Vector2(0f, fallingLetterSize.y * 0.5f + 12f + i * 16f), new Vector2(4f, 9f));
+        }
 
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
+        Sprite art = AlphabetSprite(letter);
+        Image img = C5Kit.Img(rect, "Art", art, art != null ? C5Kit.White : C5Kit.Navy, Vector2.zero,
+            fallingLetterSize, true);
+        if (art == null)
+        {
+            C5Kit.AddOutline(img, C5Kit.Cyan, 3f);
+            C5Kit.Txt(rect, "Letter", letter.ToString(), 52f, C5Kit.White, TextAlignmentOptions.Center,
+                Vector2.zero, fallingLetterSize, font);
+        }
 
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
+        // ì§€ê¸ˆ ë°›ì•„ì•¼ í•  ë¬¸ìì—ë§Œ ë°˜ì§ì„
+        RectTransform spark = C5Kit.Rect(rect, "Spark", Vector2.zero, Vector2.zero);
+        AddSparkLine(spark, new Vector2(52f, 30f), 20f);
+        AddSparkLine(spark, new Vector2(60f, 8f), -10f);
+        AddSparkLine(spark, new Vector2(40f, 50f), 55f);
 
-        rect.sizeDelta = fallingLetterSize;
-
-        float limitX =
-            dropArea.rect.width * 0.5f - 60f;
-
-        float spawnX = forceTarget
-            ? 0f
-            : Random.Range(-limitX, limitX);
-
-        float spawnY =
-            dropArea.rect.height * 0.5f - 35f;
-
-        rect.anchoredPosition =
-            new Vector2(spawnX, spawnY);
-
-        // ¡Ú ÀÌ¹ÌÁö°¡ ÀÖÀ¸¸é Sprite, ¾øÀ¸¸é TMP
-        Sprite artwork = GetFallingSprite(letter);
-
-        CreateLetterVisual(
-            go.transform,
-            letter,
-            artwork,
-            64f
-        );
-
-        FallingLetter data = new FallingLetter();
-
-        data.obj = go;
-        data.rect = rect;
-        data.character = letter;
-        data.speed = Random.Range(
-            minFallSpeed,
-            maxFallSpeed
-        );
-
+        FallingLetter data = new FallingLetter
+        {
+            obj = rect.gameObject,
+            rect = rect,
+            character = letter,
+            speed = Random.Range(minFallSpeed, maxFallSpeed),
+            spark = spark.gameObject
+        };
+        data.spark.SetActive(NeededIndex(letter) >= 0);
         activeLetters.Add(data);
     }
 
-    // =========================================
-    // UI »ç°¢Çü Ãæµ¹ ¹üÀ§ °è»ê
-    // =========================================
-
-    private Rect GetBounds(RectTransform element)
+    private void AddSparkLine(RectTransform parent, Vector2 pos, float angle)
     {
-        element.GetWorldCorners(corners);
-
-        float minX = float.PositiveInfinity;
-        float minY = float.PositiveInfinity;
-        float maxX = float.NegativeInfinity;
-        float maxY = float.NegativeInfinity;
-
-        for (int i = 0; i < 4; i++)
-        {
-            Vector3 local =
-                dropArea.InverseTransformPoint(corners[i]);
-
-            minX = Mathf.Min(minX, local.x);
-            minY = Mathf.Min(minY, local.y);
-
-            maxX = Mathf.Max(maxX, local.x);
-            maxY = Mathf.Max(maxY, local.y);
-        }
-
-        return Rect.MinMaxRect(
-            minX, minY, maxX, maxY
-        );
+        Image line = C5Kit.Img(parent, "SparkLine", null, C5Kit.Yellow, pos, new Vector2(18f, 6f));
+        line.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle);
     }
 
-    // =========================================
-    // ³«ÇÏ ÀÌµ¿ ¹× ¹Ş±â ÆÇÁ¤
-    // =========================================
+    private void UpdateSparks()
+    {
+        if (collectedCount >= TargetWord.Length)
+            return;
+        float a = 0.55f + 0.45f * Mathf.Sin(Time.time * 10f);
+        foreach (FallingLetter f in activeLetters)
+        {
+            if (f.spark == null) continue;
+            bool on = NeededIndex(f.character) >= 0;
+            if (f.spark.activeSelf != on) f.spark.SetActive(on);
+            if (on)
+                foreach (Image i in f.spark.GetComponentsInChildren<Image>())
+                    i.color = new Color(C5Kit.Yellow.r, C5Kit.Yellow.g, C5Kit.Yellow.b, a);
+        }
+    }
+
+    private Sprite AlphabetSprite(char c)
+    {
+        int i = c - 'A';
+        if (alphabetSprites == null || i < 0 || i >= alphabetSprites.Length)
+            return null;
+        return alphabetSprites[i];
+    }
 
     private void UpdateFallingLetters()
     {
-        Rect paddleBounds = GetBounds(catchPaddle);
+        Rect pad = C5Kit.RectIn(dropArea, paddle);
+        // ë°›ì¹¨ëŒ€ íŒì •ì€ ìœ„ìª½ ì ˆë°˜ë§Œ (ì˜†ì—ì„œ ìŠ¤ì¹˜ë©´ ì•ˆ ë°›í˜)
+        pad = Rect.MinMaxRect(pad.xMin + 6f, pad.center.y, pad.xMax - 6f, pad.yMax + 4f);
 
-        for (int i = activeLetters.Count - 1;
-             i >= 0; i--)
+        for (int i = activeLetters.Count - 1; i >= 0; i--)
         {
             FallingLetter item = activeLetters[i];
+            Vector2 p = item.rect.anchoredPosition;
+            p.y -= item.speed * Time.deltaTime;
+            item.rect.anchoredPosition = p;
 
-            Vector2 position =
-                item.rect.anchoredPosition;
+            Rect r = new Rect(p.x - fallingLetterSize.x * 0.4f, p.y - fallingLetterSize.y * 0.5f,
+                fallingLetterSize.x * 0.8f, fallingLetterSize.y * 0.5f);
 
-            position.y -=
-                item.speed * Time.deltaTime;
-
-            item.rect.anchoredPosition = position;
-
-            Rect letterBounds = GetBounds(item.rect);
-
-            if (paddleBounds.Overlaps(letterBounds))
+            if (pad.Overlaps(r))
             {
-                char received = item.character;
-
                 activeLetters.RemoveAt(i);
-
-                item.obj.SetActive(false);
-                Destroy(item.obj);
-
-                ReceiveLetter(received);
-
-                if (phase != Phase.Catching)
+                ReceiveLetter(item);
+                if (phase != Phase.Catching && phase != Phase.Error)
                     return;
-
                 continue;
             }
 
-            if (position.y <
-                -dropArea.rect.height * 0.5f - 90f)
+            if (p.y < -dropArea.rect.height * 0.5f - 80f)
             {
                 activeLetters.RemoveAt(i);
-
-                item.obj.SetActive(false);
                 Destroy(item.obj);
             }
         }
     }
 
-    // =========================================
-    // ¼ø¼­´ë·Î ±ÛÀÚ ¹Ş±â
-    // =========================================
-
-    private void ReceiveLetter(char letter)
+    private void ReceiveLetter(FallingLetter item)
     {
-        char target = TargetWord[collectedCount];
+        int index = NeededIndex(item.character);
 
-        if (letter != target)
+        if (index < 0)
         {
-            StartCoroutine(WrongLetterRoutine());
+            StartCoroutine(Shatter(item.rect));
+            if (wrongRoutine != null)
+                StopCoroutine(wrongRoutine);
+            wrongRoutine = StartCoroutine(WrongLetterRoutine());
             return;
         }
 
+        got[index] = true;
         collectedCount++;
-
-        Debug.Log(
-            "MG26: " + letter +
-            " È¹µæ (" + collectedCount + "/5)"
-        );
+        GameSfx.Play("piece_place", 0.6f);
+        StartCoroutine(FlyToSlot(item, index));
 
         if (collectedCount >= TargetWord.Length)
         {
-            EnterStackStage();
+            StartCoroutine(FinishCatch());
             return;
         }
 
         UpdateCatchTexts();
     }
 
-    private void UpdateCatchTexts()
+    private IEnumerator FlyToSlot(FallingLetter item, int index)
     {
-        if (collectedCount < TargetWord.Length)
-        {
-            currentText.text =
-                "CURRENT : " + TargetWord[collectedCount];
-        }
-        else
-        {
-            currentText.text = "CURRENT : COMPLETE";
-        }
+        if (item.spark != null)
+            item.spark.SetActive(false);
+        foreach (Image trail in item.obj.GetComponentsInChildren<Image>())
+            if (trail.name == "Trail") trail.enabled = false;
 
-        string result = "";
+        // ì˜ë¦¬ì§€ ì•Šê²Œ íŒ ë°– í™”ë©´ ë£¨íŠ¸ë¡œ ì˜®ê²¨ì„œ ìŠ¬ë¡¯ê¹Œì§€ ë‚ ì•„ê°
+        item.rect.SetParent(screen, true);
+        item.rect.SetAsLastSibling();
+        yield return C5Kit.FlyTo(item.rect, slotRow.Slot(index).position, 0.32f, 0.75f);
 
-        for (int i = 0; i < TargetWord.Length; i++)
-        {
-            result += i < collectedCount
-                ? TargetWord[i].ToString()
-                : "_";
+        if (item.obj != null)
+            Destroy(item.obj);
 
-            if (i < TargetWord.Length - 1)
-                result += "  ";
-        }
-
-        collectedText.text =
-            "COLLECTED : " + result;
+        slotRow.SetSlot(index, true);
+        yield return C5Kit.Pop(slotRow.Slot(index), 1.25f);
     }
 
-    // =========================================
-    // Àß¸øµÈ ¹®ÀÚ -> ÃÊ±âÈ­
-    // =========================================
+    private IEnumerator Shatter(RectTransform rect)
+    {
+        if (rect == null) yield break;
+        Image[] imgs = rect.GetComponentsInChildren<Image>();
+        float e = 0f;
+        while (e < 0.3f && rect != null)
+        {
+            e += Time.deltaTime;
+            rect.localScale = Vector3.one * (1f + e * 1.6f);
+            foreach (Image i in imgs)
+                if (i != null) i.color = new Color(1f, 0.35f, 0.55f, 1f - e / 0.3f);
+            yield return null;
+        }
+        if (rect != null)
+            Destroy(rect.gameObject);
+    }
+
+    // ì˜ëª» ë°›ìœ¼ë©´: ì˜¤ë¥˜ íšŸìˆ˜(ERROR x/5)ë§Œ 1 ì˜¬ë¼ê°€ê³ , ë°›ì€ ê¸€ìëŠ” ê·¸ëŒ€ë¡œ Â· ê²Œì„ì€ ê³„ì†
+    private Coroutine wrongRoutine;
 
     private IEnumerator WrongLetterRoutine()
     {
-        phase = Phase.Error;
+        phase = Phase.Error;   // ì—…ì (í•œ ê¸€ìë„ ë†“ì¹˜ì§€ ì•Šì•„)ì´ ì´ê±¸ ë³´ê³  ì‹¤ìˆ˜ë¡œ ê¸°ë¡
+        if (countMistakes)
+            ReportMistake();
 
-        ClearFallingLetters();
+        GameSfx.Play("wrong_buzz", 0.6f);
+        C5Kit.SetBanner(banner, bannerText, "ERROR\n<size=34>INVALID CHARACTER</size>", C5Kit.Pink);
+        bottomText.text = "í•„ìš” ì—†ëŠ” ë¬¸ìì…ë‹ˆë‹¤! <color=" + C5Kit.PinkHex + ">ì˜¤ë¥˜ +1</color>";
+        StartCoroutine(C5Kit.Shake(panel, 0.3f, 10f));
 
-        errorText.text =
-            "ERROR\nINVALID CHARACTER";
+        yield return new WaitForSeconds(0.3f);
+        if (phase == Phase.Error)
+            phase = Phase.Catching;
 
-        errorText.gameObject.SetActive(true);
-
-        currentText.text = "CURRENT : ERROR";
-
-        yield return new WaitForSeconds(
-            errorDisplaySeconds
-        );
-
-        if (!isGameActive || finished)
-            yield break;
-
-        BeginCatchStage();
+        yield return new WaitForSeconds(0.6f);
+        C5Kit.HideBanner(banner);
+        if (phase == Phase.Catching)
+            bottomText.text = "<color=" + C5Kit.YellowHex + ">S Â· T Â· A Â· R Â· T</color> ë¬¸ìë§Œ ë°›ìœ¼ì„¸ìš”. (ìˆœì„œ ìƒê´€ì—†ìŒ)";
+        wrongRoutine = null;
     }
 
-    // =========================================
-    // 2´Ü°è ÁøÀÔ
-    // =========================================
-
-    private void EnterStackStage()
+    private void ClearFallingLetters()
     {
-        phase = Phase.Stacking;
+        foreach (FallingLetter item in activeLetters)
+            if (item.obj != null)
+                Destroy(item.obj);
+        activeLetters.Clear();
+    }
 
+    // ë‹¤ ë°›ì•˜ìœ¼ë©´ ë°”ë¡œ START ê²°í•©
+    private IEnumerator FinishCatch()
+    {
+        phase = Phase.Stacking;   // ë” ì´ìƒ ë¬¸ì ì•ˆ ë–¨ì–´ì§
+        plateText.text = "CHARACTER <color=" + C5Kit.GreenHex + ">RECEIVED</color>";
+        bottomText.text = "";
+
+        yield return new WaitForSeconds(0.6f);   // ë§ˆì§€ë§‰ ê¸€ìê°€ ìŠ¬ë¡¯ì— ë“¤ì–´ê°ˆ ë•Œê¹Œì§€
         ClearFallingLetters();
-
         dropArea.gameObject.SetActive(false);
 
-        currentText.gameObject.SetActive(false);
-        collectedText.gameObject.SetActive(false);
-        errorText.gameObject.SetActive(false);
+        Transform[] from = new Transform[5];
+        for (int i = 0; i < 5; i++)
+            from[i] = slotRow.Slot(i);
+        yield return C5Kit.MergeLetters(screen, slotLetterSprites, font, new Vector2(0f, 40f), new Vector2(88f, 81f), from);
 
-        stackArea.gameObject.SetActive(true);
-        finalStartButton.gameObject.SetActive(false);
-
-        Canvas.ForceUpdateCanvases();
-
-        CreateStackBlocks();
-
-        stackedCount = 0;
-        stabilityTimer = 0f;
-
-        UpdateStackGuide();
-
-        stackStatusText.text =
-            "S ¡æ T ¡æ A ¡æ R ¡æ T ¼ø¼­·Î ºí·ÏÀ» ½×À¸½Ê½Ã¿À.";
+        phase = Phase.StartReady;
+        finalStartButton.gameObject.SetActive(true);
+        finalStartButton.transform.SetAsLastSibling();
+        StartCoroutine(C5Kit.Pop(finalStartButton.transform, 1.25f, 0.3f));
+        bottomText.text = "<color=" + C5Kit.YellowHex + ">START</color>ë¥¼ ëˆŒëŸ¬ ê²€ì‚¬ë¥¼ ì™„ë£Œí•˜ì„¸ìš”.";
     }
 
     // =========================================
-    // ¹®ÀÚ ºí·Ï 5°³ »ı¼º
+    // (ì˜ˆì „) 2ë‹¨ê³„: íƒ‘ ìŒ“ê¸° - ì§€ê¸ˆì€ ì“°ì§€ ì•ŠìŒ
     // =========================================
-
-    private void CreateStackBlocks()
+    private IEnumerator EnterStackStage()
     {
-        float areaWidth = stackArea.rect.width;
+        phase = Phase.Stacking;
+        ClearFallingLetters();
+        plateText.text = "CHARACTER RECEIVED";
+        bottomText.text = "ìˆ˜ì‹  ì™„ë£Œ!";
+
+        yield return new WaitForSeconds(0.75f);
+        yield return C5Kit.Glitch(panel, null, 0.25f, 0.6f);
+
+        dropArea.gameObject.SetActive(false);
+        stackArea.gameObject.SetActive(true);
+        slotRow.SetCount(0);
+        stackedCount = 0;
+
+        CreateStackObjects();
+        UpdateStackTexts();
+        bottomText.text = "ë¸”ë¡ì„ <color=" + C5Kit.YellowHex + ">S-T-A-R-T</color> ìˆœì„œëŒ€ë¡œ ëŒì–´ì„œ ìŒ“ìœ¼ì„¸ìš”.";
+    }
+
+    private void CreateStackObjects()
+    {
+        Image baseImg = C5Kit.Img(stackArea, "RT_StackBase", stackBaseSprite,
+            stackBaseSprite != null ? C5Kit.White : C5Kit.Yellow, new Vector2(0f, -228f),
+            new Vector2(blockSize.x + 120f, 18f));
+        stackBase = baseImg.rectTransform;
+
+        Sprite firstArt = BlockSprite(0);
+        stackGuide = C5Kit.Img(stackArea, "RT_StackGuide", firstArt, new Color(0.6f, 1f, 1f, 0.3f),
+            StackTarget(0), blockSize, true);
+
+        // ì™¼ìª½/ì˜¤ë¥¸ìª½ì— í©ì–´ ë†“ê¸° (ìœ„ì¹˜ëŠ” ë§¤ë²ˆ ì„ìŒ)
+        List<Vector2> homes = new List<Vector2>
+        {
+            new Vector2(-540f, 135f), new Vector2(-540f, -10f), new Vector2(-540f, -155f),
+            new Vector2(540f, 70f), new Vector2(540f, -90f)
+        };
+        for (int i = homes.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            Vector2 t = homes[i];
+            homes[i] = homes[j];
+            homes[j] = t;
+        }
 
         for (int i = 0; i < TargetWord.Length; i++)
         {
-            char letter = TargetWord[i];
+            Sprite art = BlockSprite(i);
+            Image img = C5Kit.Img(stackArea, "StackBlock_" + TargetWord[i] + "_" + i, art,
+                art != null ? C5Kit.White : C5Kit.Cyan, homes[i], blockSize, true);
+            img.raycastTarget = true;
+            if (art == null)
+                C5Kit.Txt(img.transform, "Letter", TargetWord[i].ToString(), 40f, C5Kit.Navy,
+                    TextAlignmentOptions.Center, Vector2.zero, blockSize, font);
 
-            GameObject go = new GameObject(
-                "StackBlock_" + letter + "_" + i,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image)
-            );
+            MG26StackBlockDrag drag = img.gameObject.AddComponent<MG26StackBlockDrag>();
+            drag.Configure(this, i, img.rectTransform, stackArea);
 
-            go.transform.SetParent(
-                stackArea,
-                false
-            );
-
-            RectTransform rect =
-                go.GetComponent<RectTransform>();
-
-            rect.anchorMin =
-                new Vector2(0.5f, 0.5f);
-
-            rect.anchorMax =
-                new Vector2(0.5f, 0.5f);
-
-            rect.pivot =
-                new Vector2(0.5f, 0.5f);
-
-            rect.sizeDelta = blockSize;
-
-            float spacing =
-                areaWidth / TargetWord.Length;
-
-            float homeX =
-                -areaWidth * 0.5f +
-                spacing * (i + 0.5f);
-
-            float homeY =
-                -stackArea.rect.height * 0.5f + 55f;
-
-            Vector2 home =
-                new Vector2(homeX, homeY);
-
-            rect.anchoredPosition = home;
-
-            Image image = go.GetComponent<Image>();
-
-            Sprite artwork = GetBlockSprite(letter);
-
-            if (artwork != null)
-            {
-                // ¡Ú ¾ÆÆ®ÆÀÀÇ ¿Ï¼º ºí·Ï ÀÌ¹ÌÁö Àû¿ë
-                image.sprite = artwork;
-                image.color = Color.white;
-                image.type = Image.Type.Simple;
-                image.preserveAspect = true;
-            }
-            else
-            {
-                // ÀÌ¹ÌÁö°¡ ¾øÀ¸¸é ±âÁ¸ ºí·Ï À¯Áö
-                image.color = i % 2 == 0
-                    ? new Color32(35, 122, 155, 255)
-                    : new Color32(40, 107, 145, 255);
-
-                CreateLetterVisual(
-                    go.transform,
-                    letter,
-                    null,
-                    35f
-                );
-            }
-
-            image.raycastTarget = true;
-
-            MG26StackBlockDrag drag =
-                go.AddComponent<MG26StackBlockDrag>();
-
-            drag.Configure(
-                this,
-                i,
-                rect,
-                stackArea
-            );
-
-            createdBlocks.Add(go);
-            blockHomePositions.Add(home);
+            blocks.Add(img.rectTransform);
+            blockHomes.Add(homes[i]);
         }
 
-        CreateStackGuide();
+        RefreshBlockDim();
     }
 
-    // =========================================
-    // Å¾ ½×±â ¸ñÇ¥ À§Ä¡ Ç¥½Ã
-    // =========================================
-
-    private void CreateStackGuide()
+    private Sprite BlockSprite(int i)
     {
-        GameObject go = new GameObject(
-            "StackTargetGuide",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        go.transform.SetParent(
-            stackArea,
-            false
-        );
-
-        stackGuide =
-            go.GetComponent<RectTransform>();
-
-        stackGuide.anchorMin =
-            new Vector2(0.5f, 0.5f);
-
-        stackGuide.anchorMax =
-            new Vector2(0.5f, 0.5f);
-
-        stackGuide.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        stackGuide.sizeDelta = blockSize;
-
-        Image image = go.GetComponent<Image>();
-
-        image.color =
-            new Color(0.3f, 0.95f, 0.95f, 0.23f);
-
-        image.raycastTarget = false;
-
-        stackGuide.SetAsFirstSibling();
+        return stackBlockSprites != null && i < stackBlockSprites.Length ? stackBlockSprites[i] : null;
     }
 
-    private Vector2 GetStackTargetPosition(int index)
+    private Vector2 StackTarget(int index)
     {
-        float baseTop =
-            stackBase.anchoredPosition.y +
-            stackBase.rect.height * 0.5f;
-
-        float y =
-            baseTop +
-            4f +
-            blockSize.y * 0.5f +
-            index * (blockSize.y + stackGap);
-
-        return new Vector2(
-            stackBase.anchoredPosition.x,
-            y
-        );
+        float baseTop = -228f + 9f;
+        return new Vector2(0f, baseTop + 2f + blockSize.y * 0.5f + index * (blockSize.y + stackGap));
     }
 
-    private void UpdateStackGuide()
+    private void RefreshBlockDim()
     {
-        if (stackGuide == null)
-            return;
-
-        if (stackedCount >= TargetWord.Length)
+        for (int i = 0; i < blocks.Count; i++)
         {
-            stackGuide.gameObject.SetActive(false);
-            return;
+            Image img = blocks[i].GetComponent<Image>();
+            bool active = i == stackedCount;
+            bool placed = i < stackedCount;
+            Color c = img.sprite != null ? C5Kit.White : C5Kit.Cyan;
+            c.a = active || placed ? 1f : 0.45f;
+            img.color = c;
         }
 
-        stackGuide.gameObject.SetActive(true);
-
-        stackGuide.anchoredPosition =
-            GetStackTargetPosition(stackedCount);
+        if (stackGuide != null)
+        {
+            bool show = stackedCount < TargetWord.Length;
+            stackGuide.gameObject.SetActive(show);
+            if (show)
+            {
+                stackGuide.sprite = BlockSprite(stackedCount);
+                stackGuide.rectTransform.anchoredPosition = StackTarget(stackedCount);
+                stackGuide.transform.SetAsFirstSibling();
+            }
+        }
     }
 
-    // =========================================
-    // ºí·Ï µå·¡±× ¹× ¹èÄ¡
-    // =========================================
+    private void PulseGuide()
+    {
+        if (stackGuide == null || !stackGuide.gameObject.activeSelf)
+            return;
+        float a = 0.18f + 0.17f * (0.5f + 0.5f * Mathf.Sin(Time.time * 5f));
+        stackGuide.color = new Color(0.6f, 1f, 1f, a);
+    }
+
+    private void UpdateStackTexts()
+    {
+        string letter = stackedCount < TargetWord.Length ? TargetWord[stackedCount].ToString() : "-";
+        plateText.text = "STACK : <color=" + C5Kit.YellowHex + "><size=46>" + letter + "</size></color>";
+    }
 
     public bool CanDragBlock(int index)
     {
-        return
-            isGameActive &&
-            !finished &&
-            phase == Phase.Stacking &&
-            index == stackedCount;
+        return isGameActive && !finished && phase == Phase.Stacking && blocks.Count == TargetWord.Length &&
+               index == stackedCount;
     }
 
-    public void TryPlaceBlock(
-        int index,
-        RectTransform block)
+    public void TryPlaceBlock(int index, RectTransform block)
     {
         if (!CanDragBlock(index))
             return;
 
-        Vector2 target =
-            GetStackTargetPosition(index);
-
-        Vector2 actual = block.anchoredPosition;
-
-        bool correct =
-            Mathf.Abs(actual.x - target.x) <=
-                snapDistanceX &&
-            Mathf.Abs(actual.y - target.y) <=
-                snapDistanceY;
-
-        if (!correct)
+        Vector2 target = StackTarget(index);
+        if (Vector2.Distance(block.anchoredPosition, target) > snapDistance)
         {
-            block.anchoredPosition =
-                blockHomePositions[index];
-
-            stackStatusText.text =
-                "ÇÏ´Ã»ö Ç¥½Ã À§Ä¡¿¡ ºí·ÏÀ» ³õÀ¸½Ê½Ã¿À.";
-
+            StartCoroutine(ReturnHome(block, blockHomes[index]));
+            bottomText.text = "ë¹›ë‚˜ëŠ” ìë¦¬ì— ë§ì¶° ë†“ìœ¼ì„¸ìš”.";
             return;
         }
 
         block.anchoredPosition = target;
-
-        MG26StackBlockDrag drag =
-            block.GetComponent<MG26StackBlockDrag>();
-
+        MG26StackBlockDrag drag = block.GetComponent<MG26StackBlockDrag>();
         if (drag != null)
             drag.SetPlaced(true);
 
-        stackedCount++;
+        GameSfx.Play("block_place", 0.6f);
+        StartCoroutine(C5Kit.Pop(block, 1.1f, 0.18f));
+        slotRow.SetSlot(index, true);
+        StartCoroutine(C5Kit.Pop(slotRow.Slot(index), 1.2f));
 
-        UpdateStackGuide();
+        stackedCount++;
+        RefreshBlockDim();
 
         if (stackedCount >= TargetWord.Length)
         {
@@ -1188,89 +702,104 @@ public class Minigame26_FallingLetters : MinigameBase
         }
         else
         {
-            stackStatusText.text =
-                "´ÙÀ½ ºí·Ï : " +
-                TargetWord[stackedCount];
+            UpdateStackTexts();
+            bottomText.text = "ë‹¤ìŒ ë¸”ë¡ : <color=" + C5Kit.YellowHex + ">" + TargetWord[stackedCount] + "</color>";
         }
     }
 
-    // =========================================
-    // 3ÃÊ ¾ÈÁ¤¼º °Ë»ç
-    // =========================================
+    private IEnumerator ReturnHome(RectTransform block, Vector2 home)
+    {
+        Vector2 from = block.anchoredPosition;
+        float e = 0f;
+        while (e < 0.2f && block != null)
+        {
+            e += Time.deltaTime;
+            block.anchoredPosition = Vector2.Lerp(from, home, C5Kit.EaseOut(e / 0.2f));
+            yield return null;
+        }
+    }
 
     private void BeginStabilityCheck()
     {
         phase = Phase.Stability;
         stabilityTimer = 0f;
-
-        stackStatusText.text =
-            "Å¾ ¾ÈÁ¤¼º °Ë»ç Áß... 3.0ÃÊ";
+        bottomText.text = "íƒ‘ì´ ì•ˆì •ë  ë•Œê¹Œì§€ ê¸°ë‹¤ë¦¬ì„¸ìš”...";
     }
 
     private void UpdateStability()
     {
         stabilityTimer += Time.deltaTime;
+        float remain = Mathf.Max(0f, stableSeconds - stabilityTimer);
+        plateText.text = "STABILITY CHECK  <color=" + C5Kit.YellowHex + ">" + remain.ToString("0.0") + "</color>";
 
-        float remaining = Mathf.Max(
-            0f,
-            stableSeconds - stabilityTimer
-        );
-
-        stackStatusText.text =
-            "Å¾ ¾ÈÁ¤¼º °Ë»ç Áß... " +
-            remaining.ToString("F1") + "ÃÊ";
+        // íƒ‘ì´ ì‚´ì§ í”ë“¤ë ¸ë‹¤ê°€ ì¦ì•„ë“¦
+        float wobble = Mathf.Sin(stabilityTimer * 9f) * 1.6f * (remain / stableSeconds);
+        for (int i = 0; i < blocks.Count; i++)
+            if (blocks[i] != null)
+                blocks[i].localRotation = Quaternion.Euler(0f, 0f, wobble * (i + 1) * 0.3f);
 
         if (stabilityTimer >= stableSeconds)
-            ShowFinalStartButton();
+            StartCoroutine(ShowFinalStart());
     }
 
-    // =========================================
-    // ¸¶Áö¸· START ¹öÆ°
-    // =========================================
-
-    private void ShowFinalStartButton()
+    private IEnumerator ShowFinalStart()
     {
         phase = Phase.StartReady;
+        plateText.text = "START <color=" + C5Kit.GreenHex + ">READY</color>";
+        bottomText.text = "";
 
-        stackStatusText.text =
-            "¹®ÀÚ º¹±¸ ¿Ï·á! START¸¦ ´©¸£½Ê½Ã¿À.";
+        Transform[] from = new Transform[blocks.Count];
+        for (int i = 0; i < blocks.Count; i++)
+        {
+            from[i] = blocks[i];
+            blocks[i].localRotation = Quaternion.identity;
+        }
 
-        RectTransform rect =
-            finalStartButton.GetComponent<RectTransform>();
+        // íƒ‘ ë¸”ë¡ ìë¦¬ì—ì„œ ê¸€ìê°€ ë¹ ì ¸ë‚˜ì™€ ê°€ìš´ë°ë¡œ ëª¨ì„ (ë¸”ë¡Â·ë°›ì¹¨ì€ ìˆ¨ê¹€)
+        Vector3[] fromPos = new Vector3[from.Length];
+        for (int i = 0; i < from.Length; i++)
+            fromPos[i] = from[i].position;
+        foreach (RectTransform b in blocks)
+            if (b != null) b.gameObject.SetActive(false);
+        if (stackBase != null) stackBase.gameObject.SetActive(false);
 
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
+        Transform[] anchors = new Transform[from.Length];
+        for (int i = 0; i < from.Length; i++)
+        {
+            RectTransform a = C5Kit.Rect(screen, "RT_MergeFrom" + i, Vector2.zero, Vector2.zero);
+            a.position = fromPos[i];
+            anchors[i] = a;
+        }
 
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
+        Vector2 center = new Vector2(0f, 40f);
+        yield return C5Kit.MergeLetters(screen, slotLetterSprites, font, center, new Vector2(88f, 81f), anchors);
 
-        rect.anchoredPosition =
-            new Vector2(0f, 155f);
+        foreach (Transform a in anchors)
+            if (a != null) Destroy(a.gameObject);
 
         finalStartButton.gameObject.SetActive(true);
         finalStartButton.transform.SetAsLastSibling();
+        StartCoroutine(C5Kit.Pop(finalStartButton.transform, 1.25f, 0.3f));
+        bottomText.text = "<color=" + C5Kit.YellowHex + ">START</color>ë¥¼ ëˆŒëŸ¬ ê²€ì‚¬ë¥¼ ì™„ë£Œí•˜ì„¸ìš”.";
     }
 
     private void OnFinalStartClicked()
     {
-        if (!isGameActive ||
-            finished ||
-            phase != Phase.StartReady)
-        {
+        if (!isGameActive || finished || phase != Phase.StartReady)
             return;
-        }
 
         finished = true;
         phase = Phase.Completed;
-
-        Debug.Log("MG26: °Ë»ç ¿Ï·á");
-
         Success();
     }
 
     protected override void GiveHint()
     {
-        // ±âÈ¹¼­¿¡ º°µµ ÈùÆ® ¾øÀ½
+        if (bottomText == null) return;
+        if (phase == Phase.Catching)
+            bottomText.text = "íŒíŠ¸: ë°˜ì§ì´ëŠ” ë¬¸ìë§Œ ë°›ìœ¼ì„¸ìš”. ë‹¤ë¥¸ ë¬¸ìëŠ” í”¼í•˜ì„¸ìš”.";
+        else if (phase == Phase.Stacking)
+            bottomText.text = "íŒíŠ¸: ë¹›ë‚˜ëŠ” ìë¦¬ë¡œ ë¸”ë¡ì„ ëŒì–´ë‹¤ ë†“ìœ¼ì„¸ìš”.";
     }
 
     protected override void RestartGame()
@@ -1280,39 +809,24 @@ public class Minigame26_FallingLetters : MinigameBase
 }
 
 // =========================================
-// ¹®ÀÚ ºí·Ï µå·¡±×
-// ÀÌ Å¬·¡½ºµµ °°Àº ÆÄÀÏ¿¡ ³ÖÀ¸¼¼¿ä.
+// íƒ‘ ë¸”ë¡ ë“œë˜ê·¸
 // =========================================
-
-public class MG26StackBlockDrag :
-    MonoBehaviour,
-    IBeginDragHandler,
-    IDragHandler,
-    IEndDragHandler
+public class MG26StackBlockDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private Minigame26_FallingLetters manager;
-
     private int blockIndex;
-
     private RectTransform blockRect;
     private RectTransform parentArea;
-
     private Vector2 pointerOffset;
-
     private bool dragging;
     private bool placed;
 
-    public void Configure(
-        Minigame26_FallingLetters owner,
-        int index,
-        RectTransform rect,
-        RectTransform area)
+    public void Configure(Minigame26_FallingLetters owner, int index, RectTransform rect, RectTransform area)
     {
         manager = owner;
         blockIndex = index;
         blockRect = rect;
         parentArea = area;
-
         dragging = false;
         placed = false;
     }
@@ -1323,100 +837,46 @@ public class MG26StackBlockDrag :
         dragging = false;
     }
 
-    public void OnBeginDrag(
-        PointerEventData eventData)
+    public void OnBeginDrag(PointerEventData eventData)
     {
-        if (placed ||
-            manager == null ||
-            !manager.CanDragBlock(blockIndex))
-        {
+        if (placed || manager == null || !manager.CanDragBlock(blockIndex))
             return;
-        }
 
-        Vector2 local;
-
-        if (!RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                parentArea,
-                eventData.position,
-                eventData.pressEventCamera,
-                out local
-            ))
-        {
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parentArea, eventData.position,
+                eventData.pressEventCamera, out Vector2 local))
             return;
-        }
 
-        pointerOffset =
-            blockRect.anchoredPosition - local;
-
+        pointerOffset = blockRect.anchoredPosition - local;
         dragging = true;
         blockRect.SetAsLastSibling();
+        blockRect.localScale = Vector3.one * 1.06f;
     }
 
-    public void OnDrag(
-        PointerEventData eventData)
+    public void OnDrag(PointerEventData eventData)
     {
         if (!dragging || placed)
             return;
 
-        Vector2 local;
-
-        if (!RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                parentArea,
-                eventData.position,
-                eventData.pressEventCamera,
-                out local
-            ))
-        {
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parentArea, eventData.position,
+                eventData.pressEventCamera, out Vector2 local))
             return;
-        }
 
         Vector2 next = local + pointerOffset;
-
-        float halfWidth =
-            blockRect.rect.width * 0.5f;
-
-        float halfHeight =
-            blockRect.rect.height * 0.5f;
-
-        float limitX =
-            parentArea.rect.width * 0.5f -
-            halfWidth;
-
-        float limitY =
-            parentArea.rect.height * 0.5f -
-            halfHeight;
-
-        next.x = Mathf.Clamp(
-            next.x,
-            -limitX,
-            limitX
-        );
-
-        next.y = Mathf.Clamp(
-            next.y,
-            -limitY,
-            limitY
-        );
-
+        float limitX = parentArea.rect.width * 0.5f - blockRect.rect.width * 0.5f;
+        float limitY = parentArea.rect.height * 0.5f - blockRect.rect.height * 0.5f;
+        next.x = Mathf.Clamp(next.x, -limitX, limitX);
+        next.y = Mathf.Clamp(next.y, -limitY, limitY);
         blockRect.anchoredPosition = next;
     }
 
-    public void OnEndDrag(
-        PointerEventData eventData)
+    public void OnEndDrag(PointerEventData eventData)
     {
         if (!dragging)
             return;
 
         dragging = false;
-
+        blockRect.localScale = Vector3.one;
         if (!placed && manager != null)
-        {
-            manager.TryPlaceBlock(
-                blockIndex,
-                blockRect
-            );
-        }
+            manager.TryPlaceBlock(blockIndex, blockRect);
     }
 }
