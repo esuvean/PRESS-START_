@@ -13132,6 +13132,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 874344422910720379, guid: d78aef7b7c02472469970c905bb11d2c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4654279291279593436, guid: d78aef7b7c02472469970c905bb11d2c, type: 3}
       propertyPath: m_Name
       value: AchievementPopupCanvas
