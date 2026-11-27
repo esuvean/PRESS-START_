@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+// PRESS START - 업적 목록 UI
+// 기존 Inspector 연결을 유지하면서 카드 배치를 수정한 버전
+
 public class AchievementUI : MonoBehaviour
 {
     [Header("Main UI")]
@@ -29,9 +32,20 @@ public class AchievementUI : MonoBehaviour
     public TMP_FontAsset listFont;
 
     [Header("List Settings")]
-    public float rowHeight = 100f;
-    public float titleFontSize = 27f;
-    public float descriptionFontSize = 21f;
+    public float rowHeight = 125f;
+    public float titleFontSize = 35f;
+    public float descriptionFontSize = 25f;
+
+    [Header("Optional - Neon Status Art")]
+    public Sprite unlockedStatusSprite;
+    public Sprite lockedStatusSprite;
+
+    [Header("Optional - New Sort Buttons")]
+    public Button latestSortButton;
+    public Button earnedSortButton;
+
+    [Header("Optional - Category Dropdown")]
+    public TMP_Dropdown categoryDropdown;
 
     private enum ListFilter
     {
@@ -41,24 +55,42 @@ public class AchievementUI : MonoBehaviour
         Hidden
     }
 
+    private enum SortMode
+    {
+        Default,
+        Latest,
+        Earned
+    }
+
     private ListFilter currentFilter = ListFilter.All;
+    private SortMode currentSort = SortMode.Default;
 
     private AchievementManager subscribedManager;
 
     private readonly List<GameObject> generatedRows =
         new List<GameObject>();
 
+    private readonly Color accent =
+        new Color32(0, 232, 245, 255);
+
+    private readonly Color muted =
+        new Color32(150, 171, 201, 255);
+
+    private readonly Color cardColor =
+        new Color32(5, 20, 41, 255);
+
+    private readonly Color descriptionColor =
+        new Color32(187, 205, 230, 255);
+
     private readonly Color normalButtonColor =
-        new Color32(28, 42, 69, 255);
+        new Color32(14, 37, 58, 255);
 
     private readonly Color selectedButtonColor =
-        new Color32(27, 100, 119, 255);
+        new Color32(12, 102, 121, 255);
 
-    private readonly Color unlockedColor =
-        new Color32(101, 226, 230, 255);
-
-    private readonly Color lockedColor =
-        new Color32(151, 168, 191, 255);
+    // =====================================
+    // 초기화
+    // =====================================
 
     private void Awake()
     {
@@ -70,7 +102,7 @@ public class AchievementUI : MonoBehaviour
         ConnectManager();
 
         if (achievementPanel != null &&
-            achievementPanel.activeSelf)
+            achievementPanel.activeInHierarchy)
         {
             Refresh();
         }
@@ -92,7 +124,7 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // AchievementManager 이벤트 연결
+    // 업적 매니저 연결
     // =====================================
 
     private void ConnectManager()
@@ -100,7 +132,7 @@ public class AchievementUI : MonoBehaviour
         AchievementManager manager =
             AchievementManager.Instance;
 
-        if (subscribedManager == manager)
+        if (manager == subscribedManager)
             return;
 
         DisconnectManager();
@@ -136,7 +168,7 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // 버튼 설정
+    // 버튼 이벤트
     // =====================================
 
     private void SetupButtons()
@@ -173,6 +205,27 @@ public class AchievementUI : MonoBehaviour
                 () => SetFilter(ListFilter.Hidden)
             );
         }
+
+        if (latestSortButton != null)
+        {
+            latestSortButton.onClick.AddListener(
+                () => SetSort(SortMode.Latest)
+            );
+        }
+
+        if (earnedSortButton != null)
+        {
+            earnedSortButton.onClick.AddListener(
+                () => SetSort(SortMode.Earned)
+            );
+        }
+
+        if (categoryDropdown != null)
+        {
+            categoryDropdown.onValueChanged.AddListener(
+                OnCategoryChanged
+            );
+        }
     }
 
     // =====================================
@@ -184,7 +237,7 @@ public class AchievementUI : MonoBehaviour
         if (achievementPanel == null)
         {
             Debug.LogError(
-                "[AchievementUI] Achievement Panel이 연결되지 않았습니다.",
+                "[AchievementUI] Achievement Panel 연결 필요!",
                 this
             );
 
@@ -194,8 +247,6 @@ public class AchievementUI : MonoBehaviour
         ConnectManager();
 
         achievementPanel.SetActive(true);
-
-        // 다른 메뉴 패널보다 앞에 표시
         achievementPanel.transform.SetAsLastSibling();
 
         SetFilter(ListFilter.All);
@@ -210,12 +261,31 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // 카테고리 선택
+    // 필터
     // =====================================
 
     private void SetFilter(ListFilter filter)
     {
         currentFilter = filter;
+
+        UpdateFilterButtons();
+
+        if (categoryDropdown != null)
+        {
+            categoryDropdown.SetValueWithoutNotify(
+                (int)filter
+            );
+        }
+
+        Refresh();
+    }
+
+    private void OnCategoryChanged(int value)
+    {
+        if (value < 0 || value > 3)
+            return;
+
+        currentFilter = (ListFilter)value;
 
         UpdateFilterButtons();
         Refresh();
@@ -262,14 +332,22 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // 업적창 새로고침
+    // 정렬
+    // =====================================
+
+    private void SetSort(SortMode sort)
+    {
+        currentSort = sort;
+        Refresh();
+    }
+
+    // =====================================
+    // 업적 목록 새로고침
     // =====================================
 
     public void Refresh()
     {
         ConnectManager();
-
-        ClearRows();
 
         AchievementManager manager =
             AchievementManager.Instance;
@@ -277,26 +355,18 @@ public class AchievementUI : MonoBehaviour
         if (manager == null)
         {
             if (progressText != null)
-            {
                 progressText.text = "0 / 30";
-            }
 
             if (progressBarFill != null)
-            {
                 progressBarFill.fillAmount = 0f;
-            }
 
-            Debug.LogWarning(
-                "[AchievementUI] AchievementManager를 찾지 못했습니다."
-            );
-
+            ClearRows();
             return;
         }
 
         int unlocked = manager.GetUnlockedCount();
         int total = manager.Achievements.Count;
 
-        // 전체 업적 진행도
         if (progressText != null)
         {
             progressText.text =
@@ -322,32 +392,73 @@ public class AchievementUI : MonoBehaviour
         if (content == null)
         {
             Debug.LogError(
-                "[AchievementUI] Content가 연결되지 않았습니다.",
+                "[AchievementUI] Content 연결 필요!",
                 this
             );
 
             return;
         }
 
-        foreach (AchievementInfo info in manager.Achievements)
-        {
-            if (!ShouldDisplay(info))
-                continue;
+        // 업적 카드가 좁게 표시되는 문제 해결
+        ConfigureContentAndScrollView();
 
-            CreateAchievementRow(
-                manager,
-                info
+        ClearRows();
+
+        List<AchievementInfo> list =
+            new List<AchievementInfo>();
+
+        foreach (AchievementInfo info
+                 in manager.Achievements)
+        {
+            if (ShouldDisplay(info))
+                list.Add(info);
+        }
+
+        if (currentSort == SortMode.Latest)
+        {
+            // 기존 코드와 동일한 ID 역순
+            list.Sort(
+                (a, b) => b.id.CompareTo(a.id)
             );
         }
+        else if (currentSort == SortMode.Earned)
+        {
+            // 획득한 업적 먼저
+            list.Sort((a, b) =>
+            {
+                bool aUnlocked =
+                    manager.IsUnlocked(a.id);
+
+                bool bUnlocked =
+                    manager.IsUnlocked(b.id);
+
+                if (aUnlocked != bUnlocked)
+                    return aUnlocked ? -1 : 1;
+
+                return a.id.CompareTo(b.id);
+            });
+        }
+        else
+        {
+            list.Sort(
+                (a, b) => a.id.CompareTo(b.id)
+            );
+        }
+
+        foreach (AchievementInfo info in list)
+        {
+            CreateAchievementRow(manager, info);
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(
+            content
+        );
 
         Canvas.ForceUpdateCanvases();
     }
 
-    // =====================================
-    // 필터 조건
-    // =====================================
-
-    private bool ShouldDisplay(AchievementInfo info)
+    private bool ShouldDisplay(
+        AchievementInfo info)
     {
         switch (currentFilter)
         {
@@ -369,7 +480,119 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // 이전 목록 제거
+    // Scroll View / Content 크기 보정
+    // =====================================
+
+    private void ConfigureContentAndScrollView()
+    {
+        // Content를 Viewport 가로 전체로 확장
+        content.anchorMin =
+            new Vector2(0f, 1f);
+
+        content.anchorMax =
+            new Vector2(1f, 1f);
+
+        content.pivot =
+            new Vector2(0.5f, 1f);
+
+        content.sizeDelta =
+            new Vector2(
+                0f,
+                content.sizeDelta.y
+            );
+
+        content.anchoredPosition = Vector2.zero;
+
+        VerticalLayoutGroup layout =
+            content.GetComponent<VerticalLayoutGroup>();
+
+        if (layout == null)
+        {
+            layout =
+                content.gameObject
+                    .AddComponent<VerticalLayoutGroup>();
+        }
+
+        layout.spacing = 14f;
+
+        layout.padding =
+            new RectOffset(12, 12, 10, 10);
+
+        layout.childAlignment =
+            TextAnchor.UpperCenter;
+
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
+        ContentSizeFitter fitter =
+            content.GetComponent<ContentSizeFitter>();
+
+        if (fitter == null)
+        {
+            fitter =
+                content.gameObject
+                    .AddComponent<ContentSizeFitter>();
+        }
+
+        fitter.horizontalFit =
+            ContentSizeFitter.FitMode.Unconstrained;
+
+        fitter.verticalFit =
+            ContentSizeFitter.FitMode.PreferredSize;
+
+        ScrollRect scroll =
+            content.GetComponentInParent<ScrollRect>();
+
+        if (scroll == null)
+            return;
+
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+
+        // 기본 회색 Scroll View 배경만 변경
+        Image scrollBackground =
+            scroll.GetComponent<Image>();
+
+        if (scrollBackground != null &&
+            (scrollBackground.sprite == null ||
+             scrollBackground.sprite.name == "Background"))
+        {
+            scrollBackground.color =
+                new Color32(5, 16, 35, 255);
+        }
+
+        RectTransform viewport =
+            scroll.viewport;
+
+        if (viewport == null)
+        {
+            viewport =
+                content.parent as RectTransform;
+        }
+
+        if (viewport != null)
+        {
+            scroll.viewport = viewport;
+
+            Image viewportImage =
+                viewport.GetComponent<Image>();
+
+            if (viewportImage != null &&
+                (viewportImage.sprite == null ||
+                 viewportImage.sprite.name == "UISprite" ||
+                 viewportImage.sprite.name == "Background"))
+            {
+                viewportImage.color = Color.clear;
+            }
+        }
+    }
+
+    // =====================================
+    // 이전 카드 제거
     // =====================================
 
     private void ClearRows()
@@ -387,7 +610,7 @@ public class AchievementUI : MonoBehaviour
     }
 
     // =====================================
-    // 업적 한 줄 자동 생성
+    // 업적 카드 생성
     // =====================================
 
     private void CreateAchievementRow(
@@ -397,248 +620,389 @@ public class AchievementUI : MonoBehaviour
         bool unlocked =
             manager.IsUnlocked(info.id);
 
-        GameObject row = new GameObject(
+        float height =
+            Mathf.Max(110f, rowHeight);
+
+        GameObject row = NewUIObject(
             "Achievement_" + info.id.ToString("00"),
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
+            content,
             typeof(Image),
             typeof(LayoutElement)
         );
 
-        row.transform.SetParent(content, false);
-
         RectTransform rowRect =
             row.GetComponent<RectTransform>();
 
-        rowRect.sizeDelta =
-            new Vector2(0f, rowHeight);
+        rowRect.anchorMin =
+            new Vector2(0f, 1f);
 
-        LayoutElement layout =
+        rowRect.anchorMax =
+            new Vector2(1f, 1f);
+
+        rowRect.pivot =
+            new Vector2(0.5f, 0.5f);
+
+        rowRect.sizeDelta =
+            new Vector2(0f, height);
+
+        LayoutElement element =
             row.GetComponent<LayoutElement>();
 
-        layout.minHeight = rowHeight;
-        layout.preferredHeight = rowHeight;
-        layout.flexibleHeight = 0f;
+        element.minHeight = height;
+        element.preferredHeight = height;
+        element.flexibleHeight = 0f;
+        element.flexibleWidth = 1f;
 
-        Image background =
-            row.GetComponent<Image>();
+        Image bg = row.GetComponent<Image>();
 
-        Sprite rowSprite = unlocked
+        Sprite sprite = unlocked
             ? unlockedRowSprite
             : lockedRowSprite;
 
-        if (rowSprite != null)
+        if (sprite != null)
         {
-            background.sprite = rowSprite;
-            background.type = Image.Type.Simple;
-            background.color = Color.white;
+            bg.sprite = sprite;
+            bg.type = Image.Type.Simple;
+            bg.color = Color.white;
         }
         else
         {
-            background.color = unlocked
-                ? new Color32(27, 55, 74, 255)
-                : new Color32(29, 45, 72, 255);
+            bg.color = cardColor;
+
+            ApplyOutline(
+                row,
+                unlocked ? accent : muted,
+                3f
+            );
         }
 
-        background.raycastTarget = false;
+        bg.raycastTarget = false;
 
-        // 업적 아이콘
-        CreateAchievementIcon(
+        // =============================
+        // 왼쪽 업적 아이콘
+        // =============================
+
+        Image iconFrame = MakeImage(
+            "IconFrame",
             row.transform,
-            manager,
-            info,
-            unlocked
+            new Vector2(0f, 0.5f),
+            new Vector2(66f, 0f),
+            new Vector2(84f, 84f),
+            new Color32(9, 29, 53, 255)
         );
 
-        bool isHiddenLocked =
-            info.category == AchievementCategory.Hidden &&
-            !unlocked;
-
-        string title = isHiddenLocked
-            ? "???"
-            : info.title;
-
-        string description = isHiddenLocked
-            ? "획득 조건 달성 후 해금"
-            : info.condition;
-
-        // 업적 이름
-        CreateText(
-            "AchievementTitle",
-            row.transform,
-            title,
-            new Vector2(115f, 18f),
-            new Vector2(570f, 40f),
-            titleFontSize,
-            unlocked ? Color.white : lockedColor
+        ApplyOutline(
+            iconFrame.gameObject,
+            unlocked ? Color.white : muted,
+            2f
         );
 
-        // 업적 조건
-        CreateText(
-            "AchievementCondition",
-            row.transform,
-            description,
-            new Vector2(115f, -20f),
-            new Vector2(620f, 39f),
-            descriptionFontSize,
-            new Color32(168, 193, 213, 255)
-        );
-
-        // 획득 여부
-        TMP_Text status = CreateText(
-            "AchievementStatus",
-            row.transform,
-            unlocked ? "?" : "LOCK",
-            new Vector2(-20f, 0f),
-            new Vector2(110f, 50f),
-            24f,
-            unlocked ? unlockedColor : lockedColor
-        );
-
-        RectTransform statusRect =
-            status.GetComponent<RectTransform>();
-
-        statusRect.anchorMin =
-            new Vector2(1f, 0.5f);
-
-        statusRect.anchorMax =
-            new Vector2(1f, 0.5f);
-
-        statusRect.pivot =
-            new Vector2(1f, 0.5f);
-
-        status.alignment =
-            TextAlignmentOptions.Center;
-
-        generatedRows.Add(row);
-    }
-
-    // =====================================
-    // 아이콘 자동 생성
-    // =====================================
-
-    private void CreateAchievementIcon(
-        Transform parent,
-        AchievementManager manager,
-        AchievementInfo info,
-        bool unlocked)
-    {
-        GameObject iconObject = new GameObject(
-            "AchievementIcon",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image)
-        );
-
-        iconObject.transform.SetParent(
-            parent,
-            false
-        );
-
-        RectTransform rect =
-            iconObject.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            new Vector2(0f, 0.5f);
-
-        rect.anchorMax =
-            new Vector2(0f, 0.5f);
-
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition =
-            new Vector2(55f, 0f);
-
-        rect.sizeDelta =
-            new Vector2(74f, 74f);
-
-        Image image =
-            iconObject.GetComponent<Image>();
-
-        Sprite sprite = unlocked
+        Sprite iconSprite = unlocked
             ? manager.GetIcon(info.id)
             : manager.lockedIcon;
 
-        if (sprite != null)
+        if (iconSprite != null)
         {
-            image.sprite = sprite;
-            image.color = Color.white;
-            image.preserveAspect = true;
+            Image art = MakeImage(
+                "AchievementIcon",
+                iconFrame.transform,
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(70f, 70f),
+                Color.white
+            );
+
+            art.sprite = iconSprite;
+            art.preserveAspect = true;
         }
         else
         {
-            image.color =
-                new Color32(38, 61, 92, 255);
-
-            // 아트가 없는 동안 표시할 기본 아이콘
-            TMP_Text fallback = CreateText(
+            TMP_Text fallback = MakeText(
                 "FallbackIcon",
-                iconObject.transform,
+                iconFrame.transform,
                 unlocked
                     ? info.id.ToString("00")
                     : "?",
-                Vector2.zero,
-                new Vector2(70f, 68f),
-                32f,
-                unlocked ? unlockedColor : lockedColor
+                37f,
+                unlocked ? Color.white : muted,
+                new Vector2(70f, 70f)
             );
-
-            RectTransform fallbackRect =
-                fallback.GetComponent<RectTransform>();
-
-            fallbackRect.anchorMin =
-                new Vector2(0.5f, 0.5f);
-
-            fallbackRect.anchorMax =
-                new Vector2(0.5f, 0.5f);
-
-            fallbackRect.pivot =
-                new Vector2(0.5f, 0.5f);
 
             fallback.alignment =
                 TextAlignmentOptions.Center;
         }
 
-        image.raycastTarget = false;
+        // =============================
+        // 아이콘과 글씨 사이 구분선
+        // =============================
+
+        MakeImage(
+            "Divider",
+            row.transform,
+            new Vector2(0f, 0.5f),
+            new Vector2(132f, 0f),
+            new Vector2(3f, height - 26f),
+            unlocked ? accent : muted
+        );
+
+        // =============================
+        // 업적 이름과 획득 조건
+        // =============================
+
+        bool hideHidden =
+            info.category ==
+                AchievementCategory.Hidden &&
+            !unlocked;
+
+        string title = hideHidden
+            ? "???"
+            : info.title;
+
+        string description = hideHidden
+            ? "획득 조건: 알 수 없음"
+            : info.condition;
+
+        TMP_Text titleText = MakeStretchText(
+            "AchievementTitle",
+            row.transform,
+            title,
+            Mathf.Max(15f, titleFontSize),
+            unlocked
+                ? Color.white
+                : new Color32(228, 236, 248, 255),
+            163f,
+            120f,
+            10f,
+            49f
+        );
+
+        titleText.fontStyle = FontStyles.Bold;
+
+        MakeStretchText(
+            "AchievementCondition",
+            row.transform,
+            description,
+            Mathf.Max(12f, descriptionFontSize),
+            descriptionColor,
+            163f,
+            120f,
+            -47f,
+            -9f
+        );
+
+        // =============================
+        // 오른쪽 획득 / 잠금 아이콘
+        // =============================
+
+        CreateStatus(
+            row.transform,
+            unlocked
+        );
+
+        generatedRows.Add(row);
     }
 
     // =====================================
-    // TMP 생성 공통 함수
+    // 업적 획득 상태 이미지
     // =====================================
 
-    private TMP_Text CreateText(
-        string objectName,
+    private void CreateStatus(
         Transform parent,
-        string value,
-        Vector2 position,
-        Vector2 size,
-        float fontSize,
-        Color color)
+        bool unlocked)
     {
-        GameObject go = new GameObject(
-            objectName,
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI)
+        Image frame = MakeImage(
+            "AchievementStatus",
+            parent,
+            new Vector2(1f, 0.5f),
+            new Vector2(-58f, 0f),
+            new Vector2(64f, 64f),
+            new Color32(3, 17, 34, 255)
         );
+
+        ApplyOutline(
+            frame.gameObject,
+            unlocked ? accent : muted,
+            2f
+        );
+
+        Sprite statusSprite = unlocked
+            ? unlockedStatusSprite
+            : lockedStatusSprite;
+
+        // 아트팀 이미지가 연결되어 있다면 표시
+        if (statusSprite != null)
+        {
+            Image art = MakeImage(
+                "StatusIcon",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(52f, 52f),
+                Color.white
+            );
+
+            art.sprite = statusSprite;
+            art.preserveAspect = true;
+
+            return;
+        }
+
+        // 이미지가 없는 동안 사용하는 임시 표시
+        if (unlocked)
+        {
+            Image shortLine = MakeImage(
+                "CheckShort",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(-10f, -4f),
+                new Vector2(19f, 7f),
+                accent
+            );
+
+            shortLine.rectTransform.localEulerAngles =
+                new Vector3(0f, 0f, -45f);
+
+            Image longLine = MakeImage(
+                "CheckLong",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(8f, 2f),
+                new Vector2(33f, 7f),
+                accent
+            );
+
+            longLine.rectTransform.localEulerAngles =
+                new Vector3(0f, 0f, 45f);
+        }
+        else
+        {
+            MakeImage(
+                "LockTop",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0f, 10f),
+                new Vector2(31f, 27f),
+                muted
+            );
+
+            MakeImage(
+                "LockTopHole",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0f, 12f),
+                new Vector2(17f, 17f),
+                new Color32(3, 17, 34, 255)
+            );
+
+            MakeImage(
+                "LockBottom",
+                frame.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0f, -11f),
+                new Vector2(43f, 29f),
+                muted
+            );
+        }
+    }
+
+    // =====================================
+    // UI GameObject 생성
+    // =====================================
+
+    private GameObject NewUIObject(
+        string name,
+        Transform parent,
+        params System.Type[] extra)
+    {
+        System.Type[] types =
+            new System.Type[extra.Length + 2];
+
+        types[0] = typeof(RectTransform);
+        types[1] = typeof(CanvasRenderer);
+
+        for (int i = 0; i < extra.Length; i++)
+        {
+            types[i + 2] = extra[i];
+        }
+
+        GameObject go =
+            new GameObject(name, types);
 
         go.transform.SetParent(parent, false);
 
-        RectTransform rect =
+        return go;
+    }
+
+    // =====================================
+    // Image 생성
+    // =====================================
+
+    private Image MakeImage(
+        string name,
+        Transform parent,
+        Vector2 anchor,
+        Vector2 offset,
+        Vector2 size,
+        Color color)
+    {
+        GameObject go = NewUIObject(
+            name,
+            parent,
+            typeof(Image)
+        );
+
+        RectTransform rt =
             go.GetComponent<RectTransform>();
 
-        rect.anchorMin =
-            new Vector2(0f, 0.5f);
+        rt.anchorMin = anchor;
+        rt.anchorMax = anchor;
 
-        rect.anchorMax =
-            new Vector2(0f, 0.5f);
+        rt.pivot =
+            new Vector2(0.5f, 0.5f);
 
-        rect.pivot =
-            new Vector2(0f, 0.5f);
+        rt.anchoredPosition = offset;
+        rt.sizeDelta = size;
 
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
+        Image image = go.GetComponent<Image>();
+
+        image.color = color;
+        image.raycastTarget = false;
+
+        return image;
+    }
+
+    // =====================================
+    // TMP 텍스트 생성
+    // =====================================
+
+    private TMP_Text MakeText(
+        string name,
+        Transform parent,
+        string value,
+        float fontSize,
+        Color color,
+        Vector2 size)
+    {
+        GameObject go = NewUIObject(
+            name,
+            parent,
+            typeof(TextMeshProUGUI)
+        );
+
+        RectTransform rt =
+            go.GetComponent<RectTransform>();
+
+        rt.anchorMin =
+            new Vector2(0.5f, 0.5f);
+
+        rt.anchorMax =
+            new Vector2(0.5f, 0.5f);
+
+        rt.pivot =
+            new Vector2(0.5f, 0.5f);
+
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = size;
 
         TextMeshProUGUI text =
             go.GetComponent<TextMeshProUGUI>();
@@ -646,10 +1010,12 @@ public class AchievementUI : MonoBehaviour
         text.text = value;
         text.fontSize = fontSize;
         text.color = color;
+
         text.alignment =
-            TextAlignmentOptions.Left;
+            TextAlignmentOptions.MidlineLeft;
 
         text.enableWordWrapping = false;
+
         text.overflowMode =
             TextOverflowModes.Ellipsis;
 
@@ -666,5 +1032,81 @@ public class AchievementUI : MonoBehaviour
         }
 
         return text;
+    }
+
+    // =====================================
+    // 카드 너비에 따라 늘어나는 텍스트
+    // =====================================
+
+    private TMP_Text MakeStretchText(
+        string name,
+        Transform parent,
+        string value,
+        float fontSize,
+        Color color,
+        float left,
+        float right,
+        float bottom,
+        float top)
+    {
+        TMP_Text text = MakeText(
+            name,
+            parent,
+            value,
+            fontSize,
+            color,
+            Vector2.zero
+        );
+
+        RectTransform rt =
+            text.GetComponent<RectTransform>();
+
+        rt.anchorMin =
+            new Vector2(0f, 0.5f);
+
+        rt.anchorMax =
+            new Vector2(1f, 0.5f);
+
+        rt.pivot =
+            new Vector2(0.5f, 0.5f);
+
+        rt.offsetMin =
+            new Vector2(left, bottom);
+
+        rt.offsetMax =
+            new Vector2(-right, top);
+
+        text.alignment =
+            TextAlignmentOptions.MidlineLeft;
+
+        return text;
+    }
+
+    // =====================================
+    // 임시 네온 테두리
+    // =====================================
+
+    private void ApplyOutline(
+        GameObject go,
+        Color color,
+        float thickness)
+    {
+        Outline outline =
+            go.GetComponent<Outline>();
+
+        if (outline == null)
+        {
+            outline = go.AddComponent<Outline>();
+        }
+
+        outline.effectColor = color;
+
+        outline.effectDistance =
+            new Vector2(
+                thickness,
+                -thickness
+            );
+
+        outline.useGraphicAlpha = false;
     }
 }
